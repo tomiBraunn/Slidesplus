@@ -14,3 +14,15 @@
     font-size: 5em;
     font-weight: 700
 }
+.searchbar {
+    height: 2em;
+}
+
+.searchbar > * {
+    height: 100%;
+}
+
+span {
+    width: 2em;
+    aspect-ratio: 1;
+}
