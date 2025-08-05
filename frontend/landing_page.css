@@ -1,0 +1,16 @@
+.logo {
+    background: linear-gradient(90deg, #7182FF 0%, #249931 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 5em;
+    font-weight: 700;
+}
+
+.titulo {
+    background: linear-gradient(90deg, #7182FF 0%, #249931 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-align: center;
+    font-size: 5em;
+    font-weight: 700
+}
