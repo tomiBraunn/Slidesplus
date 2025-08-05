@@ -11,22 +11,23 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
         rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 
-<body>
+<body class="bg-[#121212]">
     <nav>
-        <div class="logo">
+        <div class="logo flex justify-start items-center">
             <p>&lt;/&gt;</p>
         </div>
     </nav>
-    <div class="main-editor">
-        <div class="sidepanel-full">
-            <div class="viewport-viewer">
-                <div class="live-preview">
+    <div class="main-editor flex m-10">
+        <div class="sidepanel-full w-[30vw] flex flex-col justify-center items-start">
+            <div class="viewport-viewer w-full">
+                <div class="live-preview windowstyle w-full">
                     <img src="Frame 0.png">
                 </div>
-                <div class="live-preview-controls">
-
+                <div class="live-preview-controls windowstyle w-full">
+                    <span>x</span>
                 </div>
             </div>
             <div class="slidepanel-main">
@@ -86,7 +87,7 @@
                 </div>
             </div>
         </div>
-        <div class="text-editor">
+        <div class="text-editor flex-1">
             <div class="text-editor-tabs">
                 <span>
                     <p>Global</p>
@@ -101,7 +102,6 @@
         </div>
     </div>
     <style>
-
         * {
             margin: 0;
             padding: 0;
@@ -109,15 +109,14 @@
         }
 
         body {
-            background: #121212;
             font-family: "Inter", sans-serif;
             overflow: hidden;
         }
 
-        nav {
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
+        .windowstyle {
+            border: #181818 solid .320rem;
+            background: #1F1F1F;
+            border-radius: 1.25rem;
         }
 
         .logo {
@@ -128,24 +127,6 @@
             font-size: 5em;
             font-weight: 700
         }
-
-        .main-editor {
-            margin: 2em;
-            display: flex;
-        }
-
-        .sidepanel-full {
-            width: 30vw;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: flex-start;
-        }
-
-        img {
-            width: 2em;
-        }
-
     </style>
 </body>
 
