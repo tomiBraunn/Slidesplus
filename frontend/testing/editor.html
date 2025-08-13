@@ -13,15 +13,54 @@
         rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-    <link rel="stylesheet" href="style.css"/>
+    <link rel="stylesheet" href="style.css" />
 </head>
 
-<body class="flex items-center justify-center h-screen">
-    <div class="flex items-start justify-center flex-col flex gap-1 bg-[#1F1F1F] text-white px-2 rounded-lg aspect-video w-50">
+<body class="flex items-center justify-center h-screen flex-col gap-30">
+    <div class="flex items-center justify-center gap-2">
+        <div class="flex items-center justify-center">
+            <div class="flex items-center justify-start bg-[#1F1F1F] text-white rounded-l-full w-auto h-fit">
+                <input type="text" placeholder="Search"
+                    class="bg-[#1F1F1F] text-white px-4 py-2 rounded-l-full focus:outline-none w-120">
+                <span class="material-symbols-outlined pr-2 select-none">
+                    search
+                </span>
+            </div>
+            <div class="flex items-center justify-center bg-[#1F1F1F] text-white rounded-r-full w-10 h-10 ml-2">
+                <span class="material-symbols-outlined cursor-pointer select-none">
+                    add
+                </span>
+            </div>
+        </div>
+        <div class="flex items-center justify-center bg-[#1F1F1F] text-white rounded-full gap-1 py-2 px-3 h-fit">
+            <span class="material-symbols-outlined cursor-pointer select-none">
+                view_comfy_alt
+            </span>
+            <span class="w-[1px] h-7 bg-[#999999]"></span>
+            <span class="material-symbols-outlined cursor-pointer select-none">
+                dehaze
+        </div>
+        <div class="flex items-center justify-center bg-[#1F1F1F] text-white rounded-full gap-1 py-2 px-3 h-fit cursor-pointer select-none">
+            <p>Sort by:</p>
+            <span class="material-symbols-outlined">
+                arrow_drop_up
+            </span>
+        </div>
+    </div>
+
+
+
+
+
+
+
+
+    <div
+        class="flex items-start justify-center flex-col flex gap-1 bg-[#1F1F1F] text-white px-2 rounded-lg aspect-video w-50">
         <span class="material-symbols-outlined aspect-square">
             crop_landscape
         </span>
-        <div class="flex items-start justify-start flex-col gap.5">
+        <div class="flex items-start justify-start flex-col gap.5 appColorFade">
             <p id="projectName" class="text-xl">Title</p>
             <p id="projectDescription" class="text-xs text-[#999999]">description</p>
         </div>

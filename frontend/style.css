@@ -1,3 +1,14 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.appColorFade {
+    background: linear-gradient(90deg, #7182FF 0%, #249931 100%);
+}
+
+.material-symbols-outlined {
+    aspect-ratio: 1;
+    width: 2em;
+    user-select: none;
+    background: rebeccapurple;
+}
