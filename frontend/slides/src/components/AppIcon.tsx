@@ -1,9 +1,7 @@
 import React from 'react';
 
 function AppIcon() {
-    const projectName: string = "Title";
-    const projectDescription: string = "description";
-
+    
     return (
         <div className="flex items-start justify-start flex-column">
             <svg className="appColorFade" width="90" height="65" viewBox="0 0 90 65" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -13,4 +11,4 @@ function AppIcon() {
     );
 }
 
-export default AppIcon;  // Exportar para usarlo en otras partes
+export default AppIcon;
