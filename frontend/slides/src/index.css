@@ -22,6 +22,9 @@
     justify-content: center;
     align-items: center;
     aspect-ratio: 1;
-    width: 2em;
     user-select: none;
+}
+
+main .material-symbols-outlined  {
+    width: 2em;
 }

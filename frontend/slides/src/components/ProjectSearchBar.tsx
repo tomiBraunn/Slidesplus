@@ -10,7 +10,7 @@ function ProjectSearchBar() {
                         <input
                             type="text"
                             placeholder="Search"
-                            className="bg-[#1F1F1F] text-white px-4 rounded-l-full focus:outline-none w-215"
+                            className="bg-[#1F1F1F] text-white px-4 rounded-l-full focus:outline-none w-150"
                         />
                         <span className="material-symbols-outlined select-none flex">
                             search
