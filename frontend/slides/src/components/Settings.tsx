@@ -4,9 +4,13 @@ function Settings() {
 
     return (
         <>
-            <span className="material-symbols-outlined flex items-center justify-center text-[#4B4B4B]">
+            <span
+                className="material-symbols-outlined flex items-center justify-center text-[#4B4B4B] text-[40px]"
+                style={{ fontSize: "30px" }}
+            >
                 settings
             </span>
+
         </>
     );
 }

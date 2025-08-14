@@ -6,12 +6,22 @@ import NavBar from './components/NavBar';
 function App() {
   return (
     <>
-      <NavBar />
-      <main className='flex flex-col items-center justify-start h-screen text-white'>
-        <AppTextLogo />
-        <ProjectSearchBar />
-        {/* <ProjectTile /> */}
-      </main>
+      <div className="bg-[#121212] w-screen h-screen flex items-center justify-start flex-col gap-5">
+        <div className='flex flex-col items-center justify-start'>
+          <NavBar />
+          <div className='flex flex-col items-center justify-start text-white w-[60vw]'>
+            <div className='searchbar flex flex-col items-center justify-start w-full'>
+              <AppTextLogo />
+              <ProjectSearchBar />
+            </div>
+          </div>
+        </div>
+        <main className='flex items-center justify-center w-full h-100%'>
+          <div className='flex items-start justify-start w-[60vw] h-full'>
+            <ProjectTile />
+          </div>
+        </main>
+      </div>
     </>
   );
 }

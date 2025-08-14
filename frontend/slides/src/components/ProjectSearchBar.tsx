@@ -3,14 +3,14 @@ import React from 'react';
 function ProjectSearchBar() {
     return (
         <>
-            <div className="flex items-center justify-center gap-2 pt-5">
+            <div className="flex items-center justify-center gap-2 pt-5 w-full">
                 {/* search bar */}
-                <div className="flex items-center justify-center">
-                    <div className="flex items-center justify-start bg-[#1F1F1F] text-white rounded-l-full w-auto h-fit">
+                <div className="flex flex-1 items-center justify-center">
+                    <div className="flex flex-1 items-center justify-start bg-[#1F1F1F] text-white rounded-l-full w-fit h-fit min-h-[48px]">
                         <input
                             type="text"
                             placeholder="Search"
-                            className="bg-[#1F1F1F] text-white px-4 rounded-l-full focus:outline-none w-150"
+                            className="bg-[#1F1F1F] text-white px-4 rounded-l-full focus:outline-none w-full"
                         />
                         <span className="material-symbols-outlined select-none flex">
                             search
