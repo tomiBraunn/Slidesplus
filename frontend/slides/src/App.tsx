@@ -16,11 +16,14 @@ function App() {
             </div>
           </div>
         </div>
-        <main className='flex items-center justify-center w-full h-100%'>
-          <div className='flex items-start justify-start w-[60vw] h-full'>
+        <main className="flex justify-center w-full">
+          <div className="flex flex-wrap justify-start w-[60vw] gap-4">
+            <ProjectTile />
+            <ProjectTile />
             <ProjectTile />
           </div>
         </main>
+
       </div>
     </>
   );

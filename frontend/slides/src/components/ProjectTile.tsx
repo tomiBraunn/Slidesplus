@@ -6,19 +6,18 @@ function ProjectTile() {
 
     return (
         <>
-        <div className="flex items-center justify-center">
-            <div className="flex items-start justify-center flex-col flex gap-1 bg-[#1F1F1F] text-white px-2 rounded-lg aspect-video w-50">
-                <span className="material-symbols-outlined aspect-square">
+            <div className="flex flex-col items-start justify-start gap-1 bg-[#1F1F1F] text-white p-3 rounded-xl w-[16rem]">
+                <span className="material-symbols-outlined aspect-square" style={{ fontSize: "35px" }}>
                     crop_landscape
                 </span>
-                <div className="flex items-start justify-start flex-col gap.5">
-                    <p id="projectName" className="text-xl">{projectName}</p>
-                    <p id="projectDescription" className="text-xs select-none text-[#999999]">{projectDescription}</p>
+                <div className="flex flex-col items-start justify-start gap-2">
+                    <p id="projectName" className="text-[clamp(16px,2vw,32px)]">{projectName}</p>
+                    <p id="projectDescription" className="text-[clamp(10px,1.5vw,16px)] select-none text-[#999999]">{projectDescription}</p>
                 </div>
             </div>
-        </div>
         </>
     );
 }
+
 
 export default ProjectTile;

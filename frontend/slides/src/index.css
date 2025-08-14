@@ -4,7 +4,7 @@
 
 * {
     font-family: "Inter", sans-serif;
-    overflow: hidden;
+    /* overflow: hidden; */
 }
 
 
@@ -21,10 +21,5 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    aspect-ratio: 1;
     user-select: none;
-}
-
-.searchbar .material-symbols-outlined  {
-    width: 2em;
 }
