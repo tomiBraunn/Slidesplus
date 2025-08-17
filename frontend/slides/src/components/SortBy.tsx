@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 
 function SortBy() {
-    const defaultOption = "Latest";
+    const defaultOption = "Recent";
     const [isOpen, setIsOpen] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
     const [selected, setSelected] = useState(defaultOption);
@@ -38,9 +38,9 @@ function SortBy() {
             <div
                 onClick={toggleDropdown}
                 className={`flex items-center justify-center bg-[#1F1F1F] text-white gap-1 px-3 h-fit cursor-pointer select-none text-xl
-                    transition-all duration-300 ease-out ${isOpen ? 'rounded-t-[20px] gap-5' : 'rounded-full gap-1'}`}
+                    transition-all duration-300 ease-out ${isOpen ? 'rounded-t-[20px] gap-6' : 'rounded-full gap-1'}`}
             >
-                <p>Sort by:</p>
+                <p>Sort by</p>
                 <span
                     className={`material-symbols-outlined w-[1em] h-[2em] transition-transform duration-300 ease-out ${isOpen ? 'rotate-180' : 'rotate-0'}`}
                 >
@@ -54,7 +54,7 @@ function SortBy() {
                     ${showDropdown ? 'max-h-60 opacity-100 translate-y-0 rounded-b-xl' : 'max-h-0 opacity-0 -translate-y-5 rounded-b-none'}`}
             >
                 <ul className="flex flex-col">
-                    {["Latest", "Last opened", "A-Z"].map((option, index, arr) => (
+                    {["Recent", "Creation date", "A-Z"].map((option, index, arr) => (
                         <div
                             key={option}
                             className={`flex items-center justify-start gap-1 cursor-pointer hover:bg-[#333] ${index === arr.length - 1 && showDropdown ? 'rounded-b-xl' : ''}`}
