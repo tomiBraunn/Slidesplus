@@ -11,15 +11,23 @@ html {
     overflow: hidden;
 }
 
+input::placeholder {
+    user-select: none;
+}
 
-
-.appColorFade {
+.appColorFadeText {
     background: linear-gradient(90deg, #7182FF 0%, #249931 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     text-align: center;
     font-weight: 700
 }
+
+.appColorFade {
+    background: linear-gradient(90deg, #7182FF 0%, #249931 100%);
+}
+
+
 
 .material-symbols-outlined {
     display: flex;
@@ -35,9 +43,53 @@ html {
     border: solid 10px #181818;
 }
 
-.glass {
+.presentationComponentsStyleBorderLess {
+    background: #1F1F1F;
+    padding: .1rem;
+}
+
+.glassPanel {
     background-color: rgba(255, 255, 255, 0.012);
-    border: 2px solid rgba(255, 255, 255, 0.239));
+    border: 2px solid rgba(255, 255, 255, 0.239);
     backdrop-filter: blur(10.2px) brightness(100%);
     -webkit-backdrop-filter: blur(10.2px) brightness(100%);
+}
+
+.glassBackground {
+    background-color: rgba(255, 255, 255, 0.012);
+    backdrop-filter: blur(10.2px) brightness(100%);
+    -webkit-backdrop-filter: blur(10.2px) brightness(100%);
+}
+
+
+.card-animate {
+    animation: cardFadeIn 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+@keyframes cardFadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(40px) scale(0.95);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.card-exit {
+    animation: cardFadeOut 0.4s ease forwards;
+}
+
+@keyframes cardFadeOut {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-40px) scale(0.95);
+    }
 }

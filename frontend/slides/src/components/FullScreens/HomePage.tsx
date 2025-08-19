@@ -4,6 +4,7 @@ import ProjectSearchBar from "../ProjectSearchBar";
 import NavBar from "../NavBar";
 import CreateProject from '../CreateProject';
 import React, { useState } from 'react';
+import ProjectPreview from "../ProjectPreview";
 
 function HomePage() {
     const projectName: string = "Title";
@@ -31,11 +32,11 @@ function HomePage() {
             </main>
 
             {showCreate && (
-                <div className="absolute z-50 w-screen h-screen glass flex items-center justify-center">
-                    <CreateProject />
-                </div>
+                <CreateProject onClose={() => setShowCreate(false)} />
             )}
         </div>
+        // <ProjectPreview />
+
     );
 }
 

@@ -5,7 +5,7 @@ import Settings from '../../Settings';
 
 function ProjectNavBar() {
   return (
-    <nav className='flex items-center justify-between p-3 h-20 w-screen text-white border-b'>
+    <nav className='flex items-center justify-between p-3 h-20 w-screen border-b border-[#181818]'>
       <AppIcon />
       <div className='flex items-center gap-2.5'>
         <Settings />
