@@ -1,10 +1,10 @@
-import ProjectTile from "../ProjectTile";
-import AppTextLogo from "../AppTextLogo";
-import ProjectSearchBar from "../ProjectSearchBar";
-import NavBar from "../NavBar";
-import CreateProject from "../CreateProject";
+import ProjectTile from "../RegularComponents/HomeComponents/ProjectTile";
+import AppTextLogo from "../RegularComponents/MultiuseComponents/AppTextLogo";
+import ProjectSearchBar from "../RegularComponents/HomeComponents/ProjectSearchBar";
+import NavBar from "../RegularComponents/HomeComponents/Navbar";
+import CreateProject from "../RegularComponents/HomeComponents/CreateProject";
+import ProjectPreview from "../RegularComponents/HomeComponents/ProjectPreview";
 import React, { useState } from "react";
-import ProjectPreview from "../ProjectPreview";
 
 type Project = { name: string; description: string };
 

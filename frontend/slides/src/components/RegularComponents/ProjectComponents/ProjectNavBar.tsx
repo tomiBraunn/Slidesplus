@@ -1,7 +1,7 @@
 import React from 'react';
-import AppIcon from '../../AppIcon';
-import UserPicture from '../../UserPicture';
-import Settings from '../../Settings';
+import AppIcon from '../MultiuseComponents/AppIcon';
+import UserPicture from '../MultiuseComponents/UserPicture';
+import Settings from '../MultiuseComponents/Settings';
 
 function ProjectNavBar() {
   return (

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import PreviewBar from "./PreviewBar";
+import PreviewButtons from "./PreviewButtons";
 
 type Props = {
     open: boolean;
@@ -84,7 +84,7 @@ function ProjectPreview({ open, name, description, onClose }: Props) {
                 </div>
 
                 <div className="flex items-center justify-end self-end w-full">
-                    <PreviewBar
+                    <PreviewButtons
                         items={[
                             { icon: "delete", label: "Delete", onClick: () => console.log("delete") },
                             { icon: "edit", label: "Rename", onClick: () => console.log("rename") },
