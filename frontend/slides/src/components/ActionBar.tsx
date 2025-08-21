@@ -30,13 +30,13 @@ function ActionBar({ items, onClose }: Props) {
     return (
         <div
             onTransitionEnd={handleTransitionEnd}
-            className="flex items-center justify-center gap-2 p-4 w-full"
+            className="flex items-center justify-center gap-2 px-4 py-2.5"
         >
             {items.map((item) => (
-                <button
+                <div
                     key={item.label}
                     onClick={item.onClick}
-                    className="flex items-center justify-center gap-1 bg-[#181818] text-[#999999] rounded-xl p-2 flex-1 "
+                    className="flex-1 min-w-[100px] flex items-center justify-center gap-1 bg-[#181818] text-[#999999] rounded-3xl p-2.5"
                 >
                     <span
                         className="material-symbols-outlined"
@@ -44,8 +44,8 @@ function ActionBar({ items, onClose }: Props) {
                     >
                         {item.icon}
                     </span>
-                    <span className="text-sm">{item.label}</span>
-                </button>
+                    <span className="text-xs">{item.label}</span>
+                </div>
             ))}
         </div>
     );

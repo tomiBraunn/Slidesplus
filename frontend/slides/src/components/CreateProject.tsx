@@ -12,9 +12,16 @@ function CreateProject({ onClose }: Props) {
         return () => cancelAnimationFrame(id);
     }, []);
 
-    const handleClose = () => {
-        setOpen(false);
-    };
+    // Cerrar con ESC
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === "Escape") handleClose();
+        };
+        window.addEventListener("keydown", handler);
+        return () => window.removeEventListener("keydown", handler);
+    }, []);
+
+    const handleClose = () => setOpen(false);
 
     const handleTransitionEnd = () => {
         if (!open) onClose();
@@ -24,7 +31,8 @@ function CreateProject({ onClose }: Props) {
         <div className="absolute z-50 w-screen h-screen glassBackground flex items-center justify-center">
             <div
                 onTransitionEnd={handleTransitionEnd}
-                className={["presentationComponentsStyle rounded-xl shadow-2xl border border-white/10 backdrop-blur-xl bg-[#1F1F1F]/80 card-animate",
+                className={[
+                    "presentationComponentsStyle rounded-xl bg-[#1F1F1F]/80 card-animate",
                     "transform transition-all duration-200 ease-out",
                     open ? "opacity-100 scale-100" : "opacity-0 scale-95",
                 ].join(" ")}
@@ -32,9 +40,7 @@ function CreateProject({ onClose }: Props) {
                 <div className="flex items-center justify-center gap-4">
                     <div className="flex flex-col items-start justify-start gap-2 p-4">
                         <div className="flex items-center justify-start gap-2">
-                            <span
-                                className="material-symbols-outlined text-white"
-                                style={{ fontSize: "35px" }}>
+                            <span className="material-symbols-outlined text-white" style={{ fontSize: 35 }}>
                                 crop_landscape
                             </span>
                             <p className="text-white font-medium">Create presentation:</p>
@@ -51,7 +57,7 @@ function CreateProject({ onClose }: Props) {
                     <div className="flex flex-col items-end justify-between gap-4">
                         <span
                             className="material-symbols-outlined text-white cursor-pointer"
-                            style={{ fontSize: "35px" }}
+                            style={{ fontSize: 35 }}
                             onClick={handleClose}
                         >
                             close
