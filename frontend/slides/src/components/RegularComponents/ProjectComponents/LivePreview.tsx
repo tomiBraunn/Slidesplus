@@ -28,8 +28,9 @@ const LivePreview: React.FC<LivePreviewProps> = ({ html }) => {
                         className="w-full h-full border-none bg-white user-select-none overflow-hidden"
                     />
                 </div>
-                <div className='presentationComponentsStyle rounded-t-none rounded-b-xl w-full gap-0 flex items-center justify-center'>
-                    <div className='flex items-center justify-between m-1 w-fit'>
+
+                <div className="w-full flex justify-center presentationComponentsStyle rounded-none rounded-b-3xl flex items-center justify-center">
+                    <div className=" flex items-center justify-between gap-2 rounded-none rounded-b-3xl w-auto">
                         <span className="material-symbols-outlined cursor-pointer select-none w-[1.5em] aspect-square text-[#4B4B4B]">
                             fullscreen
                         </span>
