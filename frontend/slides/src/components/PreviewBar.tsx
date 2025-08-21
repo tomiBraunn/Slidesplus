@@ -11,7 +11,7 @@ type Props = {
     onClose?: () => void;
 };
 
-function ActionBar({ items, onClose }: Props) {
+function PreviewBar({ items, onClose }: Props) {
     const [open, setOpen] = useState(false);
 
     useEffect(() => {
@@ -51,4 +51,4 @@ function ActionBar({ items, onClose }: Props) {
     );
 }
 
-export default ActionBar;
+export default PreviewBar;

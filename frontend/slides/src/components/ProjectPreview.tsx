@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
-import ActionBar from "./ActionBar";
+import PreviewBar from "./PreviewBar";
 
 type Props = {
     open: boolean;
     name: string;
     description: string;
-    onClose: () => void; 
+    onClose: () => void;
 };
 
 function ProjectPreview({ open, name, description, onClose }: Props) {
@@ -55,14 +55,14 @@ function ProjectPreview({ open, name, description, onClose }: Props) {
                 ].join(" ")}
             >
                 <div className="flex items-center justify-between gap-2 w-full p-4">
-                    <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-white" style={{ fontSize: 35 }}>
-                            crop_landscape
-                        </span>
-                        <div className="flex flex-col">
-                            <p className="text-white font-medium text-lg">{name || "Sin título"}</p>
-                            <p className="text-[#999999] text-sm">{description || "Sin descripción"}</p>
+                    <div className="flex items-center flex-col">
+                        <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-white" style={{ fontSize: 35 }}>
+                                crop_landscape
+                            </span>
+                            <p className="text-white font-medium text-lg ">{name || "Sin título"}</p>
                         </div>
+                        <p className="text-[#999999] text-sm">{description || "Sin descripción"}</p>
                     </div>
                     <button
                         onClick={handleClose}
@@ -84,12 +84,12 @@ function ProjectPreview({ open, name, description, onClose }: Props) {
                 </div>
 
                 <div className="flex items-center justify-end self-end w-full">
-                    <ActionBar
+                    <PreviewBar
                         items={[
                             { icon: "delete", label: "Delete", onClick: () => console.log("delete") },
                             { icon: "edit", label: "Rename", onClick: () => console.log("rename") },
                             { icon: "share", label: "Share", onClick: () => console.log("share") },
-                            { icon: "smart_display", label: "Present", onClick: () => console.log("present") },
+                            // { icon: "smart_display", label: "Present", onClick: () => console.log("present") },
                             { icon: "open_in_new", label: "Open", onClick: () => console.log("open") },
                         ]}
                     />

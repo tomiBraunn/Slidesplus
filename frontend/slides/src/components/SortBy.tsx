@@ -49,7 +49,7 @@ function SortBy() {
             </div>
 
             <div
-                className={`absolute left-0 top-13 z-10 bg-[#1F1F1F] text-white w-full overflow-hidden
+                className={`absolute left-0 top-13 z-10 bg-[#2B2B2B] text-white w-full overflow-hidden
                     transition-all duration-300 ease-out
                     ${showDropdown ? 'max-h-60 opacity-100 translate-y-0 rounded-b-xl' : 'max-h-0 opacity-0 -translate-y-5 rounded-b-none'}`}
             >

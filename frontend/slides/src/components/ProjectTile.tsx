@@ -10,7 +10,7 @@ function ProjectTile({ name, description, onClick }: Props) {
     return (
         <button
             onClick={onClick}
-            className="flex flex-col items-start justify-start gap-1 bg-[#1F1F1F] text-white p-3 rounded-xl w-[16rem] text-left hover:bg-[#242424] transition-colors"
+            className="flex flex-col items-start justify-start gap-1 bg-[#1F1F1F] text-white p-3 rounded-xl text-left hover:bg-[#242424] transition-colors"
         >
             <span className="material-symbols-outlined aspect-square" style={{ fontSize: "35px" }}>
                 crop_landscape
