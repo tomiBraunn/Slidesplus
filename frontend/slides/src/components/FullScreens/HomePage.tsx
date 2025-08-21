@@ -20,7 +20,7 @@ function HomePage() {
 
     return (
         <div className="bg-[#121212] w-screen h-screen flex items-center justify-start flex-col gap-5 relative">
-            <div className="flex flex-col items-center justify-start">
+            <div className="bg-[#121212]  flex flex-col items-center justify-start fixed z-10">
                 <NavBar />
                 <div className="flex flex-col items-center justify-start text-white w-[70vw]">
                     <div className="searchbar flex flex-col items-center justify-start w-full">
@@ -30,8 +30,8 @@ function HomePage() {
                 </div>
             </div>
 
-            <main className="flex justify-center w-full relative">
-                <div className="flex flex-wrap justify-start w-[70vw] gap-4">
+            <main className="flex justify-center w-full relative mt-80">
+                <div className="flex flex-wrap justify-start w-[70vw] gap-x4">
                     <ProjectTile
                         name="A"
                         description="A"
@@ -52,6 +52,46 @@ function HomePage() {
                         description="C"
                         onClick={() => openPreview({ name: "C", description: "C" })}
                     />
+                                        <ProjectTile
+                        name="A"
+                        description="A"
+                        onClick={() => openPreview({ name: "A", description: "A" })}
+                    />
+                    <ProjectTile
+                        name="B"
+                        description="B"
+                        onClick={() => openPreview({ name: "B", description: "B" })}
+                    />
+                    <ProjectTile
+                        name="C"
+                        description="C"
+                        onClick={() => openPreview({ name: "C", description: "C" })}
+                    />
+                    <ProjectTile
+                        name="C"
+                        description="C"
+                        onClick={() => openPreview({ name: "C", description: "C" })}
+                    />
+                                        <ProjectTile
+                        name="A"
+                        description="A"
+                        onClick={() => openPreview({ name: "A", description: "A" })}
+                    />
+                    <ProjectTile
+                        name="B"
+                        description="B"
+                        onClick={() => openPreview({ name: "B", description: "B" })}
+                    />
+                    <ProjectTile
+                        name="C"
+                        description="C"
+                        onClick={() => openPreview({ name: "C", description: "C" })}
+                    />
+                    <ProjectTile
+                        name="C"
+                        description="C"
+                        onClick={() => openPreview({ name: "C", description: "C" })}
+                    />  
                 </div>
             </main>
 
