@@ -85,3 +85,6 @@ function HomePage() {
     );
 }
 export default HomePage;
+
+<button id="configuracion_btn"></button>
+
