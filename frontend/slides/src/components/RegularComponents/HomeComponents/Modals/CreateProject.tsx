@@ -12,7 +12,6 @@ function CreateProject({ onClose }: Props) {
         return () => cancelAnimationFrame(id);
     }, []);
 
-    // Cerrar con ESC
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
             if (e.key === "Escape") handleClose();

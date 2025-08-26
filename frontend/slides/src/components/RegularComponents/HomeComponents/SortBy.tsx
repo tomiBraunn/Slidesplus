@@ -37,8 +37,8 @@ function SortBy() {
         <div ref={containerRef} className="relative flex items-center justify-center gap-1">
             <div
                 onClick={toggleDropdown}
-                className={`flex items-center justify-center bg-[#1F1F1F] text-white gap-1 px-3 h-fit cursor-pointer select-none text-xl
-                    transition-all duration-300 ease-out ${isOpen ? 'rounded-t-[20px] gap-6' : 'rounded-full gap-1'}`}
+                className={`flex items-center justify-center bg-[#1F1F1F] text-white gap-1 px-3 h-fit cursor-pointer select-none text-lg
+                    transition-all duration-300 ease-out ${isOpen ? 'rounded-t-[20px] gap-9' : 'rounded-full gap-1'}`}
             >
                 <p>Sort by</p>
                 <span
