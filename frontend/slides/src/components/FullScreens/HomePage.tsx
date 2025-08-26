@@ -1,12 +1,12 @@
-// src/components/FullScreens/HomePage.tsx
-import React, { useState } from "react";
+import ProjectTile from "../RegularComponents/HomeComponents/ProjectTile";
 import AppTextLogo from "../RegularComponents/MultiuseComponents/AppTextLogo";
 import ProjectSearchBar from "../RegularComponents/HomeComponents/ProjectSearchBar";
 import NavBar from "../RegularComponents/HomeComponents/Navbar";
 import CreateProject from "../RegularComponents/HomeComponents/Modals/CreateProject";
 import ProjectPreview from "../RegularComponents/HomeComponents/Modals/ProjectPreview";
-import ProjectsMasonry from "../RegularComponents/HomeComponents/ProjectsMasonry";
-import type { Project } from "../RegularComponents/HomeComponents/ProjectsMasonry";
+import React, { useState } from "react";
+
+type Project = { name: string; description: string };
 
 function HomePage() {
     const [showCreate, setShowCreate] = useState(false);
@@ -24,8 +24,6 @@ function HomePage() {
         { name: "B", description: "B" },
         { name: "C", description: "C" },
         { name: "D", description: "D" },
-        { name: "E", description: "E" },
-        { name: "F", description: "F" },
     ];
 
     return (
@@ -35,42 +33,30 @@ function HomePage() {
                 <div className="flex flex-col items-center justify-start text-white w-[70vw]">
                     <div className="searchbar flex flex-col items-center justify-start w-full">
                         <AppTextLogo />
-                        <ProjectSearchBar
-                            onAddClick={() => setShowCreate(true)}
-                            viewMode={viewMode}
-                            setViewMode={setViewMode}
+                        <ProjectSearchBar 
+                            onAddClick={() => setShowCreate(true)} 
+                            viewMode={viewMode} 
+                            setViewMode={setViewMode} 
                         />
                     </div>
                 </div>
             </div>
 
             <main className="flex justify-center w-full relative">
-                <div className="w-[70vw]">
-                    {viewMode === "grid" ? (
-                        <ProjectsMasonry
-                            items={projects}
-                            onItemClick={openPreview}
-                            settings={{
-                                gap: 15,
-                                animateFrom: "right",
-                                duration: 1,
-                                hoverScale: 0.95,
-                                tileHeight: 120,
-                            }}
+                <div
+                    className={`w-[70vw] gap-4 ${
+                        viewMode === "grid" ? "grid grid-cols-4" : "flex flex-col"
+                    }`}
+                >
+                    {projects.map((p, i) => (
+                        <ProjectTile
+                            key={i}
+                            name={p.name}
+                            description={p.description}
+                            onClick={() => openPreview(p)}
+                            listMode={viewMode === "list"} // 👈
                         />
-                    ) : (
-                        <div className="flex flex-col gap-2 w-auto h-auto">
-                            {projects.map((p, i) => (
-                                <ProjectTile
-                                    key={i}
-                                    name={p.name}
-                                    description={p.description}
-                                    onClick={() => openPreview(p)}
-                                    listMode
-                                />
-                            ))}
-                        </div>
-                    )}
+                    ))}
                 </div>
             </main>
 
@@ -85,6 +71,3 @@ function HomePage() {
     );
 }
 export default HomePage;
-
-<button id="configuracion_btn"></button>
-

@@ -170,27 +170,28 @@ const Masonry: React.FC<MasonryProps> = ({
 
     grid.forEach((item, index) => {
       const selector = `[data-key="${item.id}"]`;
-      const animProps = { x: item.x, y: item.y };
+      const animProps = { x: item.x, y: item.y, width: item.w, height: item.h };
+
       if (!hasMounted.current) {
         const start = getInitialPosition(item);
-
         gsap.fromTo(
           selector,
           {
             opacity: 0,
             x: start.x,
             y: start.y,
-            filter: "blur(8px)",
+            width: item.w,
+            height: item.h,
+            ...(blurToFocus && { filter: "blur(10px)" }),
           },
           {
             opacity: 1,
-            x: item.x,
-            y: item.y,
-            filter: "blur(0px)",
-            duration,
+            ...animProps,
+            ...(blurToFocus && { filter: "blur(0px)" }),
+            duration: 0.8,
             ease: "power3.out",
             delay: index * stagger,
-          }
+          },
         );
       } else {
         gsap.to(selector, {

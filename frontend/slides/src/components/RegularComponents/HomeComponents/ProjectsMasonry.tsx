@@ -75,6 +75,12 @@ export default function ProjectsMasonry({ items, onItemClick, settings }: Props)
 
   const [containerRef, { width }] = useMeasure<HTMLDivElement>();
   const hasMounted = useRef(false);
+  const [mounted, setMounted] = useState(false);
+  const hasAnimated = useRef(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // IDs estables
   const normalized = useMemo(
@@ -93,8 +99,8 @@ export default function ProjectsMasonry({ items, onItemClick, settings }: Props)
       const col = colHeights.indexOf(Math.min(...colHeights));
       const x = col * (columnWidth + gap);
       const h = tileHeight;
-      const y = colHeights[col];
-      colHeights[col] += h + gap;
+      const y = colHeights[col] === 0 ? 0 : colHeights[col] + gap; // 👈 Aplica gap vertical
+      colHeights[col] = y + h;
       return { ...child, x, y, w: columnWidth, h };
     });
   }, [columns, normalized, width, gap, tileHeight]);
@@ -110,82 +116,58 @@ export default function ProjectsMasonry({ items, onItemClick, settings }: Props)
   }, [grid, columns, gap]);
 
   const getInitialPosition = (item: any) => {
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return { x: item.x, y: item.y };
-
-    let dir = animateFrom;
-    if (dir === "random") {
-      const dirs = ["top", "bottom", "left", "right"] as const;
-      dir = dirs[Math.floor(Math.random() * dirs.length)];
-    }
-
-    switch (dir) {
-      case "top": return { x: item.x, y: -200 };
-      case "bottom": return { x: item.x, y: rect.height + 200 };   // 👈 relativo al contenedor
-      case "left": return { x: -200, y: item.y };
-      case "right": return { x: rect.width + 200, y: item.y };    // 👈 relativo al contenedor
-      case "center": return { x: rect.width / 2 - item.w / 2, y: rect.height / 2 - item.h / 2 };
-      default: return { x: item.x, y: item.y + 100 };
-    }
+    // Siempre animar desde arriba
+    return { left: item.x, top: -200 };
   };
-
 
   // Animaciones GSAP
   useLayoutEffect(() => {
+    if (!mounted || hasAnimated.current) return;
     grid.forEach((item, index) => {
       const selector = `[data-key="${item.id}"]`;
-      const animProps = { left: item.x, top: item.y, width: item.w, height: item.h, position: "absolute" };
-
-      if (!hasMounted.current) {
-        const start = getInitialPosition(item);
-        gsap.fromTo(
-          selector,
-          {
-            opacity: 0,
-            left: start.x,
-            top: start.y,
-            width: item.w,
-            height: item.h,
-            filter: "blur(8px)",
-            position: "absolute",
-          },
-          {
-            opacity: 1,
-            ...animProps,
-            filter: "blur(0px)",
-            duration,
-            ease: "power3.out",
-            delay: index * stagger,
-          }
-        );
-
-      } else {
-        gsap.to(selector, { ...animProps, duration, ease: "power3.out", overwrite: "auto" });
-      }
+      const animProps = { left: item.x, top: item.y, width: item.w, height: item.h };
+      gsap.fromTo(
+        selector,
+        { opacity: 0, left: item.x, top: -200, width: item.w, height: item.h, filter: "blur(8px)" },
+        {
+          opacity: 1,
+          ...animProps,
+          filter: "blur(0px)",
+          duration: duration,
+          ease: "power3.out",
+          delay: index * stagger,
+        }
+      );
     });
-    hasMounted.current = true;
-  }, [grid, duration, stagger, animateFrom]);
+    hasAnimated.current = true;
+  }, [grid, duration, stagger, mounted]);
 
   const handleEnter = (id: string) =>
-    gsap.to(`[data-key="${id}"]`, { scale: hoverScale, duration: 0.25, ease: "power2.out" });
+    gsap.to(`[data-key="${id}"]`, { scale: hoverScale, boxShadow: "0 8px 32px rgba(0,0,0,0.15)", duration: 0.25, ease: "power2.out" });
   const handleLeave = (id: string) =>
-    gsap.to(`[data-key="${id}"]`, { scale: 1, duration: 0.25, ease: "power2.out" });
+    gsap.to(`[data-key="${id}"]`, { scale: 1, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", duration: 0.25, ease: "power2.out" });
 
   return (
-    <div ref={containerRef} className="relative w-full" style={{ height: containerHeight }}>
+    <div ref={containerRef} className="relative w-full h-full" style={{ height: containerHeight }}>
       {grid.map((g) => (
         <div
           key={g.id}
           data-key={g.id}
-          className="absolute box-content will-change-transform"
-          style={{ width: g.w, height: g.h }} // 👈 tamaño fijo por CSS
+          className="absolute box-content will-change-transform transition-shadow"
+          style={{
+            left: g.x,
+            top: mounted ? g.y : -200,
+            width: g.w,
+            height: g.h,
+          }}
           onMouseEnter={() => handleEnter(g.id!)}
           onMouseLeave={() => handleLeave(g.id!)}
           onClick={() => onItemClick({ name: g.name, description: g.description, id: g.id })}
         >
-          <ProjectTile name={g.name} description={g.description} />
+          <div className="w-full h-full">
+            <ProjectTile name={g.name} description={g.description} />
+          </div>
         </div>
-
       ))}
     </div>
   );
