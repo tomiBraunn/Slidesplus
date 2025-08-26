@@ -110,41 +110,55 @@ export default function ProjectsMasonry({ items, onItemClick, settings }: Props)
   }, [grid, columns, gap]);
 
   const getInitialPosition = (item: any) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return { x: item.x, y: item.y };
+
     let dir = animateFrom;
     if (dir === "random") {
       const dirs = ["top", "bottom", "left", "right"] as const;
       dir = dirs[Math.floor(Math.random() * dirs.length)];
     }
+
     switch (dir) {
       case "top": return { x: item.x, y: -200 };
-      case "bottom": return { x: item.x, y: window.innerHeight + 200 };
+      case "bottom": return { x: item.x, y: rect.height + 200 };   // 👈 relativo al contenedor
       case "left": return { x: -200, y: item.y };
-      case "right": return { x: window.innerWidth + 200, y: item.y };
-      case "center": return { x: 0, y: 0 };
+      case "right": return { x: rect.width + 200, y: item.y };    // 👈 relativo al contenedor
+      case "center": return { x: rect.width / 2 - item.w / 2, y: rect.height / 2 - item.h / 2 };
       default: return { x: item.x, y: item.y + 100 };
     }
   };
+
 
   // Animaciones GSAP
   useLayoutEffect(() => {
     grid.forEach((item, index) => {
       const selector = `[data-key="${item.id}"]`;
-      const animProps = { x: item.x, y: item.y, width: item.w, height: item.h };
+      const animProps = { left: item.x, top: item.y, width: item.w, height: item.h, position: "absolute" };
 
       if (!hasMounted.current) {
         const start = getInitialPosition(item);
         gsap.fromTo(
           selector,
-          { opacity: 0, x: start.x, y: start.y, width: item.w, height: item.h, filter: "blur(8px)" },
+          {
+            opacity: 0,
+            left: start.x,
+            top: start.y,
+            width: item.w,
+            height: item.h,
+            filter: "blur(8px)",
+            position: "absolute",
+          },
           {
             opacity: 1,
             ...animProps,
             filter: "blur(0px)",
-            duration: duration,
+            duration,
             ease: "power3.out",
             delay: index * stagger,
           }
         );
+
       } else {
         gsap.to(selector, { ...animProps, duration, ease: "power3.out", overwrite: "auto" });
       }
@@ -164,14 +178,14 @@ export default function ProjectsMasonry({ items, onItemClick, settings }: Props)
           key={g.id}
           data-key={g.id}
           className="absolute box-content will-change-transform"
+          style={{ width: g.w, height: g.h }} // 👈 tamaño fijo por CSS
           onMouseEnter={() => handleEnter(g.id!)}
           onMouseLeave={() => handleLeave(g.id!)}
           onClick={() => onItemClick({ name: g.name, description: g.description, id: g.id })}
         >
-          <div className="w-full h-full">
-            <ProjectTile name={g.name} description={g.description} />
-          </div>
+          <ProjectTile name={g.name} description={g.description} />
         </div>
+
       ))}
     </div>
   );

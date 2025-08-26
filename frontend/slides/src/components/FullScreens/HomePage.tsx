@@ -51,15 +51,15 @@ function HomePage() {
                             items={projects}
                             onItemClick={openPreview}
                             settings={{
-                                gap: 24,
-                                animateFrom: "top",
+                                gap: 15,
+                                animateFrom: "right",
                                 duration: 1,
-                                hoverScale: 0.9,
-                                tileHeight: 160,
+                                hoverScale: 0.95,
+                                tileHeight: 120,
                             }}
                         />
                     ) : (
-                        <div className="flex flex-col gap-2">
+                        <div className="flex flex-col gap-2 w-auto h-auto">
                             {projects.map((p, i) => (
                                 <ProjectTile
                                     key={i}
