@@ -8,7 +8,7 @@ function SlidesEditor() {
 
     return (
         <div className="flex items-start justify-start w-screen h-full overflow-hidden">
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 h-full">
                 <LivePreview html={html} />
                 <SlidesDrawer />
             </div>
