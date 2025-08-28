@@ -2,12 +2,12 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 import pkg from 'pg';
 
 const { Pool } = pkg;
 
 if (!process.env.DATABASE_URL) {
-  console.error("❌ No hay DATABASE_URL en .env");
   process.exit(1);
 }
 
@@ -20,16 +20,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ===============================
-// RUTAS
-// ===============================
-
-// Salud
 app.get("/", (req, res) => {
   res.json({ msg: "API funcionando" });
 });
 
-// Crear usuario
 app.post("/createuser", async (req, res) => {
   try {
     const { username, email, password, first_name, last_name } = req.body ?? {};
@@ -37,9 +31,11 @@ app.post("/createuser", async (req, res) => {
       return res.status(400).json({ message: "Faltan campos" });
     }
 
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     await pool.query(
       "INSERT INTO users (username, email, password, first_name, last_name) VALUES ($1, $2, $3, $4, $5)",
-      [username, email, password, first_name, last_name]
+      [username, email, hashedPassword, first_name, last_name]
     );
 
     res.status(201).json({ ok: true, message: "Usuario creado" });
@@ -47,12 +43,10 @@ app.post("/createuser", async (req, res) => {
     if (err.code === "23505") {
       return res.status(409).json({ message: "Usuario o email ya existe" });
     }
-    console.error("Error:", err.message);
     res.status(500).json({ message: "Error interno" });
   }
 });
 
-// Login (usuario o email)
 app.post("/login", async (req, res) => {
   try {
     const { identifier, password } = req.body ?? {};
@@ -70,7 +64,8 @@ app.post("/login", async (req, res) => {
     }
 
     const u = r.rows[0];
-    if (u.password !== password) {
+    const validPassword = await bcrypt.compare(password, u.password);
+    if (!validPassword) {
       return res.status(401).json({ message: "Clave inválida" });
     }
 
@@ -92,12 +87,10 @@ app.post("/login", async (req, res) => {
       token,
     });
   } catch (err) {
-    console.error("Error:", err.message);
     res.status(500).json({ message: "Error interno" });
   }
 });
 
-// Middleware para verificar token
 function auth(req, res, next) {
   const h = req.headers.authorization || "";
   const token = h.startsWith("Bearer ") ? h.slice(7) : null;
@@ -110,14 +103,10 @@ function auth(req, res, next) {
   }
 }
 
-// Ruta privada
 app.get("/me", auth, (req, res) => {
   res.json({ ok: true, user: req.user });
 });
 
-// ===============================
-// Start server
-// ===============================
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
   console.log(`API lista en http://localhost:${PORT}`);

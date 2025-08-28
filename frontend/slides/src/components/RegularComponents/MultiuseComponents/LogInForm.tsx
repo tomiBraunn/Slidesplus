@@ -32,7 +32,7 @@ function LogInForm() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 relative z-10 w-full max-w-md px-4">
       <div className="rounded-2xl border border-[#2B2B2B] bg-[#0f0f0f]">
         <div className="text-center px-6 pt-6">
           <h1 className="text-xl font-semibold">Welcome back!</h1>
@@ -77,7 +77,7 @@ function LogInForm() {
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 className="bg-[#121212] px-3 py-2 w-full text-sm rounded-lg border border-[#2B2B2B]
-                focus:outline-none focus:border-[#3A82F6] focus:ring-1 focus:ring-[#3A82F6]"
+                focus:outline-none"
               />
             </div>
 
@@ -100,7 +100,7 @@ function LogInForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="bg-[#121212] px-3 py-2 w-full text-sm rounded-lg border border-[#2B2B2B]
-                focus:outline-none focus:border-[#3A82F6] focus:ring-1 focus:ring-[#3A82F6]"
+                focus:outline-none"
               />
             </div>
 
