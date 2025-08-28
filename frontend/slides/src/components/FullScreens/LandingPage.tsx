@@ -1,95 +1,28 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import Masonry from "../Masonry/Masonry";
-import { gsap } from "gsap";
+import React from "react";
 
-// --------- hooks/utils (fuera del componente) ---------
-
-// Hook de media queries
-function useMedia(
-  queries: string[],
-  values: number[],
-  defaultValue: number
-) {
-  const get = () =>
-    values[queries.findIndex((q) => matchMedia(q).matches)] ?? defaultValue;
-
-  const [value, setValue] = useState<number>(get);
-
-  useEffect(() => {
-    const handler = () => setValue(get);
-    const mqls = queries.map((q) => matchMedia(q));
-    mqls.forEach((mql) => mql.addEventListener("change", handler));
-    return () => mqls.forEach((mql) => mql.removeEventListener("change", handler));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queries.join("|")]);
-
-  return value;
-}
-
-// Medir un contenedor
-function useMeasure<T extends HTMLElement>() {
-  const ref = useRef<T | null>(null);
-  const [size, setSize] = useState({ width: 0, height: 0 });
-
-  useLayoutEffect(() => {
-    if (!ref.current) return;
-    const ro = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect;
-      setSize({ width, height });
-    });
-    ro.observe(ref.current);
-    return () => ro.disconnect();
-  }, []);
-
-  return [ref, size] as const;
-}
-
-// Precargar imágenes (si lo necesitás en esta pantalla)
-async function preloadImages(urls: string[]) {
-  await Promise.all(
-    urls.map(
-      (src) =>
-        new Promise<void>((resolve) => {
-          const img = new Image();
-          img.src = src;
-          img.onload = img.onerror = () => resolve();
-        })
-    )
-  );
-}
-
-// ------------------------------------------------------
-
-export default function LandingPage() {
-  // Ejemplo de uso de hooks por si los necesitás acá
-  const columns = useMedia(
-    ["(min-width:1500px)", "(min-width:1000px)", "(min-width:600px)", "(min-width:400px)"],
-    [5, 4, 3, 2],
-    1
-  );
-
-  const [containerRef] = useMeasure<HTMLDivElement>();
-
-  // Items de prueba para Masonry (ajustá al shape que usa tu Masonry)
-  const items = useMemo(
-    () => [
-      { id: "1", img: "/img/1.jpg", url: "#", height: 400 },
-      { id: "2", img: "/img/2.jpg", url: "#", height: 520 },
-      { id: "3", img: "/img/3.jpg", url: "#", height: 360 },
-    ],
-    []
-  );
-
-  useEffect(() => {
-    // Si querés precargar:
-    // preloadImages(items.map(i => i.img));
-  }, [items]);
-
+export default function StartScreen() {
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <h1 className="text-white text-2xl mb-4">Landing Page</h1>
+    <div className="w-screen h-screen bg-gradient-to-r from-gray-900 via-black to-gray-900 flex items-center justify-center relative">
+      {/* Fondo */}
+      <div className="absolute inset-0 bg-[url('slides\public\S+ (1).png')] bg-cover bg-center"/>
+      <div className="absolute inset-0 bg-black/70" />
 
-      <Masonry />
+      {/* Contenido */}
+      <div className="relative z-10 text-center">
+        <div className="flex items-center flex-col">
+          <h1 className="text-5xl md:text-7xl font-bold text-white drop-shadow-lg">
+            Te damos la bienvenida a
+          </h1>
+          <img src="S+ (1).png" alt="Logo_S+" className="w-35" />
+        </div>
+        <p className="text-gray-300 mt-4 text-lg md:text-xl">
+          Programa tus presentaciones
+        </p>
+
+        <button className="mt-8 px-10 py-4 text-lg font-semibold rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition transform hover:scale-120">
+          Iniciar
+        </button>
+      </div>
     </div>
   );
 }
