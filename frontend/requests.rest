@@ -1,0 +1,22 @@
+### Crear usuario
+POST http://localhost:8000/createuser
+Content-Type: application/json
+
+{
+  "userid": "tomi",
+  "nombre": "Tomi",
+  "password": "clave123"
+}
+
+### Login
+POST http://localhost:8000/login
+Content-Type: application/json
+
+{
+  "userid": "tomi",
+  "password": "clave123"
+}
+
+### Ruta protegida (requiere token del login)
+GET http://localhost:8000/me
+Authorization: Bearer {{token}}
