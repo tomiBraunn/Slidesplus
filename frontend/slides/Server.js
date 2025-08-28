@@ -6,17 +6,14 @@ import pkg from 'pg';
 
 const { Pool } = pkg;
 
-// ===============================
-// Config DB
-// ===============================
 if (!process.env.DATABASE_URL) {
-  console.error("❌ No hay DATABASE_URL configurada en .env");
+  console.error("❌ No hay DATABASE_URL en .env");
   process.exit(1);
 }
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { require: true, rejectUnauthorized: false }
+  ssl: { require: true, rejectUnauthorized: false },
 });
 
 const app = express();
@@ -24,59 +21,48 @@ app.use(cors());
 app.use(express.json());
 
 // ===============================
-// Rutas
+// RUTAS
 // ===============================
 
 // Salud
 app.get("/", (req, res) => {
-  res.json({ msg: "API funcionando 🚀" });
-});
-
-// Test DB
-app.get("/dbtest", async (req, res) => {
-  try {
-    const result = await pool.query("SELECT NOW()");
-    res.json({ ok: true, time: result.rows[0] });
-  } catch (err) {
-    console.error("❌ Error en DB:", err.message);
-    res.status(500).json({ ok: false, error: err.message });
-  }
+  res.json({ msg: "API funcionando" });
 });
 
 // Crear usuario
 app.post("/createuser", async (req, res) => {
   try {
-    const { userid, nombre, password } = req.body ?? {};
-    if (!userid || !nombre || !password) {
+    const { username, email, password, first_name, last_name } = req.body ?? {};
+    if (!username || !email || !password || !first_name || !last_name) {
       return res.status(400).json({ message: "Faltan campos" });
     }
 
     await pool.query(
-      "INSERT INTO usuario (userid, nombre, password) VALUES ($1, $2, $3)",
-      [userid, nombre, password]
+      "INSERT INTO users (username, email, password, first_name, last_name) VALUES ($1, $2, $3, $4, $5)",
+      [username, email, password, first_name, last_name]
     );
 
     res.status(201).json({ ok: true, message: "Usuario creado" });
   } catch (err) {
     if (err.code === "23505") {
-      return res.status(409).json({ message: "El userid ya existe" });
+      return res.status(409).json({ message: "Usuario o email ya existe" });
     }
-    console.error("❌ Error:", err.message);
+    console.error("Error:", err.message);
     res.status(500).json({ message: "Error interno" });
   }
 });
 
-// Login
+// Login (usuario o email)
 app.post("/login", async (req, res) => {
   try {
-    const { userid, password } = req.body ?? {};
-    if (!userid || !password) {
+    const { identifier, password } = req.body ?? {};
+    if (!identifier || !password) {
       return res.status(400).json({ message: "Faltan campos" });
     }
 
     const r = await pool.query(
-      "SELECT userid, nombre, password FROM usuario WHERE userid=$1",
-      [userid]
+      "SELECT id, username, email, password, first_name, last_name FROM users WHERE username=$1 OR email=$1",
+      [identifier]
     );
 
     if (r.rowCount === 0) {
@@ -89,14 +75,24 @@ app.post("/login", async (req, res) => {
     }
 
     const token = jwt.sign(
-      { sub: u.userid, nombre: u.nombre },
+      { sub: u.id, username: u.username, email: u.email },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
 
-    res.json({ ok: true, user: { userid: u.userid, nombre: u.nombre }, token });
+    res.json({
+      ok: true,
+      user: {
+        id: u.id,
+        username: u.username,
+        email: u.email,
+        first_name: u.first_name,
+        last_name: u.last_name,
+      },
+      token,
+    });
   } catch (err) {
-    console.error("❌ Error:", err.message);
+    console.error("Error:", err.message);
     res.status(500).json({ message: "Error interno" });
   }
 });
@@ -114,7 +110,7 @@ function auth(req, res, next) {
   }
 }
 
-// Endpoint privado
+// Ruta privada
 app.get("/me", auth, (req, res) => {
   res.json({ ok: true, user: req.user });
 });
@@ -124,5 +120,5 @@ app.get("/me", auth, (req, res) => {
 // ===============================
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
-  console.log(`🚀 API lista en http://localhost:${PORT}`);
+  console.log(`API lista en http://localhost:${PORT}`);
 });

@@ -3,17 +3,28 @@ POST http://localhost:8000/createuser
 Content-Type: application/json
 
 {
-  "userid": "tomi",
-  "nombre": "Tomi",
-  "password": "clave123"
+  "username": "tomi",
+  "email": "tomi@example.com",
+  "password": "clave123",
+  "first_name": "Tomi",
+  "last_name": "Apellido"
 }
 
-### Login
+### Login con username
 POST http://localhost:8000/login
 Content-Type: application/json
 
 {
-  "userid": "tomi",
+  "identifier": "tomi",
+  "password": "clave123"
+}
+
+### Login con email
+POST http://localhost:8000/login
+Content-Type: application/json
+
+{
+  "identifier": "tomi@example.com",
   "password": "clave123"
 }
 
