@@ -1,6 +1,11 @@
 import React from "react";
+import SplitText from "../../components/SplitText/SplitText";
 
 export default function Inicio() {
+
+  const handleAnimationComplete = () => {
+    console.log('All letters have animated!');
+  };
   return (
     <div className="relative w-screen h-screen flex flex-col items-center justify-center bg-gradient-to-r from-gray-900 via-black to-gray-800 text-white overflow-hidden">
 
@@ -10,9 +15,21 @@ export default function Inicio() {
       </div>
 
       <h1 className="text-5xl font-bold mb-4 tracking-wide animate-fadeIn">
-      Welcome to
+      <SplitText
+  text="Hi, Welcome to"
+  className="text-2xl font-semibold text-center"
+  delay={100}
+  duration={0.6}
+  ease="power3.out"
+  splitType="chars"
+  from={{ opacity: 0, y: 40 }}
+  to={{ opacity: 1, y: 0 }}
+  threshold={0.1}
+  rootMargin="-100px"
+  textAlign="center"
+  onLetterAnimationComplete={handleAnimationComplete}
+/>
       </h1>
-
 
       <img
         src="S+ (1).png"
