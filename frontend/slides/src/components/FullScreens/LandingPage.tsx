@@ -1,5 +1,6 @@
 import React from "react";
 import SplitText from "../../components/SplitText/SplitText";
+import BlurText from "../../components/BlurText/BlurText";
 
 export default function Inicio() {
 
@@ -38,7 +39,19 @@ export default function Inicio() {
 
 
       <p className="text-lg text-gray-300 mb-10 animate-fadeIn animation-delay-300">
-        Coding your presentations
+      
+const handleAnimationCompleted = () => {
+  console.log('Slogan');
+};
+
+<BlurText
+  text="Coding your Presentations"
+  delay={150}
+  animateBy="words"
+  direction="top"
+  onAnimationComplete={handleAnimationCompleted}
+  className="text-2xl mb-8"
+/>
       </p>
 
       <button className="px-8 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-95 transition transform duration-300 shadow-lg text-lg font-semibold animate-fadeIn animation-delay-500 hover:shadow-blue-500/50">
