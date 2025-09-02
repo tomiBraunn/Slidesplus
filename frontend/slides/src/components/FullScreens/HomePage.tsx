@@ -5,7 +5,7 @@ import NavBar from "../RegularComponents/HomeComponents/Navbar";
 import CreateProject from "../RegularComponents/HomeComponents/Modals/CreateProject";
 import ProjectPreview from "../RegularComponents/HomeComponents/Modals/ProjectPreview";
 import React, { useEffect, useState } from "react";
-import { urlbackend } from "../RegularComponents/MultiuseComponents/Settings";
+import { urlbackend } from "../RegularComponents/MultiuseComponents/config.js";
 
 type Project = { id: string; name: string; description?: string; created_at?: string };
 
@@ -37,7 +37,6 @@ function HomePage() {
                 return;
             }
             const data = await res.json();
-            // el backend no tiene "description"; ponemos vacío para el tile
             const mapped: Project[] = (data || []).map((p: any) => ({
                 id: p.id,
                 name: p.name,
@@ -54,7 +53,6 @@ function HomePage() {
 
     useEffect(() => {
         fetchProjects();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const openPreview = (p: Project) => {
@@ -63,29 +61,7 @@ function HomePage() {
     };
 
     const onCreated = (p: Project) => {
-        // insertar al principio
         setProjects((prev) => [p, ...prev]);
-    };
-
-    const deleteProject = async (id: string) => {
-        if (!confirm("¿Eliminar este proyecto?")) return;
-        try {
-            const res = await fetch(`${urlbackend}/projects/${id}`, {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json",
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                },
-            });
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                alert(data?.message || "Couldn't delete project");
-                return;
-            }
-            setProjects((prev) => prev.filter((p) => p.id !== id));
-        } catch {
-            alert("Error de conexión con el servidor");
-        }
     };
 
     return (
@@ -105,16 +81,9 @@ function HomePage() {
             </div>
 
             <main className="flex justify-center w-full relative">
-                <div
-                    className={`w-[70vw] gap-4 ${viewMode === "grid" ? "grid grid-cols-4" : "flex flex-col"
-                        }`}
-                >
-                    {loading && (
-                        <div className="text-white/70 col-span-4">Loading projects…</div>
-                    )}
-                    {!loading && err && (
-                        <div className="text-red-400 col-span-4">{err}</div>
-                    )}
+                <div className={`w-[70vw] gap-4 ${viewMode === "grid" ? "grid grid-cols-4" : "flex flex-col"}`}>
+                    {loading && <div className="text-white/70 col-span-4">Loading projects…</div>}
+                    {!loading && err && <div className="text-red-400 col-span-4">{err}</div>}
                     {!loading && !err && projects.length === 0 && (
                         <div className="text-white/70 col-span-4">No projects available. Try creating one.</div>
                     )}
@@ -123,39 +92,29 @@ function HomePage() {
                         !err &&
                         projects.map((p) => (
                             <div key={p.id} className={viewMode === "grid" ? "relative" : "flex items-center gap-3"}>
-                                {/* Tile existente */}
                                 <ProjectTile
                                     name={p.name}
                                     description={p.description ?? ""}
                                     onClick={() => openPreview(p)}
                                     listMode={viewMode === "list"}
                                 />
-                                {/* Botón borrar (overlay simple) */}
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        deleteProject(p.id);
-                                    }}
-                                    className={`absolute top-2 right-2 bg-red-600/80 hover:bg-red-600 text-white text-xs px-2 py-1 rounded ${viewMode === "list" ? "relative top-0 right-0 ml-auto" : ""
-                                        }`}
-                                    title="Eliminar proyecto"
-                                >
-                                    Delete
-                                </button>
                             </div>
                         ))}
                 </div>
             </main>
 
-            {showCreate && (
-                <CreateProject onClose={() => setShowCreate(false)} onCreated={onCreated} />
-            )}
+            {showCreate && <CreateProject onClose={() => setShowCreate(false)} onCreated={onCreated} />}
 
             <ProjectPreview
                 open={showPreview}
-                name={selected?.name || ""}
-                description={selected?.description || ""}
+                name={selected?.name}
+                slideCount={(selected as any)?.slides?.length ?? 0}
+                lastModified={(selected as any)?.updated_at ?? selected?.created_at ?? null}
                 onClose={() => setShowPreview(false)}
+                onRename={async (newName) => {
+                }}
+                onDelete={async () => {
+                }}
             />
         </div>
     );

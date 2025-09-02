@@ -9,22 +9,25 @@ type ActionItem = {
 type Props = {
   open: boolean;
   name: string;
-  description: string;
+  slideCount?: number;
+  lastModified?: string | Date | null;
   onClose: () => void;
-  actions?: ActionItem[]; // opcional: para sobrescribir acciones
+  onDelete?: () => Promise<void> | void;
+  actions?: ActionItem[];
 };
 
 export default function ProjectPreview({
   open,
   name,
-  description,
+  slideCount = 0,
+  lastModified = null,
   onClose,
+  onDelete,
   actions,
 }: Props) {
   const [mounted, setMounted] = useState(false);
   const [show, setShow] = useState(false);
 
-  // Montaje/desmontaje según 'open'
   useEffect(() => {
     if (open) {
       setMounted(true);
@@ -34,7 +37,6 @@ export default function ProjectPreview({
     }
   }, [open]);
 
-  // ESC para cerrar
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") handleClose();
@@ -54,9 +56,28 @@ export default function ProjectPreview({
 
   if (!mounted) return null;
 
-  // Acciones por defecto si no se pasan por props
+  const formatUSDate = (d: string | Date | null | undefined) => {
+    if (!d) return "";
+    const date = typeof d === "string" ? new Date(d) : d;
+    if (!(date instanceof Date) || isNaN(date.getTime())) return "";
+    const m = String(date.getMonth() + 1);
+    const day = String(date.getDate());
+    const y = date.getFullYear();
+    return `${m}/${day}/${y}`;
+  };
+
+  const description = `${slideCount}slides-${formatUSDate(lastModified) || ""}`;
+
+  const handleDelete = async () => {
+    try {
+      await onDelete?.();
+    } finally {
+      handleClose();
+    }
+  };
+
   const defaultActions: ActionItem[] = [
-    { icon: "delete", label: "Delete", onClick: () => console.log("delete") },
+    { icon: "delete", label: "Delete", onClick: handleDelete },
     { icon: "edit", label: "Rename", onClick: () => console.log("rename") },
     { icon: "share", label: "Share", onClick: () => console.log("share") },
     { icon: "open_in_new", label: "Open", onClick: () => console.log("open") },
@@ -77,7 +98,6 @@ export default function ProjectPreview({
           show ? "opacity-100 scale-100" : "opacity-0 scale-95",
         ].join(" ")}
       >
-        {/* Header */}
         <div className="flex items-center justify-between gap-2 w-full p-4">
           <div className="flex items-start flex-col">
             <div className="flex items-center gap-2">
@@ -89,7 +109,7 @@ export default function ProjectPreview({
               </p>
             </div>
             <p className="text-[#999999] text-sm">
-              {description || "Sin descripción"}
+              {description}
             </p>
           </div>
 
@@ -105,7 +125,6 @@ export default function ProjectPreview({
           </button>
         </div>
 
-        {/* Content */}
         <div className="flex items-start justify-start gap-2 w-full h-full px-4 pb-2">
           <div className="presentationComponentsStyleBorderLess rounded-xl w-4/5 aspect-video p-4 overflow-auto border-solid border-[5px] border-[#181818]">
             <p className="text-white text-3xl">PLACEHOLDER</p>
@@ -113,7 +132,6 @@ export default function ProjectPreview({
           <div className="rounded-xl w-1/5 h-[100%] p-4 bg-red-500"></div>
         </div>
 
-        {/* Botonera integrada */}
         <div className="flex items-center justify-end self-end w-full">
           <div className="flex items-center justify-center gap-2 px-4 py-2.5">
             {items.map((item) => (

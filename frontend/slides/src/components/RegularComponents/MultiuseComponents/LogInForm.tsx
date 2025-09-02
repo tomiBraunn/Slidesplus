@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { urlbackend } from "./settings.js";
+import { urlbackend } from "./config.js";
 
 function LogInForm() {
   const [identifier, setIdentifier] = useState("");

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { urlbackend } from "../../MultiuseComponents/Settings.js";
+import { urlbackend } from "../../MultiuseComponents/config.js";
 
 type Props = {
   onClose: () => void;
