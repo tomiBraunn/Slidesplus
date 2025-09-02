@@ -1,12 +1,18 @@
 import React from "react";
+import {motion} from 'framer-motion';
 import SplitText from "../../components/SplitText/SplitText";
-import BlurText from "../../components/BlurText/BlurText";
+import { BlurText } from '../../components/BlurText/BlurText';
 
 export default function Inicio() {
 
   const handleAnimationComplete = () => {
     console.log('All letters have animated!');
   };
+
+  const handleAnimationCompleted = () => {
+    console.log('Slogan');
+  };
+
   return (
     <div className="relative w-screen h-screen flex flex-col items-center justify-center bg-gradient-to-r from-gray-900 via-black to-gray-800 text-white overflow-hidden">
 
@@ -16,43 +22,42 @@ export default function Inicio() {
       </div>
 
       <h1 className="text-5xl font-bold mb-4 tracking-wide animate-fadeIn">
-      <SplitText
-  text="Hi, Welcome to"
-  className="text-2xl font-semibold text-center"
-  delay={100}
-  duration={0.6}
-  ease="power3.out"
-  splitType="chars"
-  from={{ opacity: 0, y: 40 }}
-  to={{ opacity: 1, y: 0 }}
-  threshold={0.1}
-  rootMargin="-100px"
-  textAlign="center"
-  onLetterAnimationComplete={handleAnimationComplete}
-/>
+        <SplitText
+          text="Hi, Welcome to"
+          className="text-2xl font-semibold text-center"
+          delay={100}
+          duration={0.6}
+          ease="power3.out"
+          splitType="chars"
+          from={{ opacity: 0, y: 40 }}
+          to={{ opacity: 1, y: 0 }}
+          threshold={0.1}
+          rootMargin="-100px"
+          textAlign="center"
+          onLetterAnimationComplete={handleAnimationComplete}
+        />
       </h1>
 
       <img
         src="S+ (1).png"
         alt="Logo_S+"
-        className="w-32 mb-6 animate-pulse"/>
-
+        className="w-32 mb-6 animate-pulse"
+      />
 
       <p className="text-lg text-gray-300 mb-10 animate-fadeIn animation-delay-300">
-      
-const handleAnimationCompleted = () => {
-  console.log('Slogan');
-};
-
-<BlurText
-  text="Coding your Presentations"
-  delay={150}
-  animateBy="words"
-  direction="top"
-  onAnimationComplete={handleAnimationCompleted}
-  className="text-2xl mb-8"
-/>
+        {}
       </p>
+
+      {}
+      <BlurText
+        delay={150}
+        animateBy="words"
+        direction="top"
+        onAnimationComplete={handleAnimationCompleted}
+        className="text-2xl mb-8"
+      >
+        Coding your Presentations
+      </BlurText>
 
       <button className="px-8 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-95 transition transform duration-300 shadow-lg text-lg font-semibold animate-fadeIn animation-delay-500 hover:shadow-blue-500/50">
         Start
