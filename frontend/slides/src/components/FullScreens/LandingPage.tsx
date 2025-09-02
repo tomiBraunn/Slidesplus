@@ -12,7 +12,7 @@ export default function Inicio() {
     console.log('All letters have animated!');
     setTimeout(() => {
       setAnimationKey(prev => prev + 1);
-    }, 1000); // Espera 1 segundo antes de repetir
+    }, 1000);
   };
 
   return (
