@@ -1,6 +1,21 @@
-import React from "react";
+import React, { useState } from 'react';
+import SplitText from "../../components/SplitText/SplitText";
+import BlurText from "../../components/BlurText/BlurText";
+import { animationMapKey } from "motion";
+import TextType from "../../components/TextType/TextType"
+
 
 export default function Inicio() {
+
+  const [animationKey, setAnimationKey] = useState(0);
+
+  const handleAnimationComplete = () => {
+    console.log('All letters have animated!');
+    setTimeout(() => {
+      setAnimationKey(prev => prev + 1);
+    }, 1000);
+  };
+
   return (
     <div className="relative w-screen h-screen flex flex-col items-center justify-center bg-gradient-to-r from-gray-900 via-black to-gray-800 text-white overflow-hidden">
 
@@ -10,18 +25,31 @@ export default function Inicio() {
       </div>
 
       <h1 className="text-5xl font-bold mb-4 tracking-wide animate-fadeIn">
-      Welcome to
-      </h1>
+      <TextType 
+  text={["Hi, welcome to"]}
+  typingSpeed={75}
+  pauseDuration={1500}
+  showCursor={true}
+  cursorCharacter="|"
+/>
 
+      </h1>
 
       <img
         src="S+ (1).png"
         alt="Logo_S+"
-        className="w-32 mb-6 animate-pulse"/>
-
+        className="w-32 mb-6 animate-pulse"
+        />
 
       <p className="text-lg text-gray-300 mb-10 animate-fadeIn animation-delay-300">
-        Coding your presentations
+        <BlurText
+          text="Coding your presentations"
+          delay={300}
+          animateBy="words"
+          direction="top"
+          onAnimationComplete={handleAnimationComplete}
+          className="text-2xl mb-8"
+          />
       </p>
 
       <button className="px-8 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-95 transition transform duration-300 shadow-lg text-lg font-semibold animate-fadeIn animation-delay-500 hover:shadow-blue-500/50">
