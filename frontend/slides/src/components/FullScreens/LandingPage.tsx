@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import SplitText from "../../components/SplitText/SplitText";
 import BlurText from "../../components/BlurText/BlurText";
 import { animationMapKey } from "motion";
+import TextType from "../../components/TextType/TextType"
 
 
 export default function Inicio() {
@@ -24,21 +25,13 @@ export default function Inicio() {
       </div>
 
       <h1 className="text-5xl font-bold mb-4 tracking-wide animate-fadeIn">
-        <SplitText
-          text="Hi, Welcome to"
-          className="text-2xl font-semibold text-center"
-          delay={150}
-          duration={0.6}
-          ease="power3.out"
-          splitType="chars"
-          from={{ opacity: 0, y: 40 }}
-          to={{ opacity: 1, y: 0 }}
-          threshold={0.1}
-          rootMargin="-100px"
-          textAlign="center"
-          onLetterAnimationComplete={handleAnimationComplete}
-          key={animationKey}
-        />
+      <TextType 
+  text={["Hi, welcome to"]}
+  typingSpeed={75}
+  pauseDuration={1500}
+  showCursor={true}
+  cursorCharacter="|"
+/>
 
       </h1>
 
