@@ -1,10 +1,11 @@
 import HomePage from './components/FullScreens/HomePage';
 import ProjectPage from './components/FullScreens/ProjectPage';
-import LandingPage from './components/FullScreens/LandingPage'
+import LandingPage from './components/FullScreens/LandingPage';
 import LogInPage from './components/FullScreens/LogInPage';
 import SignUpPage from './components/FullScreens/SignUpPage';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import React from 'react';
+import ProtectedRoute from './ProtectedRoute.tsx';
 
 function App() {
   return (
@@ -13,8 +14,8 @@ function App() {
         <Route path='/' element={<LandingPage />} />
         <Route path='/login' element={<LogInPage />} />
         <Route path='/signup' element={<SignUpPage />} />
-        <Route path='/home' element={<HomePage />} />
-        <Route path='/p' element={<ProjectPage />} />
+        <Route path='/home' element={<ProtectedRoute><HomePage /></ProtectedRoute>}/>
+        <Route path='/p' element={<ProtectedRoute><ProjectPage /></ProtectedRoute>}/>
       </Routes>
     </Router>
   );

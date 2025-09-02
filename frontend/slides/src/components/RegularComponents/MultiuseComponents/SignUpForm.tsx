@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { urlbackend } from "./settings.js";
 
 function SignUpForm() {
     const [username, setUsername] = useState("");
@@ -19,7 +20,7 @@ function SignUpForm() {
         }
 
         try {
-            const res = await fetch("http://localhost:8000/createuser", {
+            const res = await fetch(`${urlbackend}/createuser`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -34,7 +35,7 @@ function SignUpForm() {
             const data = await res.json();
 
             if (!res.ok) {
-                setErrors({ [data.field || "form"]: data.message });
+                setErrors({ [data?.field || "form"]: data?.message || "Error en el registro" });
                 return;
             }
 
@@ -43,6 +44,7 @@ function SignUpForm() {
             setErrors({ form: "Error de conexión con el servidor" });
         }
     };
+
 
     return (
         <div className="relativeflex items-center justify-center">

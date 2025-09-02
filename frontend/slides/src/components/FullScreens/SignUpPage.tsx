@@ -7,7 +7,7 @@ import Threads from "../Threads/Threads";
 function SignUpPage() {
   return (
     <div className=" bg-[#121212] w-screen h-screen flex flex-col items-center justify-center text-white">
-      <AppIconWithoutLink />
+      {/* <AppIconWithoutLink /> */}
       <SignUpForm />
       <div className="absolute inset-0">
         <Threads

@@ -6,7 +6,7 @@ import Threads from "../Threads/Threads";
 function LogInPage() {
     return (
         <div className=" bg-[#121212] w-screen h-screen flex flex-col items-center justify-center text-white gap-4">
-            <AppIconWithoutLink />
+            {/* <AppIconWithoutLink /> */}
             <LogInForm />
             <div className="absolute inset-0">
                 <Threads

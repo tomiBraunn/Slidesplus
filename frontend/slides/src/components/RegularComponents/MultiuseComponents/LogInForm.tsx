@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { urlbackend } from "./settings.js";
 
 function LogInForm() {
   const [identifier, setIdentifier] = useState("");
@@ -10,7 +11,7 @@ function LogInForm() {
     setError("");
 
     try {
-      const res = await fetch("http://localhost:8000/login", {
+      const res = await fetch(`${urlbackend}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ identifier, password }),
@@ -126,7 +127,7 @@ function LogInForm() {
         </div>
       </div>
 
-      <div className="text-center text-xs text-gray-400">
+      {/* <div className="text-center text-xs text-gray-400">
         By clicking continue, you agree to our{" "}
         <a href="#" className="underline underline-offset-4 hover:text-white">
           Terms of Service
@@ -136,7 +137,7 @@ function LogInForm() {
           Privacy Policy
         </a>
         .
-      </div>
+      </div> */}
     </div>
   );
 }
