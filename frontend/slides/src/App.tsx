@@ -14,8 +14,9 @@ function App() {
         <Route path='/' element={<LandingPage />} />
         <Route path='/login' element={<LogInPage />} />
         <Route path='/signup' element={<SignUpPage />} />
-        <Route path='/home' element={<ProtectedRoute><HomePage /></ProtectedRoute>}/>
-        <Route path='/p' element={<ProtectedRoute><ProjectPage /></ProtectedRoute>}/>
+        <Route path='/home' element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+        {/* <Route path='/p' element={<ProtectedRoute><ProjectPage /></ProtectedRoute>} /> */}
+        <Route path='/p/:id' element={<ProjectPage />} />
       </Routes>
     </Router>
   );

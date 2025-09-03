@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 type ActionItem = {
   icon: string;
@@ -9,6 +10,7 @@ type ActionItem = {
 type Props = {
   open: boolean;
   name: string;
+  projectId?: string;                // <--- agregado
   slideCount?: number;
   lastModified?: string | Date | null;
   onClose: () => void;
@@ -19,6 +21,7 @@ type Props = {
 export default function ProjectPreview({
   open,
   name,
+  projectId,
   slideCount = 0,
   lastModified = null,
   onClose,
@@ -27,6 +30,7 @@ export default function ProjectPreview({
 }: Props) {
   const [mounted, setMounted] = useState(false);
   const [show, setShow] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (open) {
@@ -66,7 +70,7 @@ export default function ProjectPreview({
     return `${m}/${day}/${y}`;
   };
 
-  const description = `${slideCount}slides-${formatUSDate(lastModified) || ""}`;
+  const description = `${slideCount} slides${formatUSDate(lastModified) ? " · " + formatUSDate(lastModified) : ""}`;
 
   const handleDelete = async () => {
     try {
@@ -76,11 +80,15 @@ export default function ProjectPreview({
     }
   };
 
+  const goOpen = () => {
+    if (projectId) navigate(`/p/${projectId}`);
+  };
+
   const defaultActions: ActionItem[] = [
     { icon: "delete", label: "Delete", onClick: handleDelete },
     { icon: "edit", label: "Rename", onClick: () => console.log("rename") },
     { icon: "share", label: "Share", onClick: () => console.log("share") },
-    { icon: "open_in_new", label: "Open", onClick: () => console.log("open") },
+    { icon: "open_in_new", label: "Open", onClick: goOpen }, // <--- navega
   ];
   const items = actions?.length ? actions : defaultActions;
 
@@ -108,9 +116,7 @@ export default function ProjectPreview({
                 {name || "Sin título"}
               </p>
             </div>
-            <p className="text-[#999999] text-sm">
-              {description}
-            </p>
+            <p className="text-[#999999] text-sm">{description}</p>
           </div>
 
           <button
@@ -140,6 +146,7 @@ export default function ProjectPreview({
                 onClick={item.onClick}
                 className="flex-1 min-w-[100px] flex items-center justify-center bg-[#181818] text-[#999999] rounded-3xl p-2.5 hover:bg-[#222]"
                 title={item.label}
+                disabled={item.label === "Open" && !projectId}
               >
                 <div className="flex items-center justify-center gap-1">
                   <span
