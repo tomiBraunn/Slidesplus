@@ -1,5 +1,5 @@
 // Cambiá este valor a "local" o "prod"
-const ENV = "local"; 
+const ENV = "prod"; 
 
 const urls = {
   local: "http://localhost:8000",
