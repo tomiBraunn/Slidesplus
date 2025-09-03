@@ -107,7 +107,14 @@ function HomePage() {
                         if (loading) return <div className="text-white/70 col-span-4">Loading projects…</div>;
                         if (err) return <div className="text-red-400 col-span-4">{err}</div>;
                         if (projects.length === 0)
-                            return <div className="text-white/70 col-span-4">No projects available. Try creating one.</div>;
+                            <div className="flex flex-col items-center justify-center text-white/70 p-4">
+                            <span className="material-symbols-outlined text-[70px] mb-2 opacity-70">
+                            scan_delete
+                            </span>
+                            <p className="text-center text-sm max-w-xs">
+                            No projects available.<br/> Try creating one.
+                            </p>
+                            </div>
                         return projects.map((p) => (
                             <div key={p.id} className={viewMode === "grid" ? "relative" : "flex items-center gap-3"}>
                                 <ProjectTile
