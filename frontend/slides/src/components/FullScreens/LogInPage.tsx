@@ -1,7 +1,7 @@
 import React from 'react';
 import AppIconWithoutLink from '../RegularComponents/MultiuseComponents/AppIconWithoutLink';
 import LogInForm from '../RegularComponents/MultiuseComponents/LogInForm';
-import Threads from "../Threads/Threads"; 
+import Threads from "../ThirdPartyComponents/Threads/Threads"; 
 
 function LogInPage() {
     return (

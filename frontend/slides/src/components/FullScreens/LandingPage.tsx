@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import SplitText from "../../components/SplitText/SplitText";
-import BlurText from "../../components/BlurText/BlurText";
+import SplitText from "../ThirdPartyComponents/SplitText/SplitText";
+import BlurText from "../ThirdPartyComponents/BlurText/BlurText";
 import { animationMapKey } from "motion";
-import TextType from "../../components/TextType/TextType"
+import TextType from "../ThirdPartyComponents/TextType/TextType"
 
 
 export default function Inicio() {
