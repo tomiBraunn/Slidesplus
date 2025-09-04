@@ -47,13 +47,13 @@ function LogInForm() {
             <div className="flex flex-col gap-4">
               <button
                 type="button"
-                className="w-full rounded-xl border border-[#2B2B2B] px-4 py-2.5 text-sm font-medium hover:bg-[#161616] transition"
+                className="w-full rounded-xl border border-[#2B2B2B] px-4 py-2.5 text-sm font-medium hover:bg-[#161616] transition cursor-pointer"
               >
                 Login with Google
               </button>
               <button
                 type="button"
-                className="w-full rounded-xl border border-[#2B2B2B] px-4 py-2.5 text-sm font-medium hover:bg-[#161616] transition"
+                className="w-full rounded-xl border border-[#2B2B2B] px-4 py-2.5 text-sm font-medium hover:bg-[#161616] transition cursor-pointer"
               >
                 Login with Github
               </button>
@@ -111,7 +111,7 @@ function LogInForm() {
 
             <button
               type="submit"
-              className="w-full rounded-xl px-4 py-3 font-medium text-black bg-[#d0d0d0]"
+              className="w-full rounded-xl px-4 py-3 font-medium text-black bg-[#d0d0d0] cursor-pointer hover:bg-[#bcbcbc] transition"
             >
               Login
             </button>

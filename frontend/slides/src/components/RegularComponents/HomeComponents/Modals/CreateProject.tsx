@@ -89,7 +89,7 @@ function CreateProject({ onClose, onCreated }: Props) {
       <div
         onTransitionEnd={handleTransitionEnd}
         className={[
-          "presentationComponentsStyle rounded-xl bg-[#1F1F1F]/80 card-animate",
+          "text-white rounded-xl border border-[#2B2B2B] bg-[#0f0f0f] card-animate",
           "transform transition-all duration-200 ease-out",
           open ? "opacity-100 scale-100" : "opacity-0 scale-95",
         ].join(" ")}
@@ -111,7 +111,7 @@ function CreateProject({ onClose, onCreated }: Props) {
                 onChange={(e) => setTitle(e.target.value)}
                 onKeyDown={onKeyDownInput}
                 disabled={submitting}
-                className="rounded-lg p-2 w-full text-white bg-[#1F1F1F] border-[2.5px] border-[#181818] focus:outline-none placeholder-white/50 disabled:opacity-60"
+                className="text-white rounded-lg border border-[#2B2B2B] bg-[#0f0f0f] p-2 w-full border-[2.5px focus:outline-none placeholder-white/50 disabled:opacity-60"
               />
               {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
             </div>

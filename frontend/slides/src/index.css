@@ -92,3 +92,9 @@ input::placeholder {
         transform: translateY(-40px) scale(0.95);
     }
 }
+
+.truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

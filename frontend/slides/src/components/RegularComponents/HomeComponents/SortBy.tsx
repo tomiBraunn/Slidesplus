@@ -37,7 +37,7 @@ function SortBy() {
         <div ref={containerRef} className="relative flex items-center justify-center gap-1">
             <div
                 onClick={toggleDropdown}
-                className={`flex items-center justify-center bg-[#1F1F1F] text-white gap-1 px-3 h-fit cursor-pointer select-none text-lg
+                className={`flex items-center justify-center border border-[#2B2B2B] bg-[#0f0f0f] text-white gap-1 px-3 h-fit cursor-pointer select-none text-lg
                     transition-all duration-300 ease-out ${isOpen ? 'rounded-t-[20px] gap-9' : 'rounded-full gap-1'}`}
             >
                 <p>Sort by</p>
@@ -49,7 +49,7 @@ function SortBy() {
             </div>
 
             <div
-                className={`absolute left-0 top-13 z-10 bg-[#2B2B2B] text-white w-full overflow-hidden
+                className={`absolute left-0 top-13 z-10 text-white  border border-[#2B2B2B] bg-[#0f0f0f] w-full overflow-hidden
                     transition-all duration-300 ease-out
                     ${showDropdown ? 'max-h-60 opacity-100 translate-y-0 rounded-b-xl' : 'max-h-0 opacity-0 -translate-y-5 rounded-b-none'}`}
             >
@@ -61,7 +61,7 @@ function SortBy() {
                             onClick={() => handleSelect(option)}
                         >
                             <span
-                                className={`rounded-sm w-5 aspect-square ml-2 ${selected === option ? 'bg-[#3CFF52]' : 'bg-[#121212]'}`}
+                                className={`rounded-sm w-5 aspect-square ml-2 ${selected === option ? 'bg-[#3CFF52]' : 'bg-[#2B2B2B]'}`}
                             ></span>
                             <li className="px-1 py-2 w-full">{option}</li>
                         </div>

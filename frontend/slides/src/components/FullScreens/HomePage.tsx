@@ -108,12 +108,12 @@ function HomePage() {
                         if (err) return <div className="text-red-400 col-span-4">{err}</div>;
                         if (projects.length === 0)
                             <div className="flex flex-col items-center justify-center text-white/70 p-4">
-                            <span className="material-symbols-outlined text-[70px] mb-2 opacity-70">
-                            scan_delete
-                            </span>
-                            <p className="text-center text-sm max-w-xs">
-                            No projects available.<br/> Try creating one.
-                            </p>
+                                <span className="material-symbols-outlined text-[70px] mb-2 opacity-70">
+                                    scan_delete
+                                </span>
+                                <p className="text-center text-sm max-w-xs">
+                                    No projects available.<br /> Try creating one.
+                                </p>
                             </div>
                         return projects.map((p) => (
                             <div key={p.id} className={viewMode === "grid" ? "relative" : "flex items-center gap-3"}>
@@ -135,11 +135,19 @@ function HomePage() {
                 open={showPreview}
                 name={selected?.name || ""}
                 projectId={selected?.id}
-                slideCount={(selected as any)?.slides?.length ?? 0}
-                lastModified={selected?.updated_at ?? selected?.created_at ?? null}
+                slideCount={selected?.slideCount}
+                lastModified={selected?.updated_at}
                 onClose={() => setShowPreview(false)}
-                onDelete={onDeleteProject}
+                onDelete={async (id) => {
+                    setProjects(prev => prev.filter(p => p.id !== id));
+                    setShowPreview(false);
+                }}
+                onRename={async (id, next) => {
+                    setProjects(prev => prev.map(p => p.id === id ? { ...p, name: next } : p));
+                    setSelected(prev => prev ? { ...prev, name: next } : prev);
+                }}
             />
+
         </div>
     );
 }
