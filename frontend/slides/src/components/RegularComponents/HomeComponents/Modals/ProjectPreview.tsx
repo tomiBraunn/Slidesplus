@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BasicModal from "../../MultiuseComponents/BasicModal";
 import { urlbackend } from "../../MultiuseComponents/config.js";
@@ -39,6 +39,10 @@ function ProjectPreview({
   const [confirmText, setConfirmText] = useState("");
   const [renameText, setRenameText] = useState(name || "");
   const [busy, setBusy] = useState(false);
+  const [doc, setDoc] = useState<string>("");
+  const [loadingDoc, setLoadingDoc] = useState(false);
+  const [docErr, setDocErr] = useState("");
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -61,6 +65,55 @@ function ProjectPreview({
   useEffect(() => {
     setRenameText(name || "");
   }, [name]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      if (!open || !projectId) {
+        setDoc("");
+        setDocErr("");
+        setLoadingDoc(false);
+        return;
+      }
+      setLoadingDoc(true);
+      setDocErr("");
+      try {
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        const res = await fetch(`${urlbackend}/projects/${projectId}`, {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({} as any));
+          throw new Error(data?.message || "No se pudo cargar el proyecto");
+        }
+        const data = await res.json();
+        if (!cancelled) setDoc(typeof data?.document === "string" ? data.document : "");
+      } catch (e: any) {
+        if (!cancelled) setDocErr(e?.message || "Error al cargar");
+      } finally {
+        if (!cancelled) setLoadingDoc(false);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, projectId]);
+
+  useEffect(() => {
+    const d =
+      doc && doc.trim()
+        ? doc
+        : `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${name || "Sin título"}</title><style>html,body{height:100%}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;padding:24px;display:flex;align-items:center;justify-content:center;background:#fff;color:#111}</style></head><body><h1>${name || "Sin título"}</h1></body></html>`;
+    const target = iframeRef.current?.contentDocument || iframeRef.current?.contentWindow?.document;
+    if (!target) return;
+    target.open();
+    target.write(d);
+    target.close();
+  }, [doc, name]);
 
   const handleClose = () => setShow(false);
 
@@ -173,8 +226,14 @@ function ProjectPreview({
         </div>
 
         <div className="flex items-start justify-start gap-2 w-full h-full px-4 pb-2">
-          <div className="text-white rounded-xl border border-[#2B2B2B] bg-[#0f0f0f] w-4/5 aspect-video p-4 overflow-auto border-solid">
-            <p className="text-white text-3xl">PLACEHOLDER</p>
+          <div className="text-white rounded-xl border border-[#2B2B2B] bg-[#0f0f0f] w-4/5 aspect-video p-0 overflow-hidden border-solid relative">
+            {loadingDoc ? (
+              <div className="w-full h-full flex items-center justify-center text-white/70 text-sm">Loading preview…</div>
+            ) : docErr ? (
+              <div className="w-full h-full flex items-center justify-center text-red-400 text-sm">{docErr}</div>
+            ) : (
+              <iframe ref={iframeRef} title="Project Preview" className="w-full h-full border-0 bg-white" />
+            )}
           </div>
           <div className="rounded-xl w-1/5 h-[100%] p-4 bg-red-500"></div>
         </div>
