@@ -182,5 +182,28 @@ app.delete("/projects/:id", auth, async (req, res) => {
   }
 });
 
+app.post("/gemini", async (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message || !message.trim()) return res.status(400).json({ error: "Falta mensaje" });
+
+    const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/projects/632443460255/locations/us-central1/publishers/google/models/gemini-pro:generateContent";
+    const API_KEY = "***REMOVED_GEMINI_KEY***";
+
+    const response = await fetch(`${GEMINI_API_URL}?key=${API_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: message }] }],
+      }),
+    });
+
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Error al conectar con Gemini" });
+  }
+});
+
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => { });
