@@ -1,64 +1,47 @@
-import 'dotenv/config';
-import express from 'express';
-import cors from 'cors';
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
-import pkg from 'pg';
+// server.js
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
+import pkg from "pg";
 
 const { Pool } = pkg;
 
-if (!process.env.DATABASE_URL) {
-  process.exit(1);
-}
+// ---- Chequeos de entorno (para no fallar silencioso) ----
+if (!process.env.DATABASE_URL) console.error("[BOOT] Falta DATABASE_URL en .env");
+if (!process.env.JWT_SECRET) console.error("[BOOT] Falta JWT_SECRET en .env");
+if (!process.env.GEMINI_API_KEY) console.warn("[BOOT] Falta GEMINI_API_KEY (solo afecta /gemini)");
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { require: true, rejectUnauthorized: false },
-});
+const pool = process.env.DATABASE_URL
+  ? new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { require: true, rejectUnauthorized: false },
+    })
+  : null;
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
 
+// ---- Health / raíz ----
+app.get("/health", (req, res) => {
+  res.json({
+    ok: true,
+    env: {
+      hasDB: !!process.env.DATABASE_URL,
+      hasJWT: !!process.env.JWT_SECRET,
+      hasGeminiKey: !!process.env.GEMINI_API_KEY,
+      node: process.version,
+    },
+  });
+});
+
 app.get("/", (req, res) => {
   res.json({ msg: "API funcionando" });
 });
 
-app.post("/createuser", async (req, res) => {
-  try {
-    const { username, email, password, first_name, last_name } = req.body ?? {};
-    if (!username || !email || !password || !first_name || !last_name) return res.status(400).json({ message: "Faltan campos" });
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await pool.query(
-      `INSERT INTO users (username, email, password, first_name, last_name) VALUES ($1,$2,$3,$4,$5)`,
-      [username, email, hashedPassword, first_name, last_name]
-    );
-    res.status(201).json({ ok: true });
-  } catch (err) {
-    if (err.code === "23505") return res.status(409).json({ message: "Usuario o email ya existe" });
-    res.status(500).json({ message: "Error interno" });
-  }
-});
-
-app.post("/login", async (req, res) => {
-  try {
-    const { identifier, password } = req.body ?? {};
-    if (!identifier || !password) return res.status(400).json({ message: "Faltan campos" });
-    const r = await pool.query(
-      `SELECT id, username, email, password, first_name, last_name FROM users WHERE username=$1 OR email=$1`,
-      [identifier]
-    );
-    if (r.rowCount === 0) return res.status(404).json({ message: "Usuario no encontrado" });
-    const u = r.rows[0];
-    const valid = await bcrypt.compare(password, u.password);
-    if (!valid) return res.status(401).json({ message: "Clave inválida" });
-    const token = jwt.sign({ sub: u.id, username: u.username, email: u.email }, process.env.JWT_SECRET, { expiresIn: "1d" });
-    res.json({ ok: true, user: { id: u.id, username: u.username, email: u.email, first_name: u.first_name, last_name: u.last_name }, token });
-  } catch {
-    res.status(500).json({ message: "Error interno" });
-  }
-});
-
+// ---- Auth middleware ----
 function auth(req, res, next) {
   const h = req.headers.authorization || "";
   const token = h.startsWith("Bearer ") ? h.slice(7) : null;
@@ -71,104 +54,190 @@ function auth(req, res, next) {
   }
 }
 
+// ---- Users ----
+app.post("/createuser", async (req, res) => {
+  if (!pool) return res.status(500).json({ message: "DB no configurada" });
+  try {
+    const { username, email, password, first_name, last_name } = req.body ?? {};
+    if (!username || !email || !password || !first_name || !last_name)
+      return res.status(400).json({ message: "Faltan campos" });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await pool.query(
+      `INSERT INTO users (username, email, password, first_name, last_name)
+       VALUES ($1,$2,$3,$4,$5)`,
+      [username, email, hashedPassword, first_name, last_name]
+    );
+    res.status(201).json({ ok: true });
+  } catch (err) {
+    if (err.code === "23505")
+      return res.status(409).json({ message: "Usuario o email ya existe" });
+    console.error("createuser error:", err);
+    res.status(500).json({ message: "Error interno" });
+  }
+});
+
+app.post("/login", async (req, res) => {
+  if (!pool) return res.status(500).json({ message: "DB no configurada" });
+  try {
+    const { identifier, password } = req.body ?? {};
+    if (!identifier || !password) return res.status(400).json({ message: "Faltan campos" });
+
+    const r = await pool.query(
+      `SELECT id, username, email, password, first_name, last_name
+         FROM users WHERE username=$1 OR email=$1`,
+      [identifier]
+    );
+    if (r.rowCount === 0) return res.status(404).json({ message: "Usuario no encontrado" });
+
+    const u = r.rows[0];
+    const valid = await bcrypt.compare(password, u.password);
+    if (!valid) return res.status(401).json({ message: "Clave inválida" });
+
+    const token = jwt.sign(
+      { sub: u.id, username: u.username, email: u.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.json({
+      ok: true,
+      user: {
+        id: u.id,
+        username: u.username,
+        email: u.email,
+        first_name: u.first_name,
+        last_name: u.last_name,
+      },
+      token,
+    });
+  } catch (err) {
+    console.error("login error:", err);
+    res.status(500).json({ message: "Error interno" });
+  }
+});
+
 app.get("/me", auth, (req, res) => {
   res.json({ ok: true, user: req.user });
 });
 
+// ---- Projects ----
 app.get("/projects", auth, async (req, res) => {
+  if (!pool) return res.status(500).json({ message: "DB no configurada" });
   try {
     const q = await pool.query(
       `SELECT id, owner_id, name, document, created_at, updated_at
-       FROM projects
-       WHERE owner_id = $1
-       ORDER BY updated_at DESC, created_at DESC`,
+         FROM projects
+         WHERE owner_id = $1
+         ORDER BY updated_at DESC, created_at DESC`,
       [req.user.sub]
     );
     res.json(q.rows);
-  } catch {
+  } catch (err) {
+    console.error("projects list error:", err);
     res.status(500).json({ message: "Error interno" });
   }
 });
 
 app.get("/projects/:id", auth, async (req, res) => {
+  if (!pool) return res.status(500).json({ message: "DB no configurada" });
   try {
     const q = await pool.query(
       `SELECT id, owner_id, name, document, created_at, updated_at
-       FROM projects
-       WHERE id = $1 AND owner_id = $2`,
+         FROM projects
+         WHERE id = $1 AND owner_id = $2`,
       [req.params.id, req.user.sub]
     );
     if (q.rowCount === 0) return res.status(404).json({ message: "Proyecto no encontrado" });
     res.json(q.rows[0]);
-  } catch {
+  } catch (err) {
+    console.error("projects get error:", err);
     res.status(500).json({ message: "Error interno" });
   }
 });
 
 app.post("/projects", auth, async (req, res) => {
+  if (!pool) return res.status(500).json({ message: "DB no configurada" });
   try {
     const { name, document = "" } = req.body ?? {};
     if (!name || !name.trim()) return res.status(400).json({ message: "Falta nombre" });
+
     const q = await pool.query(
       `INSERT INTO projects (owner_id, name, document)
-       VALUES ($1,$2,$3)
-       RETURNING id, owner_id, name, document, created_at, updated_at`,
+         VALUES ($1,$2,$3)
+         RETURNING id, owner_id, name, document, created_at, updated_at`,
       [req.user.sub, name.trim(), document]
     );
     res.status(201).json(q.rows[0]);
   } catch (err) {
     if (err.code === "23505") return res.status(409).json({ message: "Nombre ya existe" });
+    console.error("projects create error:", err);
     res.status(500).json({ message: "Error interno" });
   }
 });
 
 app.patch("/projects/:id", auth, async (req, res) => {
+  if (!pool) return res.status(500).json({ message: "DB no configurada" });
   try {
     const { id } = req.params;
     const { name, document } = req.body ?? {};
+
     const fields = [];
     const vals = [];
     let i = 1;
-    if (typeof name === "string" && name.trim()) { fields.push(`name=$${i++}`); vals.push(name.trim()); }
-    if (typeof document === "string") { fields.push(`document=$${i++}`); vals.push(document); }
+    if (typeof name === "string" && name.trim()) {
+      fields.push(`name=$${i++}`);
+      vals.push(name.trim());
+    }
+    if (typeof document === "string") {
+      fields.push(`document=$${i++}`);
+      vals.push(document);
+    }
     if (fields.length === 0) return res.status(400).json({ message: "Sin cambios" });
+
     vals.push(id, req.user.sub);
+
     const q = await pool.query(
       `UPDATE projects
-       SET ${fields.join(", ")}, updated_at = NOW()
-       WHERE id = $${i++} AND owner_id = $${i}
-       RETURNING id, owner_id, name, document, created_at, updated_at`,
+         SET ${fields.join(", ")}, updated_at = NOW()
+         WHERE id = $${i++} AND owner_id = $${i}
+         RETURNING id, owner_id, name, document, created_at, updated_at`,
       vals
     );
     if (q.rowCount === 0) return res.status(404).json({ message: "Proyecto no encontrado" });
     res.json(q.rows[0]);
   } catch (err) {
     if (err.code === "23505") return res.status(409).json({ message: "Nombre ya existe" });
+    console.error("projects patch error:", err);
     res.status(500).json({ message: "Error interno" });
   }
 });
 
 app.patch("/projects/:id/rename", auth, async (req, res) => {
+  if (!pool) return res.status(500).json({ message: "DB no configurada" });
   try {
     const { id } = req.params;
     const { name } = req.body ?? {};
     if (!name || !name.trim()) return res.status(400).json({ message: "Falta nombre" });
+
     const q = await pool.query(
       `UPDATE projects
-       SET name=$1, updated_at=NOW()
-       WHERE id=$2 AND owner_id=$3
-       RETURNING id, owner_id, name, document, created_at, updated_at`,
+         SET name=$1, updated_at=NOW()
+         WHERE id=$2 AND owner_id=$3
+         RETURNING id, owner_id, name, document, created_at, updated_at`,
       [name.trim(), id, req.user.sub]
     );
     if (q.rowCount === 0) return res.status(404).json({ message: "Proyecto no encontrado" });
     res.json(q.rows[0]);
   } catch (err) {
     if (err.code === "23505") return res.status(409).json({ message: "Nombre ya existe" });
+    console.error("projects rename error:", err);
     res.status(500).json({ message: "Error interno" });
   }
 });
 
 app.delete("/projects/:id", auth, async (req, res) => {
+  if (!pool) return res.status(500).json({ message: "DB no configurada" });
   try {
     const { id } = req.params;
     const q = await pool.query(
@@ -177,33 +246,63 @@ app.delete("/projects/:id", auth, async (req, res) => {
     );
     if (q.rowCount === 0) return res.status(404).json({ message: "Proyecto no encontrado" });
     res.json({ ok: true, id });
-  } catch {
+  } catch (err) {
+    console.error("projects delete error:", err);
     res.status(500).json({ message: "Error interno" });
   }
 });
 
 app.post("/gemini", async (req, res) => {
   try {
-    const { message } = req.body;
-    if (!message || !message.trim()) return res.status(400).json({ error: "Falta mensaje" });
+    const { message, image, model } = req.body ?? {};
+    if (!message || !String(message).trim()) {
+      return res.status(400).json({ error: "Falta mensaje" });
+    }
 
-    const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/projects/632443460255/locations/us-central1/publishers/google/models/gemini-pro:generateContent";
-    const API_KEY = "***REMOVED_GEMINI_KEY***";
+    const API_KEY = process.env.GEMINI_API_KEY;
+    if (!API_KEY) {
+      console.error("GEMINI_API_KEY ausente");
+      return res.status(500).json({ error: "Config del servidor incompleta (GEMINI_API_KEY)" });
+    }
 
-    const response = await fetch(`${GEMINI_API_URL}?key=${API_KEY}`, {
+    // ✅ Endpoint correcto para API key (NO uses projects/publishers)
+    const mdl = model || "gemini-1.5-flash-latest"; // podés probar "gemini-1.5-pro-latest"
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${mdl}:generateContent?key=${API_KEY}`;
+
+    const parts = [{ text: String(message) }];
+    // Imagen opcional (base64 sin "data:...;base64,")
+    if (image?.data && image?.mimeType) {
+      parts.push({
+        inline_data: { mime_type: image.mimeType, data: image.data }
+      });
+    }
+
+    const payload = { contents: [{ role: "user", parts }] };
+
+    const r = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: message }] }],
-      }),
+      body: JSON.stringify(payload),
     });
 
-    const data = await response.json();
-    res.json(data);
-  } catch (err) {
+    const raw = await r.text(); // leemos texto para loguear exacto
+    if (!r.ok) {
+      console.error("Gemini upstream error:", r.status, raw);
+      let details;
+      try { details = JSON.parse(raw); } catch { details = raw; }
+      // devolvemos info útil al front para debug
+      return res.status(502).json({ error: "Gemini upstream error", status: r.status, details });
+    }
+
+    res.type("application/json").send(raw);
+  } catch (e) {
+    console.error("Gemini proxy exception:", e);
     res.status(500).json({ error: "Error al conectar con Gemini" });
   }
 });
 
+
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => { });
+app.listen(PORT, () => {
+  console.log(`[BOOT] Server escuchando en http://localhost:${PORT}`);
+});
