@@ -20,7 +20,7 @@ export default function SlidesEditor({ initialDocument, onChange }: Props) {
   }, [doc]);
 
   return (
-    <div className="flex items-start justify-start w-screen h-[calc(100vh-5rem)] overflow-hidden">
+    <div className="flex items-start justify-start w-screen h-full overflow-hidden">
       <div className="flex flex-col gap-3 h-full w-1/3">
         <LivePreview document={doc} />
         <SlidesDrawer />

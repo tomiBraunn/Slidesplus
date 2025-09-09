@@ -36,7 +36,7 @@ input::placeholder {
 }
 
 
-.presentationComponentsStyle {
+/* .presentationComponentsStyle {
     background: #1F1F1F;
     padding: .1rem;
     border: solid 10px #181818;
@@ -45,6 +45,19 @@ input::placeholder {
 .presentationComponentsStyleBorderLess {
     background: #1F1F1F;
     padding: .1rem;
+} */
+
+
+.defaultStyle {
+    background: #0f0f0f;
+    border: solid 1px #2B2B2B;
+    color: white;
+    transition: background-color 0.3s, border-color 0.3s;
+
+}
+
+.defaultStyleHover:hover {
+    background: #161616;
 }
 
 .glassPanel {

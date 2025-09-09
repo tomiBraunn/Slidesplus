@@ -207,7 +207,7 @@ function ProjectPreview({
         onMouseDown={(e) => e.stopPropagation()}
         onTransitionEnd={handleTransitionEnd}
         className={[
-          "text-white rounded-xl border border-[#2B2B2B] bg-[#0f0f0f] card-animate w-[70vw] max-w-[1100px] max-h-[85vh] overflow-hidden flex flex-col border border-white/10 backdrop-blur-xl",
+          "text-white rounded-xl defaultStyle card-animate w-[70vw] max-w-[1100px] max-h-[85vh] overflow-hidden flex flex-col border border-white/10 backdrop-blur-xl",
           "transform transition-all duration-200 ease-out",
           show ? "opacity-100 scale-100" : "opacity-0 scale-95",
         ].join(" ")}
@@ -278,7 +278,7 @@ function ProjectPreview({
         }
       >
         <input
-          className="w-full rounded-lg border border-[#2B2B2B] bg-[#121212] px-3 py-2 text-sm"
+          className="w-full rounded-lg defaultStyle px-3 py-2 text-sm"
           value={confirmText}
           onChange={(e) => setConfirmText(e.target.value)}
           placeholder={name}
@@ -301,7 +301,7 @@ function ProjectPreview({
         }
       >
         <input
-          className="w-full rounded-lg border border-[#2B2B2B] bg-[#121212] px-3 py-2 text-sm text-white"
+          className="w-full rounded-lg defaultStyle px-3 py-2 text-sm text-white"
           value={renameText}
           onChange={(e) => setRenameText(e.target.value)}
         />

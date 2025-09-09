@@ -7,7 +7,7 @@ type Props = {
 
 function ViewModeSwitch({ viewMode, setViewMode }: Props) {
     return (
-        <div className="flex items-center justify-center text-white border border-[#2B2B2B] bg-[#0f0f0f] rounded-full gap-0 h-fit">
+        <div className="flex items-center justify-center defaultStyle defaultStyleHover rounded-full gap-0 h-fit">
             <span
                 className={`material-symbols-outlined cursor-pointer select-none w-[2em] aspect-square ${
                     viewMode === "grid" ? "text-[#3CFF52]" : ""

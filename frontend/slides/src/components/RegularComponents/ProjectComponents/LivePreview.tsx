@@ -15,8 +15,8 @@ export default function LivePreview({ document }: Props) {
 
   return (
     <div className="flex flex-col items-center justify-center gap-1 w-full">
-      <div className="flex items-center justify-center w-full h-full select-none aspect-video presentationComponentsStyle rounded-t-xl rounded-b-none">
-        <iframe ref={iframeRef} title="Live Preview" className="w-full h-full border-none bg-white overflow-hidden" />
+      <div className="flex items-center justify-center w-full h-full select-none aspect-video defaultStyle rounded-t-xl rounded-b-none">
+        <iframe ref={iframeRef} title="Live Preview" className="w-full h-full border-none bg-white overflow-hidden rounded-t-sm" />
       </div>
       <div className="w-full flex justify-center presentationComponentsStyle rounded-none rounded-b-3xl">
         <div className="flex items-center justify-between gap-2 rounded-none rounded-b-3xl w-auto">

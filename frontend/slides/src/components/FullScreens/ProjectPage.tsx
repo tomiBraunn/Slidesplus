@@ -25,25 +25,7 @@ export default function ProjectPage() {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
-  const defaultDoc = `<!doctype html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>New Document</title>
-<style>
-  :root { color-scheme: light dark; }
-  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; padding: 24px; }
-  h1 { margin: 0 0 12px; font-size: 28px; }
-  p { margin: 0 0 8px; line-height: 1.45; }
-  .btn { display:inline-block; padding:10px 14px; border-radius:8px; background:#111; color:#fff; text-decoration:none; }
-</style>
-</head>
-<body>
-  <h1>Hello</h1>
-  <p>Edit this document and it will auto-save.</p>
-</body>
-</html>`;
+  const defaultDoc = ``;
 
   const fetchProject = async () => {
     if (!id) return;
@@ -132,7 +114,7 @@ export default function ProjectPage() {
       if (!res.ok) return;
       const data = await res.json();
       setProject(prev => (prev ? { ...prev, name: data.name } : prev));
-    } catch {}
+    } catch { }
   };
 
   const applySetCode = (val: string | ((v: string) => string)) => {
@@ -154,7 +136,7 @@ export default function ProjectPage() {
   return (
     <div className="bg-[#121212] w-screen h-screen flex flex-col">
       <ProjectNavBar projectId={id || ""} name={name} saveState={saveState} onRename={onRename} />
-      <div className="flex-1 w-full p-5 flex" style={{ height: "calc(100vh - 64px)" }}>
+      <div className="flex-1 w-full m-5 flex">
         <div style={{ flex: 1, minWidth: 0 }}>
           {loading && <div className="text-white/70">Loading…</div>}
           {!loading && notFound && <div className="text-red-400">Project not found.</div>}
@@ -162,7 +144,9 @@ export default function ProjectPage() {
             <SlidesEditor key={`editor-${project.id}-${editorBump}`} initialDocument={doc} onChange={onDocChange} />
           )}
         </div>
-        <GeminiChatbot setCode={applySetCode} />
+        <div className="hidden">
+          <GeminiChatbot setCode={applySetCode} />
+        </div>
       </div>
     </div>
   );

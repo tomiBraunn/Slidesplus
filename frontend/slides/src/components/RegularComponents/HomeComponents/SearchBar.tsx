@@ -16,7 +16,7 @@ function SearchBar({ onAddClick, onSearch }: Props) {
 
   return (
     <div className="flex flex-1 items-center justify-center">
-      <div className="flex flex-1 items-center justify-start text-white rounded-xl border border-[#2B2B2B] bg-[#0f0f0f] rounded-l-full w-fit h-fit min-h-[50px]">
+      <div className="flex flex-1 items-center justify-start rounded-l-full w-fit h-fit min-h-[50px] defaultStyle defaultStyleHover px-0.5">
         <input
           type="text"
           placeholder="Search projects..."
@@ -29,7 +29,7 @@ function SearchBar({ onAddClick, onSearch }: Props) {
         </span>
       </div>
       <div
-        className="flex items-center justify-center text-white rounded-xl border border-[#2B2B2B] bg-[#0f0f0f] rounded-r-full ml-2 cursor-pointer"
+        className="flex items-center justify-center rounded-xl defaultStyle defaultStyleHover rounded-r-full ml-2 cursor-pointer"
         onClick={onAddClick}
       >
         <span className="material-symbols-outlined w-[2em] aspect-square">

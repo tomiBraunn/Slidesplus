@@ -11,7 +11,7 @@ function ProjectTile({ name, description, onClick, listMode = false }: Props) {
     return (
         <button
             onClick={onClick}
-            className={`text-white rounded-xl border border-[#2B2B2B] bg-[#0f0f0f] hover:bg-[#161616] transition-colors w-full cursor-pointer ${listMode
+            className={`rounded-xl defaultStyle defaultStyleHover w-full cursor-pointer ${listMode
                 ? "flex flex-row items-center py-2 px-3 gap-3 w-full rounded-full"
                 : "flex flex-col items-start justify-start gap-2 p-3 text-left"
                 }`}
