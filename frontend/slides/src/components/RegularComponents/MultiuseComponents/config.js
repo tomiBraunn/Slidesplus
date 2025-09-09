@@ -1,4 +1,4 @@
-//"local" o "prod"
+//"local" <---> "prod"
 const ENV = "prod";
 
 const urls = {
