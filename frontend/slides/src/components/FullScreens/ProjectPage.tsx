@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import ProjectNavBar from "../RegularComponents/ProjectComponents/ProjectNavBar";
 import SlidesEditor from "../RegularComponents/ProjectComponents/SlidesEditor";
+import GeminiChatbot from "../RegularComponents/MultiuseComponents/GeminiChatbot";
 import { urlbackend } from "../RegularComponents/MultiuseComponents/config.js";
 
 type Project = { id: string; name: string; document: string; updated_at?: string };
@@ -16,6 +17,7 @@ export default function ProjectPage() {
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const debRef = useRef<number | null>(null);
   const lastSavedRef = useRef<string>("");
+  const [editorBump, setEditorBump] = useState(0);
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   const authHeaders = {
@@ -39,7 +41,7 @@ export default function ProjectPage() {
 </head>
 <body>
   <h1>Hello</h1>
-  <p>Edita este documento y se guardará automáticamente.</p>
+  <p>Edit this document and it will auto-save.</p>
 </body>
 </html>`;
 
@@ -62,7 +64,7 @@ export default function ProjectPage() {
       if (!res.ok) return;
       const data = await res.json();
       const doc = typeof data.document === "string" && data.document.trim() ? data.document : defaultDoc;
-      setProject({ id: data.id, name: data.name || "Sin título", document: doc, updated_at: data.updated_at });
+      setProject({ id: data.id, name: data.name || "Untitled", document: doc, updated_at: data.updated_at });
       lastSavedRef.current = doc;
     } catch {
     } finally {
@@ -72,7 +74,6 @@ export default function ProjectPage() {
 
   useEffect(() => {
     fetchProject();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const save = async (document: string) => {
@@ -125,7 +126,7 @@ export default function ProjectPage() {
         return;
       }
       if (res.status === 409) {
-        alert("Ya tenés un proyecto con ese nombre.");
+        alert("You already have a project with that name.");
         return;
       }
       if (!res.ok) return;
@@ -134,18 +135,34 @@ export default function ProjectPage() {
     } catch {}
   };
 
+  const applySetCode = (val: string | ((v: string) => string)) => {
+    setProject(prev => {
+      if (!prev) return prev;
+      const current = prev.document || "";
+      const computed = typeof val === "function" ? (val as (v: string) => string)(current) : val;
+      const nextDoc = computed ?? "";
+      if (debRef.current) window.clearTimeout(debRef.current);
+      debRef.current = window.setTimeout(() => save(nextDoc), 700) as unknown as number;
+      setEditorBump(x => x + 1);
+      return { ...prev, document: nextDoc };
+    });
+  };
+
   const name = useMemo(() => project?.name || "", [project]);
   const doc = useMemo(() => project?.document || defaultDoc, [project]);
 
   return (
     <div className="bg-[#121212] w-screen h-screen flex flex-col">
       <ProjectNavBar projectId={id || ""} name={name} saveState={saveState} onRename={onRename} />
-      <div className="flex-1 w-full p-5">
-        {loading && <div className="text-white/70">Cargando…</div>}
-        {!loading && notFound && <div className="text-red-400">Proyecto no encontrado.</div>}
-        {!loading && project && (
-          <SlidesEditor initialDocument={doc} onChange={onDocChange} />
-        )}
+      <div className="flex-1 w-full p-5 flex" style={{ height: "calc(100vh - 64px)" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {loading && <div className="text-white/70">Loading…</div>}
+          {!loading && notFound && <div className="text-red-400">Project not found.</div>}
+          {!loading && project && (
+            <SlidesEditor key={`editor-${project.id}-${editorBump}`} initialDocument={doc} onChange={onDocChange} />
+          )}
+        </div>
+        <GeminiChatbot setCode={applySetCode} />
       </div>
     </div>
   );
