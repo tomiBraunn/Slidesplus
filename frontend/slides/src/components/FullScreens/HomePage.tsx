@@ -1,6 +1,6 @@
 import ProjectTile from "../RegularComponents/HomeComponents/ProjectTile";
 import AppTextLogo from "../RegularComponents/MultiuseComponents/AppTextLogo";
-import ProjectSearchBar from "../RegularComponents/HomeComponents/ProjectSearchBar";
+import SearchBar from "../RegularComponents/HomeComponents/SearchBar";
 import NavBar from "../RegularComponents/HomeComponents/Navbar";
 import CreateProject from "../RegularComponents/HomeComponents/Modals/CreateProject";
 import ProjectPreview from "../RegularComponents/HomeComponents/Modals/ProjectPreview";
