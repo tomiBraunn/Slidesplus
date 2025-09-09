@@ -1,11 +1,11 @@
 import ProjectTile from "../RegularComponents/HomeComponents/ProjectTile";
 import AppTextLogo from "../RegularComponents/MultiuseComponents/AppTextLogo";
-import SearchBar from "../RegularComponents/HomeComponents/SearchBar";
+import ProjectSearchBar from "../RegularComponents/HomeComponents/ProjectSearchBar";
 import NavBar from "../RegularComponents/HomeComponents/Navbar";
 import CreateProject from "../RegularComponents/HomeComponents/Modals/CreateProject";
 import ProjectPreview from "../RegularComponents/HomeComponents/Modals/ProjectPreview";
 import React, { useEffect, useState } from "react";
-import { urlbackend } from "../RegularComponents/MultiuseComponents/config.js";
+import { urlbackend } from "../../config.js";
 
 type Project = { id: string; name: string; description?: string; created_at?: string; updated_at?: string };
 

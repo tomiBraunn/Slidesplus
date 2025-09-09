@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { urlbackend } from "./config.js";
+import { urlbackend } from "../../../config.js";
 
 function SignUpForm() {
     const [username, setUsername] = useState("");

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import ProjectNavBar from "../RegularComponents/ProjectComponents/ProjectNavBar";
 import SlidesEditor from "../RegularComponents/ProjectComponents/SlidesEditor";
 import GeminiChatbot from "../RegularComponents/MultiuseComponents/GeminiChatbot";
-import { urlbackend } from "../RegularComponents/MultiuseComponents/config.js";
+import { urlbackend } from "../../config.js";
 
 type Project = { id: string; name: string; document: string; updated_at?: string };
 type SaveState = "idle" | "saving" | "saved" | "error";
