@@ -52,7 +52,7 @@ function ProjectNavBar({ name, saveState, onRename }: Props) {
               }}
               title="Rename project"
             >
-              {name || "Untitled"}
+              {name || ""}
             </button>
           )}
           <span className="text-xs px-2 py-0.5 rounded-full border border-[#2B2B2B] text-[#9aa0a6]">

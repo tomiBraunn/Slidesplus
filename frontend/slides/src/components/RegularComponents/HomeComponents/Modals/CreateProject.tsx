@@ -40,7 +40,7 @@ function CreateProject({ onClose, onCreated }: Props) {
       return;
     }
     if (name.length > 120) {
-      setError("El título no puede superar 120 caracteres.");
+      setError("Title can’t be longer than 120 characters.");
       return;
     }
 
@@ -60,7 +60,7 @@ function CreateProject({ onClose, onCreated }: Props) {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data?.message || "No se pudo crear el proyecto.");
+        setError(data?.message || "Failed to create project.");
         setSubmitting(false);
         return;
       }
@@ -73,7 +73,7 @@ function CreateProject({ onClose, onCreated }: Props) {
       handleClose();
     } catch (e) {
       setSubmitting(false);
-      setError("Error de conexión con el servidor.");
+      setError("Error connecting to the server.");
     }
   };
 
@@ -134,7 +134,7 @@ function CreateProject({ onClose, onCreated }: Props) {
                 submitting ? "opacity-60 cursor-not-allowed" : "hover:opacity-90",
               ].join(" ")}
             >
-              {submitting ? "Creating..." : "Next"}
+              {submitting ? "Next" : "Next"}
             </button>
           </div>
         </div>
