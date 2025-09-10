@@ -48,9 +48,14 @@ function ProjectPreview({
   useEffect(() => {
     if (open) {
       setMounted(true);
+      document.documentElement.classList.add("overflow-hidden");
       requestAnimationFrame(() => setShow(true));
     } else {
       setShow(false);
+      setShowDelete(false);
+      setShowRename(false);
+      setConfirmText("");
+      document.documentElement.classList.remove("overflow-hidden");
     }
   }, [open]);
 
@@ -59,7 +64,10 @@ function ProjectPreview({
       if (e.key === "Escape") handleClose();
     };
     if (mounted) window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    return () => {
+      window.removeEventListener("keydown", handler);
+      document.documentElement.classList.remove("overflow-hidden");
+    };
   }, [mounted]);
 
   useEffect(() => {
@@ -120,6 +128,10 @@ function ProjectPreview({
   const handleTransitionEnd = () => {
     if (!show) {
       setMounted(false);
+      setShowDelete(false);
+      setShowRename(false);
+      setConfirmText("");
+      document.documentElement.classList.remove("overflow-hidden");
       onClose();
     }
   };
@@ -196,20 +208,28 @@ function ProjectPreview({
   const defaultActions: ActionItem[] = [
     { icon: "delete", label: "Delete", onClick: () => setShowDelete(true) },
     { icon: "edit", label: "Rename", onClick: () => setShowRename(true) },
-    { icon: "share", label: "Share", onClick: () => console.log("share") },
+    { icon: "share", label: "Share", onClick: goOpen },
     { icon: "open_in_new", label: "Open", onClick: goOpen },
   ];
   const items = actions?.length ? actions : defaultActions;
 
   return (
-    <div className="absolute z-50 inset-0 glassBackground flex items-center justify-center" onMouseDown={handleClose}>
+    <div
+      className={[
+        "fixed z-50 inset-0 flex items-center justify-center",
+        "bg-black/40 transition-[backdrop-filter,opacity] duration-200 ease-out",
+        show ? "opacity-100 backdrop-blur-xl" : "opacity-0 backdrop-blur-0",
+      ].join(" ")}
+      onMouseDown={handleClose}
+      onTransitionEnd={handleTransitionEnd}
+    >
       <div
         onMouseDown={(e) => e.stopPropagation()}
-        onTransitionEnd={handleTransitionEnd}
         className={[
-          "text-white rounded-xl defaultStyle card-animate w-[70vw] max-w-[1100px] max-h-[85vh] overflow-hidden flex flex-col border border-white/10 backdrop-blur-xl",
+          "text-white rounded-xl defaultStyle card-animate w-[70vw] max-w-[1100px] max-h-[85vh] overflow-hidden flex flex-col border border-white/10 bg-[#0b0b0bcc]",
           "transform transition-all duration-200 ease-out",
           show ? "opacity-100 scale-100" : "opacity-0 scale-95",
+          "backdrop-blur-sm",
         ].join(" ")}
       >
         <div className="flex items-center justify-between gap-2 w-full p-4">
