@@ -108,7 +108,8 @@ function HomePage() {
                         if (err) return <div className="text-red-400 col-span-4">{err}</div>;
                         if (projects.length === 0) return (
                             <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-4">
-                                <span className="material-symbols-outlined text-[70px] mb-2 opacity-70">
+                                <span className="material-symbols-outlined mb-2 opacity-70" style={{ fontSize: "40px" }}
+                                >
                                     scan_delete
                                 </span>
                                 <p className="text-center text-sm max-w-xs">

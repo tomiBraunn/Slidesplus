@@ -4,12 +4,8 @@ import { useNavigate } from 'react-router-dom';
 function UrlNotFoundPage() {
     const navigate = useNavigate();
 
-    const goBackOrHome = () => {
-        if (window.history.length > 1) {
-            navigate(-1);
-        } else {
-            navigate('/', { replace: true });
-        }
+    const goHome = () => {
+        navigate('/home', { replace: true });
     };
 
     return (
@@ -19,13 +15,18 @@ function UrlNotFoundPage() {
                     <p>ERROR</p>
                     <p>404</p>
                 </div>
-                <div className='flex flex-col items start justify-center [&>*]:text-4xl'>
+                <div className='flex flex-col items-start justify-center [&>*]:text-4xl'>
                     <p>PAGE</p>
                     <p>NOT</p>
-                    <p>FOUNDED</p>
+                    <p>FOUND</p>
                 </div>
             </div>
-            <button onClick={goBackOrHome} className="text-white rounded-xl border border-[#2B2B2B] bg-[#0f0f0f] hover:bg-[#161616] transition-colors cursor-pointer flex items-center justify-center px-5 py-2 select-none">HOME PAGE</button>
+            <button 
+                onClick={goHome} 
+                className="text-white rounded-xl border border-[#2B2B2B] bg-[#0f0f0f] hover:bg-[#161616] transition-colors cursor-pointer flex items-center justify-center px-5 py-2 select-none"
+            >
+                HOME PAGE
+            </button>
         </div>
     );
 }
