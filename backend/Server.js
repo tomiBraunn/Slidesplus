@@ -1,4 +1,3 @@
-// server.js
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
@@ -7,11 +6,6 @@ import bcrypt from "bcrypt";
 import pkg from "pg";
 
 const { Pool } = pkg;
-
-// ---- Chequeos de entorno (para no fallar silencioso) ----
-if (!process.env.DATABASE_URL) console.error("[BOOT] Falta DATABASE_URL en .env");
-if (!process.env.JWT_SECRET) console.error("[BOOT] Falta JWT_SECRET en .env");
-if (!process.env.GEMINI_API_KEY) console.warn("[BOOT] Falta GEMINI_API_KEY (solo afecta /gemini)");
 
 const pool = process.env.DATABASE_URL
   ? new Pool({
@@ -24,43 +18,24 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
 
-// ---- Health / raíz ----
-app.get("/health", (req, res) => {
-  res.json({
-    ok: true,
-    env: {
-      hasDB: !!process.env.DATABASE_URL,
-      hasJWT: !!process.env.JWT_SECRET,
-      hasGeminiKey: !!process.env.GEMINI_API_KEY,
-      node: process.version,
-    },
-  });
-});
-
-app.get("/", (req, res) => {
-  res.json({ msg: "API funcionando" });
-});
-
-// ---- Auth middleware ----
 function auth(req, res, next) {
   const h = req.headers.authorization || "";
   const token = h.startsWith("Bearer ") ? h.slice(7) : null;
-  if (!token) return res.status(401).json({ message: "Falta token" });
+  if (!token) return res.status(401).json({ message: "Missing token" });
   try {
     req.user = jwt.verify(token, process.env.JWT_SECRET);
     next();
   } catch {
-    return res.status(401).json({ message: "Token inválido" });
+    return res.status(401).json({ message: "Invalid token" });
   }
 }
 
-// ---- Users ----
 app.post("/createuser", async (req, res) => {
-  if (!pool) return res.status(500).json({ message: "DB no configurada" });
+  if (!pool) return res.status(500).json({ message: "Database not configured" });
   try {
     const { username, email, password, first_name, last_name } = req.body ?? {};
     if (!username || !email || !password || !first_name || !last_name)
-      return res.status(400).json({ message: "Faltan campos" });
+      return res.status(400).json({ message: "Missing fields" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
     await pool.query(
@@ -71,28 +46,27 @@ app.post("/createuser", async (req, res) => {
     res.status(201).json({ ok: true });
   } catch (err) {
     if (err.code === "23505")
-      return res.status(409).json({ message: "Usuario o email ya existe" });
-    console.error("createuser error:", err);
-    res.status(500).json({ message: "Error interno" });
+      return res.status(409).json({ message: "Username or email already exists" });
+    res.status(500).json({ message: "Internal error" });
   }
 });
 
 app.post("/login", async (req, res) => {
-  if (!pool) return res.status(500).json({ message: "DB no configurada" });
+  if (!pool) return res.status(500).json({ message: "Database not configured" });
   try {
     const { identifier, password } = req.body ?? {};
-    if (!identifier || !password) return res.status(400).json({ message: "Faltan campos" });
+    if (!identifier || !password) return res.status(400).json({ message: "Missing fields" });
 
     const r = await pool.query(
       `SELECT id, username, email, password, first_name, last_name
          FROM users WHERE username=$1 OR email=$1`,
       [identifier]
     );
-    if (r.rowCount === 0) return res.status(404).json({ message: "Usuario no encontrado" });
+    if (r.rowCount === 0) return res.status(404).json({ message: "User not found" });
 
     const u = r.rows[0];
     const valid = await bcrypt.compare(password, u.password);
-    if (!valid) return res.status(401).json({ message: "Clave inválida" });
+    if (!valid) return res.status(401).json({ message: "Invalid password" });
 
     const token = jwt.sign(
       { sub: u.id, username: u.username, email: u.email },
@@ -111,9 +85,8 @@ app.post("/login", async (req, res) => {
       },
       token,
     });
-  } catch (err) {
-    console.error("login error:", err);
-    res.status(500).json({ message: "Error interno" });
+  } catch {
+    res.status(500).json({ message: "Internal error" });
   }
 });
 
@@ -121,9 +94,8 @@ app.get("/me", auth, (req, res) => {
   res.json({ ok: true, user: req.user });
 });
 
-// ---- Projects ----
 app.get("/projects", auth, async (req, res) => {
-  if (!pool) return res.status(500).json({ message: "DB no configurada" });
+  if (!pool) return res.status(500).json({ message: "Database not configured" });
   try {
     const q = await pool.query(
       `SELECT id, owner_id, name, document, created_at, updated_at
@@ -133,14 +105,13 @@ app.get("/projects", auth, async (req, res) => {
       [req.user.sub]
     );
     res.json(q.rows);
-  } catch (err) {
-    console.error("projects list error:", err);
-    res.status(500).json({ message: "Error interno" });
+  } catch {
+    res.status(500).json({ message: "Internal error" });
   }
 });
 
 app.get("/projects/:id", auth, async (req, res) => {
-  if (!pool) return res.status(500).json({ message: "DB no configurada" });
+  if (!pool) return res.status(500).json({ message: "Database not configured" });
   try {
     const q = await pool.query(
       `SELECT id, owner_id, name, document, created_at, updated_at
@@ -148,19 +119,18 @@ app.get("/projects/:id", auth, async (req, res) => {
          WHERE id = $1 AND owner_id = $2`,
       [req.params.id, req.user.sub]
     );
-    if (q.rowCount === 0) return res.status(404).json({ message: "Proyecto no encontrado" });
+    if (q.rowCount === 0) return res.status(404).json({ message: "Project not found" });
     res.json(q.rows[0]);
-  } catch (err) {
-    console.error("projects get error:", err);
-    res.status(500).json({ message: "Error interno" });
+  } catch {
+    res.status(500).json({ message: "Internal error" });
   }
 });
 
 app.post("/projects", auth, async (req, res) => {
-  if (!pool) return res.status(500).json({ message: "DB no configurada" });
+  if (!pool) return res.status(500).json({ message: "Database not configured" });
   try {
     const { name, document = "" } = req.body ?? {};
-    if (!name || !name.trim()) return res.status(400).json({ message: "Falta nombre" });
+    if (!name || !name.trim()) return res.status(400).json({ message: "Missing name" });
 
     const q = await pool.query(
       `INSERT INTO projects (owner_id, name, document)
@@ -170,14 +140,13 @@ app.post("/projects", auth, async (req, res) => {
     );
     res.status(201).json(q.rows[0]);
   } catch (err) {
-    if (err.code === "23505") return res.status(409).json({ message: "Nombre ya existe" });
-    console.error("projects create error:", err);
-    res.status(500).json({ message: "Error interno" });
+    if (err.code === "23505") return res.status(409).json({ message: "Name already exists" });
+    res.status(500).json({ message: "Internal error" });
   }
 });
 
 app.patch("/projects/:id", auth, async (req, res) => {
-  if (!pool) return res.status(500).json({ message: "DB no configurada" });
+  if (!pool) return res.status(500).json({ message: "Database not configured" });
   try {
     const { id } = req.params;
     const { name, document } = req.body ?? {};
@@ -193,7 +162,7 @@ app.patch("/projects/:id", auth, async (req, res) => {
       fields.push(`document=$${i++}`);
       vals.push(document);
     }
-    if (fields.length === 0) return res.status(400).json({ message: "Sin cambios" });
+    if (fields.length === 0) return res.status(400).json({ message: "No changes" });
 
     vals.push(id, req.user.sub);
 
@@ -204,21 +173,20 @@ app.patch("/projects/:id", auth, async (req, res) => {
          RETURNING id, owner_id, name, document, created_at, updated_at`,
       vals
     );
-    if (q.rowCount === 0) return res.status(404).json({ message: "Proyecto no encontrado" });
+    if (q.rowCount === 0) return res.status(404).json({ message: "Project not found" });
     res.json(q.rows[0]);
   } catch (err) {
-    if (err.code === "23505") return res.status(409).json({ message: "Nombre ya existe" });
-    console.error("projects patch error:", err);
-    res.status(500).json({ message: "Error interno" });
+    if (err.code === "23505") return res.status(409).json({ message: "Name already exists" });
+    res.status(500).json({ message: "Internal error" });
   }
 });
 
 app.patch("/projects/:id/rename", auth, async (req, res) => {
-  if (!pool) return res.status(500).json({ message: "DB no configurada" });
+  if (!pool) return res.status(500).json({ message: "Database not configured" });
   try {
     const { id } = req.params;
     const { name } = req.body ?? {};
-    if (!name || !name.trim()) return res.status(400).json({ message: "Falta nombre" });
+    if (!name || !name.trim()) return res.status(400).json({ message: "Missing name" });
 
     const q = await pool.query(
       `UPDATE projects
@@ -227,28 +195,26 @@ app.patch("/projects/:id/rename", auth, async (req, res) => {
          RETURNING id, owner_id, name, document, created_at, updated_at`,
       [name.trim(), id, req.user.sub]
     );
-    if (q.rowCount === 0) return res.status(404).json({ message: "Proyecto no encontrado" });
+    if (q.rowCount === 0) return res.status(404).json({ message: "Project not found" });
     res.json(q.rows[0]);
   } catch (err) {
-    if (err.code === "23505") return res.status(409).json({ message: "Nombre ya existe" });
-    console.error("projects rename error:", err);
-    res.status(500).json({ message: "Error interno" });
+    if (err.code === "23505") return res.status(409).json({ message: "Name already exists" });
+    res.status(500).json({ message: "Internal error" });
   }
 });
 
 app.delete("/projects/:id", auth, async (req, res) => {
-  if (!pool) return res.status(500).json({ message: "DB no configurada" });
+  if (!pool) return res.status(500).json({ message: "Database not configured" });
   try {
     const { id } = req.params;
     const q = await pool.query(
       `DELETE FROM projects WHERE id=$1 AND owner_id=$2 RETURNING id`,
       [id, req.user.sub]
     );
-    if (q.rowCount === 0) return res.status(404).json({ message: "Proyecto no encontrado" });
+    if (q.rowCount === 0) return res.status(404).json({ message: "Project not found" });
     res.json({ ok: true, id });
-  } catch (err) {
-    console.error("projects delete error:", err);
-    res.status(500).json({ message: "Error interno" });
+  } catch {
+    res.status(500).json({ message: "Internal error" });
   }
 });
 
@@ -256,24 +222,21 @@ app.post("/gemini", async (req, res) => {
   try {
     const { message, image, model } = req.body ?? {};
     if (!message || !String(message).trim()) {
-      return res.status(400).json({ error: "Falta mensaje" });
+      return res.status(400).json({ error: "Missing message" });
     }
 
     const API_KEY = process.env.GEMINI_API_KEY;
     if (!API_KEY) {
-      console.error("GEMINI_API_KEY ausente");
-      return res.status(500).json({ error: "Config del servidor incompleta (GEMINI_API_KEY)" });
+      return res.status(500).json({ error: "Server misconfigured (GEMINI_API_KEY missing)" });
     }
 
-    // ✅ Endpoint correcto para API key (NO uses projects/publishers)
-    const mdl = model || "gemini-1.5-flash-latest"; // podés probar "gemini-1.5-pro-latest"
+    const mdl = model || "gemini-1.5-flash-latest";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${mdl}:generateContent?key=${API_KEY}`;
 
     const parts = [{ text: String(message) }];
-    // Imagen opcional (base64 sin "data:...;base64,")
     if (image?.data && image?.mimeType) {
       parts.push({
-        inline_data: { mime_type: image.mimeType, data: image.data }
+        inline_data: { mime_type: image.mimeType, data: image.data },
       });
     }
 
@@ -285,24 +248,24 @@ app.post("/gemini", async (req, res) => {
       body: JSON.stringify(payload),
     });
 
-    const raw = await r.text(); // leemos texto para loguear exacto
+    const raw = await r.text();
     if (!r.ok) {
-      console.error("Gemini upstream error:", r.status, raw);
       let details;
-      try { details = JSON.parse(raw); } catch { details = raw; }
-      // devolvemos info útil al front para debug
+      try {
+        details = JSON.parse(raw);
+      } catch {
+        details = raw;
+      }
       return res.status(502).json({ error: "Gemini upstream error", status: r.status, details });
     }
 
     res.type("application/json").send(raw);
-  } catch (e) {
-    console.error("Gemini proxy exception:", e);
-    res.status(500).json({ error: "Error al conectar con Gemini" });
+  } catch {
+    res.status(500).json({ error: "Error connecting to Gemini" });
   }
 });
 
-
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
-  console.log(`[BOOT] Server escuchando en http://localhost:${PORT}`);
+  console.log(`Server running at http://localhost:${PORT}`);
 });
