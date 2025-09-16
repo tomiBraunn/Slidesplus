@@ -12,7 +12,6 @@ function SearchBar({ onAddClick, setFiltrar }: Props) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearch(value);
-   // onSearch(value);(
    setFiltrar(value)
   };
 
@@ -21,7 +20,7 @@ function SearchBar({ onAddClick, setFiltrar }: Props) {
       <div className="flex flex-1 items-center justify-start rounded-l-full w-fit h-fit min-h-[50px] defaultStyle defaultStyleHover px-0.5">
         <input
           type="text"
-          placeholder="Search projects..."
+          placeholder="Search"
           value={search}
           onChange={handleChange}
           className="text-white px-4 rounded-l-full focus:outline-none w-full bg-transparent"
