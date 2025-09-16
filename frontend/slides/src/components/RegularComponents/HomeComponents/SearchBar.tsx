@@ -2,16 +2,18 @@ import React, { useState } from "react";
 
 type Props = {
   onAddClick: () => void;
-  onSearch: (value: string) => void;
+ // onSearch: (value: string) => void;
+  setFiltrar: (value:string)=> void;
 };
 
-function SearchBar({ onAddClick, onSearch }: Props) {
+function SearchBar({ onAddClick, setFiltrar }: Props) {
   const [search, setSearch] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearch(value);
-    onSearch(value);
+   // onSearch(value);(
+   setFiltrar(value)
   };
 
   return (

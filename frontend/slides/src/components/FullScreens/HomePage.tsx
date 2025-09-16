@@ -15,6 +15,7 @@ function HomePage() {
     const [showPreview, setShowPreview] = useState(false);
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
     const [projects, setProjects] = useState<Project[]>([]);
+    const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
     const [err, setErr] = useState("");
 
@@ -43,6 +44,7 @@ function HomePage() {
                 updated_at: p.updated_at,
             }));
             setProjects(mapped);
+            setFilteredProjects(mapped);
         } catch {
             setErr("Error de conexión con el servidor");
         } finally {
@@ -85,6 +87,14 @@ function HomePage() {
         }
     };
 
+    const filtrar =(value:string) => {
+        console.log("en filtrar", value)
+        console.log(projects)
+        const fp = projects.filter(item => item.name.includes(value));
+        //const fp = projects.filter(item => item.name.toLowerCase().includes(value.toLowerCase()));
+        setFilteredProjects(fp)
+
+    }
     return (
         <div className="bg-[#121212] w-screen h-screen flex items-center justify-start flex-col gap-5 relative">
             <div className="bg-[#121212] flex flex-col items-center justify-start z-10">
@@ -96,6 +106,7 @@ function HomePage() {
                             onAddClick={() => setShowCreate(true)}
                             viewMode={viewMode}
                             setViewMode={setViewMode}
+                            setFiltrar={filtrar}
                         />
                     </div>
                 </div>
@@ -117,7 +128,7 @@ function HomePage() {
                                 </p>
                             </div>
                         );
-                        return projects.map((p) => (
+                        return filteredProjects.map((p) => (
                             <div key={p.id} className={viewMode === "grid" ? "relative" : "flex items-center gap-3"}>
                                 <ProjectTile
                                     name={p.name}
