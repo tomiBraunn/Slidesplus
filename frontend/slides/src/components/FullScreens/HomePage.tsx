@@ -90,8 +90,7 @@ function HomePage() {
     const filtrar =(value:string) => {
         console.log("en filtrar", value)
         console.log(projects)
-        const fp = projects.filter(item => item.name.includes(value));
-        //const fp = projects.filter(item => item.name.toLowerCase().includes(value.toLowerCase()));
+        const fp = projects.filter(item => item.name.toLowerCase().includes(value.toLowerCase()));
         setFilteredProjects(fp)
 
     }
