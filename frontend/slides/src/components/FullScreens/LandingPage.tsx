@@ -3,6 +3,7 @@ import SplitText from "../ThirdPartyComponents/SplitText/SplitText";
 import BlurText from "../ThirdPartyComponents/BlurText/BlurText";
 import { animationMapKey } from "motion";
 import TextType from "../ThirdPartyComponents/TextType/TextType"
+import { useNavigate } from 'react-router-dom';
 
 
 export default function Inicio() {
@@ -15,6 +16,11 @@ export default function Inicio() {
       setAnimationKey(prev => prev + 1);
     }, 1000);
   };
+
+  const handleClick = () => {
+    navigate('/home')
+  }
+  const navigate = useNavigate();
 
   return (
     <div className="relative w-screen h-screen flex flex-col items-center justify-center bg-gradient-to-r from-gray-900 via-black to-gray-800 text-white overflow-hidden">
@@ -52,7 +58,7 @@ export default function Inicio() {
           />
       </p>
 
-      <button className="px-8 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-95 transition transform duration-300 shadow-lg text-lg font-semibold animate-fadeIn animation-delay-500 hover:shadow-blue-500/50">
+      <button onClick={handleClick} className="px-8 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-95 transition transform duration-300 shadow-lg text-lg font-semibold animate-fadeIn animation-delay-500 hover:shadow-blue-500/50">
         Start
       </button>
     </div>
