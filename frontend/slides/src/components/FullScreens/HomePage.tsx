@@ -178,6 +178,7 @@ function HomePage() {
                 );
               }
               
+              
               )
             return filteredProjects.map((p) => (
               <div
