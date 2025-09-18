@@ -1,4 +1,3 @@
-// server.js
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
@@ -8,9 +7,10 @@ import pkg from "pg";
 
 const { Pool } = pkg;
 
-if (!process.env.DATABASE_URL) console.error("[BOOT] Missing DATABASE_URL in .env");
-if (!process.env.JWT_SECRET) console.error("[BOOT] Missing JWT_SECRET in .env");
-if (!process.env.GEMINI_API_KEY) console.warn("[BOOT] Missing GEMINI_API_KEY (only affects /gemini)");
+// ---- Chequeos de entorno (para no fallar silencioso) ----
+if (!process.env.DATABASE_URL) console.error("[BOOT] Falta DATABASE_URL en .env");
+if (!process.env.JWT_SECRET) console.error("[BOOT] Falta JWT_SECRET en .env");
+if (!process.env.GEMINI_API_KEY) console.warn("[BOOT] Falta GEMINI_API_KEY (solo afecta /gemini)");
 
 const pool = process.env.DATABASE_URL
   ? new Pool({
@@ -23,47 +23,7 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: "4mb" }));
 
-/* ---------- Helpers ---------- */
-
-function auth(req, res, next) {
-  const h = req.headers.authorization || "";
-  const token = h.startsWith("Bearer ") ? h.slice(7) : null;
-  if (!token) return res.status(401).json({ message: "Missing token" });
-  try {
-    req.user = jwt.verify(token, process.env.JWT_SECRET);
-    next();
-  } catch {
-    return res.status(401).json({ message: "Invalid token" });
-  }
-}
-
-async function getProjectForOwner(projectId, ownerId) {
-  const r = await pool.query(
-    `SELECT id, owner_id, name, created_at, updated_at
-     FROM projects
-     WHERE id=$1 AND owner_id=$2`,
-    [projectId, ownerId]
-  );
-  return r.rowCount ? r.rows[0] : null;
-}
-
-async function withTransaction(fn) {
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-    const result = await fn(client);
-    await client.query("COMMIT");
-    return result;
-  } catch (e) {
-    try { await client.query("ROLLBACK"); } catch {}
-    throw e;
-  } finally {
-    client.release();
-  }
-}
-
-/* ---------- Health / Root ---------- */
-
+// ---- Health / raíz ----
 app.get("/health", (req, res) => {
   res.json({
     ok: true,
@@ -76,10 +36,24 @@ app.get("/health", (req, res) => {
   });
 });
 
-app.get("/", (req, res) => res.json({ msg: "API ready" }));
+app.get("/", (req, res) => {
+  res.json({ msg: "API funcionando" });
+});
 
-/* ---------- Users ---------- */
+// ---- Auth middleware ----
+function auth(req, res, next) {
+  const h = req.headers.authorization || "";
+  const token = h.startsWith("Bearer ") ? h.slice(7) : null;
+  if (!token) return res.status(401).json({ message: "Falta token" });
+  try {
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    next();
+  } catch {
+    return res.status(401).json({ message: "Token inválido" });
+  }
+}
 
+// ---- Users ----
 app.post("/createuser", async (req, res) => {
   if (!pool) return res.status(500).json({ message: "Database not configured" });
   try {
@@ -95,9 +69,10 @@ app.post("/createuser", async (req, res) => {
     );
     res.status(201).json({ ok: true });
   } catch (err) {
-    if (err.code === "23505") return res.status(409).json({ message: "Username or email already exists" });
+    if (err.code === "23505")
+      return res.status(409).json({ message: "Usuario o email ya existe" });
     console.error("createuser error:", err);
-    res.status(500).json({ message: "Internal error" });
+    res.status(500).json({ message: "Error interno" });
   }
 });
 
@@ -115,8 +90,8 @@ app.post("/login", async (req, res) => {
     if (r.rowCount === 0) return res.status(404).json({ message: "User not found" });
 
     const u = r.rows[0];
-    const ok = await bcrypt.compare(password, u.password);
-    if (!ok) return res.status(401).json({ message: "Invalid credentials" });
+    const valid = await bcrypt.compare(password, u.password);
+    if (!valid) return res.status(401).json({ message: "Clave inválida" });
 
     const token = jwt.sign(
       { sub: u.id, username: u.username, email: u.email },
@@ -137,14 +112,13 @@ app.post("/login", async (req, res) => {
     });
   } catch (err) {
     console.error("login error:", err);
-    res.status(500).json({ message: "Internal error" });
+    res.status(500).json({ message: "Error interno" });
   }
 });
 
 app.get("/me", auth, (req, res) => res.json({ ok: true, user: req.user }));
 
-/* ---------- Projects ---------- */
-
+// ---- Projects ----
 app.get("/projects", auth, async (req, res) => {
   if (!pool) return res.status(500).json({ message: "Database not configured" });
   try {
@@ -158,27 +132,32 @@ app.get("/projects", auth, async (req, res) => {
     res.json(q.rows);
   } catch (err) {
     console.error("projects list error:", err);
-    res.status(500).json({ message: "Internal error" });
+    res.status(500).json({ message: "Error interno" });
   }
 });
 
 app.get("/projects/:id", auth, async (req, res) => {
   if (!pool) return res.status(500).json({ message: "Database not configured" });
   try {
-    const p = await getProjectForOwner(req.params.id, req.user.sub);
-    if (!p) return res.status(404).json({ message: "Project not found" });
-    res.json(p);
+    const q = await pool.query(
+      `SELECT id, owner_id, name, document, created_at, updated_at
+         FROM projects
+         WHERE id = $1 AND owner_id = $2`,
+      [req.params.id, req.user.sub]
+    );
+    if (q.rowCount === 0) return res.status(404).json({ message: "Proyecto no encontrado" });
+    res.json(q.rows[0]);
   } catch (err) {
     console.error("projects get error:", err);
-    res.status(500).json({ message: "Internal error" });
+    res.status(500).json({ message: "Error interno" });
   }
 });
 
 app.post("/projects", auth, async (req, res) => {
   if (!pool) return res.status(500).json({ message: "Database not configured" });
   try {
-    const { name } = req.body ?? {};
-    if (!name || !name.trim()) return res.status(400).json({ message: "Missing project name" });
+    const { name, document = "" } = req.body ?? {};
+    if (!name || !name.trim()) return res.status(400).json({ message: "Falta nombre" });
 
     const q = await pool.query(
       `INSERT INTO projects (owner_id, name)
@@ -188,9 +167,46 @@ app.post("/projects", auth, async (req, res) => {
     );
     res.status(201).json(q.rows[0]);
   } catch (err) {
-    if (err.code === "23505") return res.status(409).json({ message: "Project name already exists" });
+    if (err.code === "23505") return res.status(409).json({ message: "Nombre ya existe" });
     console.error("projects create error:", err);
-    res.status(500).json({ message: "Internal error" });
+    res.status(500).json({ message: "Error interno" });
+  }
+});
+
+app.patch("/projects/:id", auth, async (req, res) => {
+  if (!pool) return res.status(500).json({ message: "DB no configurada" });
+  try {
+    const { id } = req.params;
+    const { name, document } = req.body ?? {};
+
+    const fields = [];
+    const vals = [];
+    let i = 1;
+    if (typeof name === "string" && name.trim()) {
+      fields.push(`name=$${i++}`);
+      vals.push(name.trim());
+    }
+    if (typeof document === "string") {
+      fields.push(`document=$${i++}`);
+      vals.push(document);
+    }
+    if (fields.length === 0) return res.status(400).json({ message: "Sin cambios" });
+
+    vals.push(id, req.user.sub);
+
+    const q = await pool.query(
+      `UPDATE projects
+         SET ${fields.join(", ")}, updated_at = NOW()
+         WHERE id = $${i++} AND owner_id = $${i}
+         RETURNING id, owner_id, name, document, created_at, updated_at`,
+      vals
+    );
+    if (q.rowCount === 0) return res.status(404).json({ message: "Proyecto no encontrado" });
+    res.json(q.rows[0]);
+  } catch (err) {
+    if (err.code === "23505") return res.status(409).json({ message: "Nombre ya existe" });
+    console.error("projects patch error:", err);
+    res.status(500).json({ message: "Error interno" });
   }
 });
 
@@ -198,7 +214,7 @@ app.patch("/projects/:id/rename", auth, async (req, res) => {
   if (!pool) return res.status(500).json({ message: "Database not configured" });
   try {
     const { name } = req.body ?? {};
-    if (!name || !name.trim()) return res.status(400).json({ message: "Missing project name" });
+    if (!name || !name.trim()) return res.status(400).json({ message: "Falta nombre" });
 
     const q = await pool.query(
       `UPDATE projects
@@ -210,9 +226,9 @@ app.patch("/projects/:id/rename", auth, async (req, res) => {
     if (q.rowCount === 0) return res.status(404).json({ message: "Project not found" });
     res.json(q.rows[0]);
   } catch (err) {
-    if (err.code === "23505") return res.status(409).json({ message: "Project name already exists" });
+    if (err.code === "23505") return res.status(409).json({ message: "Nombre ya existe" });
     console.error("projects rename error:", err);
-    res.status(500).json({ message: "Internal error" });
+    res.status(500).json({ message: "Error interno" });
   }
 });
 
@@ -223,33 +239,11 @@ app.delete("/projects/:id", auth, async (req, res) => {
       `DELETE FROM projects WHERE id=$1 AND owner_id=$2 RETURNING id`,
       [req.params.id, req.user.sub]
     );
-    if (q.rowCount === 0) return res.status(404).json({ message: "Project not found" });
-    res.json({ ok: true, id: q.rows[0].id });
+    if (q.rowCount === 0) return res.status(404).json({ message: "Proyecto no encontrado" });
+    res.json({ ok: true, id });
   } catch (err) {
     console.error("projects delete error:", err);
-    res.status(500).json({ message: "Internal error" });
-  }
-});
-
-/* ---------- Slides ---------- */
-
-app.get("/projects/:id/slides", auth, async (req, res) => {
-  if (!pool) return res.status(500).json({ message: "Database not configured" });
-  try {
-    const p = await getProjectForOwner(req.params.id, req.user.sub);
-    if (!p) return res.status(404).json({ message: "Project not found" });
-
-    const r = await pool.query(
-      `SELECT id, project_id, position, html, created_at, updated_at
-       FROM slides
-       WHERE project_id=$1
-       ORDER BY position ASC, created_at ASC`,
-      [p.id]
-    );
-    res.json(r.rows);
-  } catch (err) {
-    console.error("slides list error:", err);
-    res.status(500).json({ message: "Internal error" });
+    res.status(500).json({ message: "Error interno" });
   }
 });
 
@@ -452,18 +446,24 @@ app.delete("/projects/:id/slides/:slideId", auth, async (req, res) => {
 app.post("/gemini", async (req, res) => {
   try {
     const { message, image, model } = req.body ?? {};
-    if (!message || !String(message).trim())
-      return res.status(400).json({ error: "Missing message" });
+    if (!message || !String(message).trim()) {
+      return res.status(400).json({ error: "Falta mensaje" });
+    }
 
     const API_KEY = process.env.GEMINI_API_KEY;
-    if (!API_KEY) return res.status(500).json({ error: "Server missing GEMINI_API_KEY" });
+    if (!API_KEY) {
+      console.error("GEMINI_API_KEY ausente");
+      return res.status(500).json({ error: "Config del servidor incompleta (GEMINI_API_KEY)" });
+    }
 
     const mdl = model || "gemini-1.5-flash-latest";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${mdl}:generateContent?key=${API_KEY}`;
 
     const parts = [{ text: String(message) }];
     if (image?.data && image?.mimeType) {
-      parts.push({ inline_data: { mime_type: image.mimeType, data: image.data } });
+      parts.push({
+        inline_data: { mime_type: image.mimeType, data: image.data }
+      });
     }
 
     const payload = { contents: [{ role: "user", parts }] };
@@ -476,22 +476,21 @@ app.post("/gemini", async (req, res) => {
 
     const raw = await r.text();
     if (!r.ok) {
-      console.error("Gemini upstream error:", r.status, raw);
       let details;
       try { details = JSON.parse(raw); } catch { details = raw; }
+      // devolvemos info útil al front para debug
       return res.status(502).json({ error: "Gemini upstream error", status: r.status, details });
     }
 
     res.type("application/json").send(raw);
   } catch (e) {
     console.error("Gemini proxy exception:", e);
-    res.status(500).json({ error: "Failed to reach Gemini" });
+    res.status(500).json({ error: "Error al conectar con Gemini" });
   }
 });
 
-/* ---------- Boot ---------- */
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
-  console.log(`[BOOT] Server listening at http://localhost:${PORT}`);
+  console.log(`[BOOT] Server escuchando en http://localhost:${PORT}`);
 });
