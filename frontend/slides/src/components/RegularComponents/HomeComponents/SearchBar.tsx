@@ -2,17 +2,16 @@ import React, { useState } from "react";
 
 type Props = {
   onAddClick: () => void;
- // onSearch: (value: string) => void;
-  setFiltrar: (value:string)=> void;
+  setFiltrar: (value: string) => void;
 };
 
-function SearchBar({ onAddClick, setFiltrar }: Props) {
+export default function SearchBar({ onAddClick, setFiltrar }: Props) {
   const [search, setSearch] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearch(value);
-   setFiltrar(value)
+    setFiltrar(value);
   };
 
   return (
@@ -29,16 +28,13 @@ function SearchBar({ onAddClick, setFiltrar }: Props) {
           search
         </span>
       </div>
-      <div
+      <button
+        type="button"
         className="flex items-center justify-center rounded-xl defaultStyle defaultStyleHover rounded-r-full ml-2 cursor-pointer"
         onClick={onAddClick}
       >
-        <span className="material-symbols-outlined w-[2em] aspect-square">
-          add
-        </span>
-      </div>
+        <span className="material-symbols-outlined w-[2em] aspect-square">add</span>
+      </button>
     </div>
   );
 }
-
-export default SearchBar;
