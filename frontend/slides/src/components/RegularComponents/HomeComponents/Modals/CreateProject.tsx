@@ -106,7 +106,7 @@ function CreateProject({ onClose, onCreated }: Props) {
             <div className="w-full">
               <input
                 type="text"
-                placeholder="Title?"
+                placeholder="Title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 onKeyDown={onKeyDownInput}
