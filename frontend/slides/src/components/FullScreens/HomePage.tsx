@@ -64,12 +64,11 @@ function HomePage() {
     fetchProjects();
   }, []);
 
-  // Mantener filteredProjects en sync cuando cambie projects
   useEffect(() => {
     setFilteredProjects((prev) => {
-      // Si prev está vacío (ej. primera carga) o su tamaño no coincide, reseteamos a projects
+      
       if (prev.length !== projects.length) return projects;
-      // Si tenían mismo tamaño, igual devolvemos projects para evitar desfasajes
+  
       return projects;
     });
   }, [projects]);
@@ -80,7 +79,7 @@ function HomePage() {
   };
 
   const onCreated = (p: Project) => {
-    // Insertar arriba y sincronizar la grilla
+
     setProjects((prev) => [p, ...prev]);
     setFilteredProjects((prev) => [p, ...prev]);
     setShowCreate(false);
