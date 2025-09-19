@@ -66,9 +66,9 @@ function HomePage() {
 
   useEffect(() => {
     setFilteredProjects((prev) => {
-      
+
       if (prev.length !== projects.length) return projects;
-  
+
       return projects;
     });
   }, [projects]);
@@ -140,9 +140,8 @@ function HomePage() {
 
       <main className="flex justify-center w-full relative">
         <div
-          className={`w-[70vw] gap-4 ${
-            viewMode === "grid" ? "grid grid-cols-4" : "flex flex-col"
-          }`}
+          className={`w-[70vw] gap-4 ${viewMode === "grid" ? "grid grid-cols-4" : "flex flex-col"
+            }`}
         >
           {(() => {
             if (loading)
@@ -166,19 +165,17 @@ function HomePage() {
                 </div>
               );
 
-              // if (projects.length > 0 && filteredProjects.length === 0) {
-              //   return (
-              //     <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-4">
-              //       <span className="material-symbols-outlined">block</span>
-              //       <p className="text-center text-sm max-w-xs">
-              //         We couldn't find your project.
-              //       </p>
-              //     </div>
-              //   );
-              }
-              
-              
-              )
+            if (projects.length > 0 && filteredProjects.length === 0) {
+              return (
+                <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-4">
+                  <span className="material-symbols-outlined">block</span>
+                  <p className="text-center text-sm max-w-xs">
+                    We couldn't find your project.
+                  </p>
+                </div>
+              );
+            }
+
             return filteredProjects.map((p) => (
               <div
                 key={p.id}
