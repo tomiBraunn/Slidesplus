@@ -93,8 +93,13 @@ function HomePage() {
   }, [])
 
   useEffect(() => {
-    setFilteredProjects(projects)
-  }, [projects])
+    setFilteredProjects((prev) => {
+      // Si prev está vacío (ej. primera carga) o su tamaño no coincide, reseteamos a projects
+      if (prev.length !== projects.length) return projects;
+      // Si tenían mismo tamaño, igual devolvemos projects para evitar desfasajes
+      return projects;
+    });
+  }, [projects]);
 
   const openPreview = (p: Project) => {
     setSelected(p)
@@ -102,10 +107,11 @@ function HomePage() {
   }
 
   const onCreated = (p: Project) => {
-    setProjects((prev) => [p, ...prev])
-    setFilteredProjects((prev) => [p, ...prev])
-    setShowCreate(false)
-  }
+    // Insertar arriba y sincronizar la grilla
+    setProjects((prev) => [p, ...prev]);
+    setFilteredProjects((prev) => [p, ...prev]);
+    setShowCreate(false);
+  };
 
   const onDeleteProject = async () => {
     if (!selected) return
@@ -183,17 +189,21 @@ function HomePage() {
                     <br /> Try creating one.
                   </p>
                 </div>
+              );
+
+              if (projects.length > 0 && filteredProjects.length === 0) {
+                return (
+                  <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-4">
+                    <span className="material-symbols-outlined">block</span>
+                    <p className="text-center text-sm max-w-xs">
+                      We couldn't find your project.
+                    </p>
+                  </div>
+                );
+              }
+              
+              
               )
-            if (projects.length > 0 && filteredProjects.length === 0) {
-              return (
-                <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-4">
-                  <span className="material-symbols-outlined">block</span>
-                  <p className="text-center text-sm max-w-xs">
-                    No projects match your search.
-                  </p>
-                </div>
-              )
-            }
             return filteredProjects.map((p) => (
               <div
                 key={p.id}
