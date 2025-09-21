@@ -93,13 +93,18 @@ function HomePage() {
   }, [])
 
   useEffect(() => {
+<<<<<<< HEAD
+    setFilteredProjects(projects)
+  }, [projects])
+=======
     setFilteredProjects((prev) => {
-      // Si prev está vacío (ej. primera carga) o su tamaño no coincide, reseteamos a projects
+
       if (prev.length !== projects.length) return projects;
-      // Si tenían mismo tamaño, igual devolvemos projects para evitar desfasajes
+
       return projects;
     });
   }, [projects]);
+>>>>>>> 31e9497379718fb7263886496126fd5411e5952f
 
   const openPreview = (p: Project) => {
     setSelected(p)
@@ -107,11 +112,18 @@ function HomePage() {
   }
 
   const onCreated = (p: Project) => {
-    // Insertar arriba y sincronizar la grilla
+<<<<<<< HEAD
+    setProjects((prev) => [p, ...prev])
+    setFilteredProjects((prev) => [p, ...prev])
+    setShowCreate(false)
+  }
+=======
+
     setProjects((prev) => [p, ...prev]);
     setFilteredProjects((prev) => [p, ...prev]);
     setShowCreate(false);
   };
+>>>>>>> 31e9497379718fb7263886496126fd5411e5952f
 
   const onDeleteProject = async () => {
     if (!selected) return
@@ -189,21 +201,31 @@ function HomePage() {
                     <br /> Try creating one.
                   </p>
                 </div>
+<<<<<<< HEAD
+              )
+=======
               );
 
-              if (projects.length > 0 && filteredProjects.length === 0) {
-                return (
-                  <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-4">
-                    <span className="material-symbols-outlined">block</span>
-                    <p className="text-center text-sm max-w-xs">
-                      We couldn't find your project.
-                    </p>
-                  </div>
-                );
-              }
-              
-              
+>>>>>>> 31e9497379718fb7263886496126fd5411e5952f
+            if (projects.length > 0 && filteredProjects.length === 0) {
+              return (
+                <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-4">
+                  <span className="material-symbols-outlined">block</span>
+                  <p className="text-center text-sm max-w-xs">
+<<<<<<< HEAD
+                    No projects match your search.
+                  </p>
+                </div>
               )
+            }
+=======
+                    We couldn't find your project.
+                  </p>
+                </div>
+              );
+            }
+
+>>>>>>> 31e9497379718fb7263886496126fd5411e5952f
             return filteredProjects.map((p) => (
               <div
                 key={p.id}
