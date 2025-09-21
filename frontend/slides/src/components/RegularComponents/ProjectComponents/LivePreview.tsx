@@ -1,17 +1,17 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react"
 
-type Props = { document: string };
+type Props = { document: string }
 
 export default function LivePreview({ document }: Props) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null)
 
   useEffect(() => {
-    const doc = iframeRef.current?.contentDocument || iframeRef.current?.contentWindow?.document;
-    if (!doc) return;
-    doc.open();
-    doc.write(document || "");
-    doc.close();
-  }, [document]);
+    const doc = iframeRef.current?.contentDocument || iframeRef.current?.contentWindow?.document
+    if (!doc) return
+    doc.open()
+    doc.write(document || "")
+    doc.close()
+  }, [document])
 
   return (
     <div className="flex flex-col items-center justify-center gap-1 w-full">
@@ -27,5 +27,5 @@ export default function LivePreview({ document }: Props) {
         </div>
       </div>
     </div>
-  );
+  )
 }

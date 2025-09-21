@@ -1,33 +1,57 @@
-### Crear usuario
+### Health
+GET http://localhost:8000/health
+
+### Create user
 POST http://localhost:8000/createuser
 Content-Type: application/json
 
 {
-  "username": "tomi",
-  "email": "tomi@example.com",
-  "password": "clave123",
-  "first_name": "Tomi",
-  "last_name": "Apellido"
+  "username": "testuser",
+  "email": "test@example.com",
+  "password": "testpass123",
+  "first_name": "Test",
+  "last_name": "User"
 }
 
-### Login con username
+### Login
 POST http://localhost:8000/login
 Content-Type: application/json
 
 {
-  "identifier": "tomi",
-  "password": "clave123"
+  "identifier": "testuser",
+  "password": "testpass123"
 }
 
-### Login con email
-POST http://localhost:8000/login
-Content-Type: application/json
-
-{
-  "identifier": "tomi@example.com",
-  "password": "clave123"
-}
-
-### Ruta protegida (requiere token del login)
+### Me
 GET http://localhost:8000/me
-Authorization: Bearer {{token}}
+Authorization: Bearer {{TOKEN}}
+
+### List projects
+GET http://localhost:8000/projects
+Authorization: Bearer {{TOKEN}}
+
+### Create project
+POST http://localhost:8000/projects
+Authorization: Bearer {{TOKEN}}
+Content-Type: application/json
+
+{
+  "name": "Demo project"
+}
+
+### Get one project (poné un ID válido)
+GET http://localhost:8000/projects/{{PROJECT_ID}}
+Authorization: Bearer {{TOKEN}}
+
+### Rename project
+PATCH http://localhost:8000/projects/{{PROJECT_ID}}
+Authorization: Bearer {{TOKEN}}
+Content-Type: application/json
+
+{
+  "name": "Nuevo nombre"
+}
+
+### Delete project
+DELETE http://localhost:8000/projects/{{PROJECT_ID}}
+Authorization: Bearer {{TOKEN}}

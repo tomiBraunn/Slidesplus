@@ -18,7 +18,8 @@
         <AppIcon />
         <div className='flex items-center gap-2.5'>
           <Settings />
-          <UserPicture />
+          <UserPicture avatar={user.avatar} />
+
         </div>
       </nav>
 

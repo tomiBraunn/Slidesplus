@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import CodeEditor from "./CodeEditor";
 import LivePreview from "./LivePreview";
 import SlidesDrawer from "./SlidesDrawer";
@@ -15,9 +15,13 @@ export default function SlidesEditor({ initialDocument, onChange }: Props) {
     setDoc(initialDocument);
   }, [initialDocument]);
 
-  useEffect(() => {
-    onChange(doc);
-  }, [doc]);
+  const emitChange = useCallback(
+    (next: string) => {
+      setDoc(next);
+      if (typeof onChange === "function") onChange(next);
+    },
+    [onChange]
+  );
 
   return (
     <div className="flex items-start justify-start w-screen h-full overflow-hidden">
@@ -26,7 +30,7 @@ export default function SlidesEditor({ initialDocument, onChange }: Props) {
         <SlidesDrawer />
       </div>
       <div className="flex-1 h-full">
-        <CodeEditor document={doc} setDocument={setDoc} />
+        <CodeEditor document={doc} setDocument={emitChange} />
       </div>
     </div>
   );

@@ -1,153 +1,118 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import ProjectNavBar from "../RegularComponents/ProjectComponents/ProjectNavBar";
-import SlidesEditor from "../RegularComponents/ProjectComponents/SlidesEditor";
-import GeminiChatbot from "../RegularComponents/MultiuseComponents/GeminiChatbot";
-import { urlbackend } from "../../config.js";
+import React, { useEffect, useState } from "react"
+import ProjectNavBar from "../RegularComponents/ProjectComponents/ProjectNavBar"
+import ChatBotMode from "../RegularComponents/ProjectComponents/Modes/ChatBotMode"
+import CodeEditorMode from "../RegularComponents/ProjectComponents/Modes/CodeEditorMode"
+import VisualEditorMode from "../RegularComponents/ProjectComponents/Modes/VisualEditorMode"
 
-type Project = { id: string; name: string; document: string; updated_at?: string };
-type SaveState = "idle" | "saving" | "saved" | "error";
+type ProjectMode = "code" | "visual" | "ai"
+type SaveState = "idle" | "saving" | "saved" | "error"
 
 export default function ProjectPage() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const [project, setProject] = useState<Project | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
-  const [saveState, setSaveState] = useState<SaveState>("idle");
-  const debRef = useRef<number | null>(null);
-  const lastSavedRef = useRef<string>("");
-  const [editorBump, setEditorBump] = useState(0);
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-
-  const authHeaders = {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-
-  const defaultDoc = ``;
-
-  const fetchProject = async () => {
-    if (!id) return;
-    setLoading(true);
-    setNotFound(false);
-    try {
-      const res = await fetch(`${urlbackend}/projects/${id}`, { headers: authHeaders });
-      if (res.status === 401) {
-        localStorage.removeItem("token");
-        navigate("/login");
-        return;
-      }
-      if (res.status === 404) {
-        setNotFound(true);
-        setProject(null);
-        return;
-      }
-      if (!res.ok) return;
-      const data = await res.json();
-      const doc = typeof data.document === "string" && data.document.trim() ? data.document : defaultDoc;
-      setProject({ id: data.id, name: data.name || "Untitled", document: doc, updated_at: data.updated_at });
-      lastSavedRef.current = doc;
-    } catch {
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [mode, setMode] = useState<ProjectMode>("code")
+  const [projectId, setProjectId] = useState<string | null>(null)
+  const [name, setName] = useState<string>("Untitled")
+  const [saveState, setSaveState] = useState<SaveState>("idle")
+  const [doc, setDoc] = useState<string>("")
 
   useEffect(() => {
-    fetchProject();
-  }, [id]);
+    const parts = window.location.pathname.split("/")
+    const id = parts[parts.length - 1]
+    if (!id) return
+    setProjectId(id)
 
-  const save = async (document: string) => {
-    if (!id || !project) return;
-    if (document === lastSavedRef.current) return;
-    setSaveState("saving");
-    try {
-      const res = await fetch(`${urlbackend}/projects/${id}`, {
-        method: "PATCH",
-        headers: authHeaders,
-        body: JSON.stringify({ document }),
-      });
-      if (res.status === 401) {
-        localStorage.removeItem("token");
-        navigate("/login");
-        return;
-      }
-      if (!res.ok) {
-        setSaveState("error");
-        return;
-      }
-      const data = await res.json();
-      lastSavedRef.current = data.document;
-      setProject(prev => (prev ? { ...prev, document: data.document, name: data.name, updated_at: data.updated_at } : data));
-      setSaveState("saved");
-      window.setTimeout(() => setSaveState("idle"), 900);
-    } catch {
-      setSaveState("error");
-    }
-  };
+    const token = localStorage.getItem("token")
+    if (!token) return
 
-  const onDocChange = (nextDoc: string) => {
-    if (!project) return;
-    setProject(prev => (prev ? { ...prev, document: nextDoc } : prev));
-    if (debRef.current) window.clearTimeout(debRef.current);
-    debRef.current = window.setTimeout(() => save(nextDoc), 700) as unknown as number;
-  };
+    fetch(`http://localhost:8000/projects/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.name) setName(data.name)
+      })
 
-  const onRename = async (nextName: string) => {
-    if (!id || !nextName.trim()) return;
-    try {
-      const res = await fetch(`${urlbackend}/projects/${id}/rename`, {
-        method: "PATCH",
-        headers: authHeaders,
-        body: JSON.stringify({ name: nextName.trim() }),
-      });
-      if (res.status === 401) {
-        localStorage.removeItem("token");
-        navigate("/login");
-        return;
-      }
-      if (res.status === 409) {
-        alert("You already have a project with that name.");
-        return;
-      }
-      if (!res.ok) return;
-      const data = await res.json();
-      setProject(prev => (prev ? { ...prev, name: data.name } : prev));
-    } catch { }
-  };
+    fetch(`http://localhost:8000/projects/${id}/slides`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.ok && data.slides.length > 0) {
+          setDoc(
+            "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>" +
+            data.slides.map((s: any) => s.html).join("\n") +
+            "</body></html>"
+          )
+        } else {
+          setDoc(
+            "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body><section class='slide'><h1>Slide 1</h1></section></body></html>"
+          )
+        }
+      })
+  }, [])
 
-  const applySetCode = (val: string | ((v: string) => string)) => {
-    setProject(prev => {
-      if (!prev) return prev;
-      const current = prev.document || "";
-      const computed = typeof val === "function" ? (val as (v: string) => string)(current) : val;
-      const nextDoc = computed ?? "";
-      if (debRef.current) window.clearTimeout(debRef.current);
-      debRef.current = window.setTimeout(() => save(nextDoc), 700) as unknown as number;
-      setEditorBump(x => x + 1);
-      return { ...prev, document: nextDoc };
-    });
-  };
+  const onRename = (next: string) => {
+    setName(next)
+  }
 
-  const name = useMemo(() => project?.name || "", [project]);
-  const doc = useMemo(() => project?.document || defaultDoc, [project]);
+  const onChangeDoc = (next: string) => {
+    setDoc(next)
+    setSaveState("saving")
+    window.clearTimeout((onChangeDoc as any)._t)
+      ; (onChangeDoc as any)._t = window.setTimeout(async () => {
+        try {
+          if (!projectId) return
+          const token = localStorage.getItem("token")
+          if (!token) return
+          const slides = next
+            .split("<section")
+            .filter((s) => s.trim() !== "")
+            .map((s, i) => ({
+              html: "<section" + s,
+              position: i,
+            }))
+          await fetch(`http://localhost:8000/projects/${projectId}/slides`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ slides }),
+          })
+          setSaveState("saved")
+          window.setTimeout(() => setSaveState("idle"), 800)
+        } catch {
+          setSaveState("error")
+        }
+      }, 500)
+  }
 
   return (
-    <div className="bg-[#121212] w-screen h-screen flex flex-col">
-      <ProjectNavBar projectId={id || ""} name={name} saveState={saveState} onRename={onRename} />
-      <div className="flex-1 w-full m-5 flex">
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {loading && <div className="text-white/70">Loading…</div>}
-          {!loading && notFound && <div className="text-red-400">Project not found.</div>}
-          {!loading && project && (
-            <SlidesEditor key={`editor-${project.id}-${editorBump}`} initialDocument={doc} onChange={onDocChange} />
-          )}
-        </div>
-        <div className="hidden">
-          <GeminiChatbot setCode={applySetCode} />
-        </div>
+    <div className="w-screen h-screen flex flex-col">
+      <ProjectNavBar
+        name={name}
+        saveState={saveState}
+        onRename={onRename}
+        mode={mode}
+        onChangeMode={setMode}
+      />
+      <div className="flex-1 overflow-hidden">
+        {mode === "code" && <CodeEditorMode doc={doc} onChange={onChangeDoc} />}
+        {mode === "visual" && <VisualEditorMode doc={doc} onChange={onChangeDoc} />}
+        {mode === "ai" && (
+          <ChatBotMode
+            doc={doc}
+            onChange={onChangeDoc}
+            applySetDoc={(val) => {
+              setDoc((prev) => {
+                const next =
+                  typeof val === "function" ? (val as (v: string) => string)(prev) : val
+                onChangeDoc(next)
+                return next
+              })
+            }}
+          />
+        )}
       </div>
     </div>
-  );
+  )
 }
