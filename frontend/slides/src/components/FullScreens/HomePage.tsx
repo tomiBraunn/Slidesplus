@@ -6,6 +6,7 @@ import CreateProject from "../RegularComponents/HomeComponents/Modals/CreateProj
 import ProjectPreview from "../RegularComponents/HomeComponents/Modals/ProjectPreview"
 import React, { useEffect, useState } from "react"
 import { urlbackend } from "../../config.js"
+import SortBy from "../RegularComponents/HomeComponents/SortBy";
 
 type Project = {
   id: string
@@ -194,6 +195,7 @@ function HomePage() {
                 </div>
               )
             }
+
             return filteredProjects.map((p) => (
               <div
                 key={p.id}
