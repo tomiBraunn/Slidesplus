@@ -207,7 +207,7 @@ app.get("/projects/:id/slides", auth, async (req, res) => {
     res.status(500).json({ message: "Internal error" })
   }
 })
-
+ 
 app.post("/projects/:id/slides", auth, async (req, res) => {
   try {
     const { slides } = req.body ?? {}
