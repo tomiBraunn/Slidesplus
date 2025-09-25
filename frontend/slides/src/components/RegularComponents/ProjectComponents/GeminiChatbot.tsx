@@ -51,25 +51,27 @@ async function createSlidesBulk(apiBase: string, projectId: string, slides: { ht
 }
 
 function htmlToSlides(html: string): string[] {
-  const parts = html.split(/<section(?=\s|>)/i)
-  if (parts.length > 1) {
-    const slides: string[] = []
-    for (let i = 1; i < parts.length; i++) {
-      const chunk = "<section" + parts[i]
-      const closeIdx = chunk.toLowerCase().lastIndexOf("</section>")
-      slides.push(closeIdx >= 0 ? chunk.slice(0, closeIdx + 10) : chunk)
-    }
-    return slides.map(s => s.trim()).filter(Boolean)
-  }
   const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
   const inner = bodyMatch ? bodyMatch[1] : html
-  const wrapped = `
-    <section class="slide" style="font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto;color:#e5e7eb;background:#111827;padding:32px;border-radius:16px;">
+  return [`
+    <section style="
+      width:100vw;
+      height:100vh;
+      background:white;
+      overflow:hidden;
+      padding:32px;
+      box-sizing:border-box;
+      border-radius:16px;
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto;
+      color:#111;
+      display:flex;
+      flex-direction:column;
+    ">
       ${inner}
     </section>
-  `
-  return [wrapped]
+  `]
 }
+
 
 export default function GeminiChatbot({
   setCode,

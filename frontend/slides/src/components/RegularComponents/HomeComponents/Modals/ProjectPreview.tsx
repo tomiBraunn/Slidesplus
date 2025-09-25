@@ -39,10 +39,11 @@ function ProjectPreview({
   const [confirmText, setConfirmText] = useState("")
   const [renameText, setRenameText] = useState(name || "")
   const [busy, setBusy] = useState(false)
-
   const [slides, setSlides] = useState<any[]>([])
   const [selectedSlide, setSelectedSlide] = useState<number>(0)
   const iframeRef = useRef<HTMLIFrameElement>(null)
+  const mainPreviewRef = useRef<HTMLDivElement>(null)
+  const [previewsHeight, setPreviewsHeight] = useState<number>(0)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -108,9 +109,32 @@ function ProjectPreview({
     const target = iframeRef.current?.contentDocument || iframeRef.current?.contentWindow?.document
     if (!target) return
     target.open()
-    target.write(current.html || "")
+    target.write(`
+      <html>
+        <head>
+          <style>
+            html, body { margin:0; padding:0; height:100%; overflow:hidden; background:#ffffff }
+            body > * { width:100%; height:100%; box-sizing:border-box }
+          </style>
+        </head>
+        <body>
+          ${current.html || ""}
+        </body>
+      </html>
+    `)
     target.close()
   }, [slides, selectedSlide])
+
+  useEffect(() => {
+    function updateHeight() {
+      if (mainPreviewRef.current) {
+        setPreviewsHeight(mainPreviewRef.current.offsetHeight)
+      }
+    }
+    updateHeight()
+    window.addEventListener("resize", updateHeight)
+    return () => window.removeEventListener("resize", updateHeight)
+  }, [slides])
 
   const handleClose = () => setShow(false)
 
@@ -170,7 +194,7 @@ function ProjectPreview({
 
   const doRename = async () => {
     if (!projectId) return
-    const next = renameText.trim() || "Sin título"
+    const next = renameText.trim() || "Untitled"
     setBusy(true)
     try {
       const res = await fetch(`${urlbackend}/projects/${projectId}`, {
@@ -214,8 +238,7 @@ function ProjectPreview({
     >
       <div
         onMouseDown={(e) => e.stopPropagation()}
-        className={`text-white rounded-xl defaultStyle card-animate w-[70vw] max-w-[1100px] max-h-[85vh] overflow-hidden flex flex-col border border-white/10 bg-[#0b0b0bcc] transform transition-all duration-200 ease-out backdrop-bl-sm${show ? " opacity-100 scale-100" : " opacity-0 scale-95"
-          }`}
+        className={`text-white rounded-xl defaultStyle card-animate w-[70vw] max-w-[1100px] max-h-[85vh] overflow-hidden flex flex-col border border-white/10 bg-[#0b0b0bcc] transform transition-all duration-200 ease-out backdrop-bl-sm${show ? " opacity-100 scale-100" : " opacity-0 scale-95"}`}
       >
         <div className="flex items-center justify-between gap-2 w-full p-4">
           <div className="flex items-start flex-col">
@@ -223,15 +246,15 @@ function ProjectPreview({
               <span className="material-symbols-outlined text-white" style={{ fontSize: 35 }}>
                 crop_landscape
               </span>
-              <p className="text-white font-medium text-lg">{name || "Sin título"}</p>
+              <p className="text-white font-medium text-lg">{name || "Untitled"}</p>
             </div>
             <p className="text-[#999999] text-sm">{description}</p>
           </div>
           <button
             onClick={handleClose}
             className="flex items-center justify-center rounded-full p-2 hover:bg-white/10 text-white"
-            aria-label="Cerrar"
-            title="Cerrar"
+            aria-label="Close"
+            title="Close"
           >
             <span className="material-symbols-outlined" style={{ fontSize: 22 }}>
               close
@@ -240,23 +263,28 @@ function ProjectPreview({
         </div>
 
         <div className="flex items-start justify-start gap-2 w-full h-full px-4 pb-2">
-          <div className="text-white rounded-xl border border-[#2B2B2B] bg-[#0f0f0f] w-4/5 aspect-video p-0 overflow-hidden border-solid relative">
-            <iframe ref={iframeRef} title="Project Preview" className="w-full h-full border-0 bg-white" />
+          <div ref={mainPreviewRef} className="text-white rounded-xl border border-[#2B2B2B] bg-[#0f0f0f] w-full aspect-video p-0 overflow-hidden border-solid relative">
+            <iframe ref={iframeRef} title="Project Preview" className="w-full h-full border-0" />
           </div>
-          <div className="rounded-xl w-1/5 h-full p-2 bg-[#0f0f0f] flex flex-col gap-2 overflow-y-auto">
+          <div
+            className="rounded-xl w-1/5 p-2 bg-[#0f0f0f] flex flex-col gap-2 overflow-y-auto"
+            style={{ height: previewsHeight }}
+          >
             {slides.map((s) => (
               <div
                 key={s.id}
                 onClick={() => setSelectedSlide(s.position)}
-                className={`cursor-pointer border rounded-md overflow-hidden ${selectedSlide === s.position ? "border-blue-500" : "border-[#2B2B2B]"
-                  }`}
+                className={`cursor-pointer border rounded-md overflow-hidden ${selectedSlide === s.position ? "border-blue-500" : "border-[#2B2B2B]"}`}
+                style={{ flex: "0 0 auto" }}
               >
-                <iframe
-                  title={`slide-${s.position}`}
-                  srcDoc={s.html}
-                  className="w-full aspect-video border-0 pointer-events-none overflow-hidden"
-                  sandbox=""
-                />
+                <div className="w-full" style={{ paddingTop: `${(9 / 16) * 100}%`, position: "relative" }}>
+                  <iframe
+                    title={`slide-${s.position}`}
+                    srcDoc={`<html><head><style>html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#ffffff}body>*{width:100%;height:100%;box-sizing:border-box}</style></head><body>${s.html}</body></html>`}
+                    className="absolute top-0 left-0 w-full h-full border-0 pointer-events-none"
+                    sandbox=""
+                  />
+                </div>
               </div>
             ))}
           </div>
