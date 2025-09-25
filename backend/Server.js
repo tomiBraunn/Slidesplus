@@ -207,29 +207,23 @@ app.get("/projects/:id/slides", auth, async (req, res) => {
     res.status(500).json({ message: "Internal error" })
   }
 })
- 
-app.post("/projects/:id/slides", auth, async (req, res) => {
+
+app.get("/projects/:id/slides", auth, async (req, res) => {
   try {
-    const { slides } = req.body ?? {}
-    if (!Array.isArray(slides)) return res.status(400).json({ message: "Slides must be an array" })
-
-    await pool.query(`DELETE FROM slides WHERE project_id=$1`, [req.params.id])
-
-    for (let i = 0; i < slides.length; i++) {
-      const html = slides[i]?.html || ""
-      await pool.query(
-        `INSERT INTO slides (project_id, position, html)
-         VALUES ($1, $2, $3)`,
-        [req.params.id, i, html]
-      )
-    }
-
-    res.status(200).json({ ok: true })
+    const slides = await pool.query(
+      `SELECT id, position, html, created_at, updated_at
+       FROM slides
+       WHERE project_id=$1
+       ORDER BY position ASC`,
+      [req.params.id]
+    )
+    res.json({ ok: true, slides: slides.rows })
   } catch (err) {
     console.error(err)
     res.status(500).json({ message: "Internal error" })
   }
 })
+
 
 app.post("/projects", auth, async (req, res) => {
   if (!pool) return res.status(500).json({ message: "Database not configured" })
