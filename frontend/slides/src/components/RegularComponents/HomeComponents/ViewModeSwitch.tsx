@@ -1,5 +1,3 @@
-import React from "react";
-
 type Props = {
     viewMode: "grid" | "list";
     setViewMode: (mode: "grid" | "list") => void;

@@ -1,10 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
-function SortBy() {
-  const defaultOption = "Recent";
+type Props = {
+  setSelected: (value: string) => void;
+};
+
+function SortBy({ setSelected }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [selected, setSelected] = useState(defaultOption);
   const containerRef = useRef(null);
 
   const toggleDropdown = () => {
@@ -17,10 +19,10 @@ function SortBy() {
     }
   };
 
-  const handleSelect = (option) => setSelected(option);
+  const handleClick = (option:string) => setSelected(option);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target)) {
         setShowDropdown(false);
         setTimeout(() => setIsOpen(false), 150);
@@ -58,7 +60,7 @@ function SortBy() {
             <div
               key={option}
               className={`flex items-center justify-start gap-1 cursor-pointer hover:bg-[#333] ${index === arr.length - 1 && showDropdown ? 'rounded-b-xl' : ''}`}
-              onClick={() => handleSelect(option)}
+              onClick={() => handleClick(option)}
             >
               <span
                 className={`rounded-sm w-5 aspect-square ml-2 ${selected === option ? 'bg-[#3CFF52]' : 'bg-[#2B2B2B]'}`}

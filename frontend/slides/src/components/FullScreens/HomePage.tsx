@@ -4,8 +4,9 @@ import ProjectSearchBar from "../RegularComponents/HomeComponents/ProjectSearchB
 import NavBar from "../RegularComponents/HomeComponents/Navbar"
 import CreateProject from "../RegularComponents/HomeComponents/Modals/CreateProject"
 import ProjectPreview from "../RegularComponents/HomeComponents/Modals/ProjectPreview"
-import React, { useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { urlbackend } from "../../config.js"
+import SortBy from "../RegularComponents/HomeComponents/SortBy"
 
 type Project = {
   id: string
@@ -135,113 +136,117 @@ function HomePage() {
     const term = value.toLowerCase()
     if (!term) {
       setFilteredProjects(projects)
-      return
+    }else{
+      const fp = projects.filter((item) => item.name.toLowerCase().includes(term))
+      setFilteredProjects(fp)
     }
-    const fp = projects.filter((item) => item.name.toLowerCase().includes(term))
-    setFilteredProjects(fp)
   }
 
+  
+
   return (
-    <div className="bg-[#121212] w-screen h-screen flex items-center justify-start flex-col gap-5 relative">
-      <div className="bg-[#121212] flex flex-col items-center justify-start z-10">
-        <NavBar user={user} />
-        <div className="flex flex-col items-center justify-start text-white w-[70vw]">
-          <div className="searchbar flex flex-col items-center justify-start w-full">
-            <AppTextLogo />
-            <ProjectSearchBar
-              onAddClick={() => setShowCreate(true)}
-              viewMode={viewMode}
-              setViewMode={setViewMode}
-              setFiltrar={filterProjects}
-            />
+    <>
+      <div className="bg-[#121212] w-screen h-screen flex items-center justify-start flex-col gap-5 relative">
+        <div className="bg-[#121212] flex flex-col items-center justify-start z-10">
+          <NavBar user={user} />
+          <div className="flex flex-col items-center justify-start text-white w-[70vw]">
+            <div className="searchbar flex flex-col items-center justify-start w-full">
+              <AppTextLogo />
+              <ProjectSearchBar
+                onAddClick={() => setShowCreate(true)}
+                viewMode={viewMode}
+                setViewMode={setViewMode}
+                setFiltrar={filterProjects}
+              />
+            </div>
           </div>
         </div>
+
+        <main className="flex justify-center w-full relative">
+          <div
+            className={`w-[70vw] gap-4 ${viewMode === "grid" ? "grid grid-cols-4" : "flex flex-col"
+              }`}
+          >
+            {(() => {
+              if (loading)
+                return (
+                  <div className="text-white/70 col-span-4">Loading projects…</div>
+                )
+              if (err) return <div className="text-red-400 col-span-4">{err}</div>
+              if (projects.length === 0)
+                return (
+                  <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-4">
+                    <span
+                      className="material-symbols-outlined mb-2 opacity-70"
+                      style={{ fontSize: "40px" }}
+                    >
+                      scan_delete
+                    </span>
+                    <p className="text-center text-sm max-w-xs">
+                      No projects available.
+                      <br /> Try creating one.
+                    </p>
+                  </div>
+                )
+              if (projects.length > 0 && filteredProjects.length === 0) {
+                return (
+                  <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-4">
+                    <span className="material-symbols-outlined">block</span>
+                    <p className="text-center text-sm max-w-xs">
+                      No projects match your search.
+                    </p>
+                  </div>
+                )
+              }
+              return filteredProjects.map((p) => (
+                <div
+                  key={p.id}
+                  className={
+                    viewMode === "grid"
+                      ? "relative"
+                      : "flex items-center gap-3"
+                  }
+                >
+                  <ProjectTile
+                    name={p.name}
+                    description={p.description ?? ""}
+                    onClick={() => openPreview(p)}
+                    listMode={viewMode === "list"}
+                  />
+                </div>
+              ))
+            })()}
+          </div>
+        </main>
+
+        {showCreate && (
+          <CreateProject onClose={() => setShowCreate(false)} onCreated={onCreated} />
+        )}
+
+        <ProjectPreview
+          open={showPreview}
+          name={selected?.name || ""}
+          projectId={selected?.id}
+          slideCount={selected?.slideCount}
+          lastModified={selected?.updated_at}
+          onClose={() => setShowPreview(false)}
+          onDelete={async (id) => {
+            setProjects((prev) => prev.filter((p) => p.id !== id))
+            setFilteredProjects((prev) => prev.filter((p) => p.id !== id))
+            setShowPreview(false)
+          }}
+          onRename={async (id, next) => {
+            setProjects((prev) =>
+              prev.map((p) => (p.id === id ? { ...p, name: next } : p))
+            )
+            setFilteredProjects((prev) =>
+              prev.map((p) => (p.id === id ? { ...p, name: next } : p))
+            )
+            setSelected((prev) => (prev ? { ...prev, name: next } : prev))
+          }}
+        />
       </div>
-
-      <main className="flex justify-center w-full relative">
-        <div
-          className={`w-[70vw] gap-4 ${viewMode === "grid" ? "grid grid-cols-4" : "flex flex-col"
-            }`}
-        >
-          {(() => {
-            if (loading)
-              return (
-                <div className="text-white/70 col-span-4">Loading projects…</div>
-              )
-            if (err) return <div className="text-red-400 col-span-4">{err}</div>
-            if (projects.length === 0)
-              return (
-                <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-4">
-                  <span
-                    className="material-symbols-outlined mb-2 opacity-70"
-                    style={{ fontSize: "40px" }}
-                  >
-                    scan_delete
-                  </span>
-                  <p className="text-center text-sm max-w-xs">
-                    No projects available.
-                    <br /> Try creating one.
-                  </p>
-                </div>
-              )
-            if (projects.length > 0 && filteredProjects.length === 0) {
-              return (
-                <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-4">
-                  <span className="material-symbols-outlined">block</span>
-                  <p className="text-center text-sm max-w-xs">
-                    No projects match your search.
-                  </p>
-                </div>
-              )
-            }
-            return filteredProjects.map((p) => (
-              <div
-                key={p.id}
-                className={
-                  viewMode === "grid"
-                    ? "relative"
-                    : "flex items-center gap-3"
-                }
-              >
-                <ProjectTile
-                  name={p.name}
-                  description={p.description ?? ""}
-                  onClick={() => openPreview(p)}
-                  listMode={viewMode === "list"}
-                />
-              </div>
-            ))
-          })()}
-        </div>
-      </main>
-
-      {showCreate && (
-        <CreateProject onClose={() => setShowCreate(false)} onCreated={onCreated} />
-      )}
-
-      <ProjectPreview
-        open={showPreview}
-        name={selected?.name || ""}
-        projectId={selected?.id}
-        slideCount={selected?.slideCount}
-        lastModified={selected?.updated_at}
-        onClose={() => setShowPreview(false)}
-        onDelete={async (id) => {
-          setProjects((prev) => prev.filter((p) => p.id !== id))
-          setFilteredProjects((prev) => prev.filter((p) => p.id !== id))
-          setShowPreview(false)
-        }}
-        onRename={async (id, next) => {
-          setProjects((prev) =>
-            prev.map((p) => (p.id === id ? { ...p, name: next } : p))
-          )
-          setFilteredProjects((prev) =>
-            prev.map((p) => (p.id === id ? { ...p, name: next } : p))
-          )
-          setSelected((prev) => (prev ? { ...prev, name: next } : prev))
-        }}
-      />
-    </div>
+    </>
   )
 }
 
