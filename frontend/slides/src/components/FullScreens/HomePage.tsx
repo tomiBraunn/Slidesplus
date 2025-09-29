@@ -142,7 +142,8 @@ function HomePage() {
     }
   }
 
-  
+  // Escribi aca la funcion que los ordena y pasala por parametro a ProjectSearchbar
+  // Usa como ejemplo la pelota y lo que haces en la searchbar
 
   return (
     <>
