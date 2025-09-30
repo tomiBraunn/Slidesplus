@@ -1,13 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 
 type Props = {
+  selected: string;
   setSelected: (value: string) => void;
 };
 
-function SortBy({ setSelected }: Props) {
+function SortBy({ selected, setSelected }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const containerRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   const toggleDropdown = () => {
     if (!isOpen) {
@@ -19,16 +20,15 @@ function SortBy({ setSelected }: Props) {
     }
   };
 
-  const handleClick = (option:string) => setSelected(option);
+  const handleClick = (option: string) => setSelected(option);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setShowDropdown(false);
         setTimeout(() => setIsOpen(false), 150);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
@@ -49,7 +49,6 @@ function SortBy({ setSelected }: Props) {
           arrow_drop_down
         </span>
       </div>
-
       <div
         className={`absolute left-0 top-13 z-10 text-white border border-[#2B2B2B] bg-[#0f0f0f] w-full overflow-hidden
                     transition-all duration-300 ease-out

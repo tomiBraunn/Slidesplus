@@ -7,7 +7,8 @@ type Props = {
   viewMode: "grid" | "list";
   setViewMode: (mode: "grid" | "list") => void;
   setFiltrar: (value: string) => void;
-  setSelected:(value: string) => void;
+  selected: string;
+  setSelected: (value: string) => void;
 };
 
 export default function ProjectSearchBar({
@@ -15,13 +16,14 @@ export default function ProjectSearchBar({
   viewMode,
   setViewMode,
   setFiltrar,
+  selected,
   setSelected,
 }: Props) {
   return (
     <div className="flex items-center justify-center gap-2 pt-5 w-full">
       <SearchBar onAddClick={onAddClick} setFiltrar={setFiltrar} />
       <ViewModeSwitch viewMode={viewMode} setViewMode={setViewMode} />
-      <SortBy setSelected={setSelected} />
+      <SortBy selected={selected} setSelected={setSelected} />
     </div>
   );
 }

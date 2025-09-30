@@ -136,7 +136,7 @@ function HomePage() {
     const term = value.toLowerCase()
     if (!term) {
       setFilteredProjects(projects)
-    }else{
+    } else {
       const fp = projects.filter((item) => item.name.toLowerCase().includes(term))
       setFilteredProjects(fp)
     }
@@ -147,7 +147,7 @@ function HomePage() {
 
   const sortProjects = (criteria: string) => {
     let sorted = [...filteredProjects]
-  
+
     switch (criteria) {
       case "A-Z":
         sorted.sort((a, b) => a.name.localeCompare(b.name))
@@ -169,7 +169,7 @@ function HomePage() {
       default:
         break
     }
-  
+
     setFilteredProjects(sorted)
   }
 
@@ -190,8 +190,9 @@ function HomePage() {
                 viewMode={viewMode}
                 setViewMode={setViewMode}
                 setFiltrar={filterProjects}
+                selected={sortOption}
+                setSelected={setSortOption}
               />
-              <SortBy selected={sortOption} setSelected={setSortOption}/>
             </div>
           </div>
         </div>
