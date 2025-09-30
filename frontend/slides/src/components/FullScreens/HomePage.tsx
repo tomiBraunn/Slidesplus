@@ -143,7 +143,39 @@ function HomePage() {
   }
 
   // Escribi aca la funcion que los ordena y pasala por parametro a ProjectSearchbar
-  // Usa como ejemplo la pelota y lo que haces en la searchbar
+  const [sortOption, setSortOption] = useState("Recent")
+
+  const sortProjects = (criteria: string) => {
+    let sorted = [...filteredProjects]
+  
+    switch (criteria) {
+      case "A-Z":
+        sorted.sort((a, b) => a.name.localeCompare(b.name))
+        break
+      case "Creation date":
+        sorted.sort(
+          (a, b) =>
+            new Date(b.created_at || "").getTime() -
+            new Date(a.created_at || "").getTime()
+        )
+        break
+      case "Recent":
+        sorted.sort(
+          (a, b) =>
+            new Date(b.updated_at || "").getTime() -
+            new Date(a.updated_at || "").getTime()
+        )
+        break
+      default:
+        break
+    }
+  
+    setFilteredProjects(sorted)
+  }
+
+  useEffect(() => {
+    sortProjects(sortOption)
+  }, [sortOption])
 
   return (
     <>
@@ -159,6 +191,7 @@ function HomePage() {
                 setViewMode={setViewMode}
                 setFiltrar={filterProjects}
               />
+              <SortBy selected={sortOption} setSelected={setSortOption}/>
             </div>
           </div>
         </div>
