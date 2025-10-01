@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import SettingsModal from "../MultiuseComponents/SettingsModal";
 
 function Settings() {
   const [isOpen, setIsOpen] = useState(false);
@@ -7,7 +8,7 @@ function Settings() {
     <>
       {}
       <span
-        className="material-symbols-outlined flex items-center justify-center text-[#4B4B4B] text-[40px] cursor-pointer hover:text-black"
+        className="material-symbols-outlined flex items-center justify-center text-[#4B4B4B] text-[40px] cursor-pointer"
         style={{ fontSize: "32.5px" }}
         onClick={() => setIsOpen(true)}
       >
@@ -31,7 +32,7 @@ function Settings() {
                   <p className="text-white font-medium text-lg">Settings</p>
                 </div>
                 <p className="text-[#999999] text-sm">
-                  App Options
+                  Options
                 </p>
               </div>
               <button
@@ -64,6 +65,9 @@ function Settings() {
                 <button className="text-left px-4 py-2 rounded hover:bg-[#222]">
                   Language
                 </button>
+                <button className="text-left px-4 py-2 rounded hover:bg-[#222]">
+                  Export Data
+                </button>
                 <button className="text-left px-4 py-2 rounded text-red-500 hover:bg-[#222]">
                   Clean all projects
                 </button>
@@ -76,12 +80,6 @@ function Settings() {
             {}
             <div className="flex items-center justify-end self-end w-full">
               <div className="flex items-center justify-center gap-2 px-4 py-2.5">
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="flex-1 min-w-[100px] flex items-center justify-center text-[#999999] border border-[#2B2B2B] bg-[#0f0f0f] rounded-3xl p-2.5 hover:bg-[#222]"
-                >
-                  Cancel
-                </button>
               </div>
             </div>
           </div>
