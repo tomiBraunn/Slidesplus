@@ -12,3 +12,6 @@ export const endpoints = {
   backend: urlbackend,
   gemini: `${urls[ENV]}/gemini`, 
 };
+
+
+//AGREGAR CUSTOM SCROLLBAR EN PREVIEW
