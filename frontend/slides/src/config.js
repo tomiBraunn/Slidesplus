@@ -3,7 +3,7 @@ const ENV = "prod";
 
 const urls = {
   local: "http://localhost:8000",
-  prod: "https://slidesplus-backend.vercel.app",
+  prod: "https://slides-plus-backend.vercel.app",
 };
 
 export const urlbackend = urls[ENV];

@@ -3,6 +3,7 @@ import ProjectNavBar from "../RegularComponents/ProjectComponents/ProjectNavBar"
 import ChatBotMode from "../RegularComponents/ProjectComponents/Modes/ChatBotMode"
 import CodeEditorMode from "../RegularComponents/ProjectComponents/Modes/CodeEditorMode"
 import VisualEditorMode from "../RegularComponents/ProjectComponents/Modes/VisualEditorMode"
+import { urlbackend } from "../../config.js"
 
 type ProjectMode = "code" | "visual" | "ai"
 type SaveState = "idle" | "saving" | "saved" | "error"
@@ -23,7 +24,7 @@ export default function ProjectPage() {
     const token = localStorage.getItem("token")
     if (!token) return
 
-    fetch(`http://localhost:8000/projects/${id}`, {
+    fetch(`${urlbackend}/projects/${id}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
@@ -31,7 +32,7 @@ export default function ProjectPage() {
         if (data?.name) setName(data.name)
       })
 
-    fetch(`http://localhost:8000/projects/${id}/slides`, {
+    fetch(`${urlbackend}/projects/${id}/slides`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
@@ -70,7 +71,7 @@ export default function ProjectPage() {
               html: "<section" + s,
               position: i,
             }))
-          await fetch(`http://localhost:8000/projects/${projectId}/slides`, {
+          await fetch(`${urlbackend}/projects/${projectId}/slides`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
