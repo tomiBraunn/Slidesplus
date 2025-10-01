@@ -217,6 +217,65 @@ app.get("/projects/:id/slides", auth, async (req, res) => {
   }
 })
 
+app.post("/projects/:id/slides", auth, async (req, res) => {
+  if (!pool) return res.status(500).json({ message: "Database not configured" })
+  try {
+    const { id } = req.params
+    const { slides } = req.body ?? {}
+
+    if (!Array.isArray(slides)) {
+      return res.status(400).json({ message: "Invalid slides format" })
+    }
+
+    const projectCheck = await pool.query(
+      `SELECT id FROM projects WHERE id=$1 AND owner_id=$2`,
+      [id, req.user.sub]
+    )
+    if (projectCheck.rowCount === 0) {
+      return res.status(404).json({ message: "Project not found" })
+    }
+
+    await pool.query(`DELETE FROM slides WHERE project_id=$1`, [id])
+
+    if (slides.length > 0) {
+      const values = []
+      const placeholders = []
+
+      slides.forEach((slide, idx) => {
+        const position = slide.position ?? idx
+        const html = slide.html || ""
+        const offset = idx * 3
+        placeholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3})`)
+        values.push(id, position, html)
+      })
+
+      await pool.query(
+        `INSERT INTO slides (project_id, position, html)
+         VALUES ${placeholders.join(", ")}`,
+        values
+      )
+    }
+
+    await pool.query(
+      `UPDATE projects SET updated_at=NOW() WHERE id=$1`,
+      [id]
+    )
+
+    const result = await pool.query(
+      `SELECT id, position, html, created_at, updated_at
+       FROM slides
+       WHERE project_id=$1
+       ORDER BY position ASC`,
+      [id]
+    )
+
+    res.json({ ok: true, slides: result.rows })
+  } catch (err) {
+    console.error("Error saving slides:", err)
+    res.status(500).json({ message: "Internal error" })
+  }
+})
+
 app.post("/projects", auth, async (req, res) => {
   if (!pool) return res.status(500).json({ message: "Database not configured" })
   try {
