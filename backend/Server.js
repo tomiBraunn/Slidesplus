@@ -52,7 +52,17 @@ function auth(req, res, next) {
   }
 }
 
-app.get("/health", (_req, res) => res.json({ ok: true }))
+app.get("/health", (_req, res) => {
+  res.json({
+    ok: true,
+    env: {
+      hasDB: !!process.env.DATABASE_URL,
+      hasJWT: !!process.env.JWT_SECRET,
+      hasGeminiKey: !!process.env.GEMINI_API_KEY,
+      node: process.version,
+    },
+  })
+})
 
 app.get("/debug/routes", (_req, res) => {
   const routes = []
@@ -295,42 +305,184 @@ app.delete("/projects/:id", auth, async (req, res) => {
 app.post("/gemini", async (req, res) => {
   try {
     const { system, mode, message, history, context, model, image } = req.body ?? {}
-    if (!message || !String(message).trim()) return res.status(400).json({ error: "Missing message" })
+
+    if (!message || !String(message).trim()) {
+      return res.status(400).json({ error: "Missing message" })
+    }
+
     const API_KEY = process.env.GEMINI_API_KEY
-    if (!API_KEY) return res.status(500).json({ error: "Server misconfigured (GEMINI_API_KEY missing)" })
-    const mdl = model || "gemini-1.5-flash-latest"
+    if (!API_KEY) {
+      return res.status(500).json({
+        error: "Server misconfigured (GEMINI_API_KEY missing)"
+      })
+    }
+
+    const mdl = model || "gemini-2.5-flash"
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${mdl}:generateContent?key=${API_KEY}`
-    const parts = []
-    if (system) parts.push({ text: `[SYSTEM]: ${String(system)}` })
-    if (context) parts.push({ text: `[CONTEXT]: ${String(context).slice(-12000)}` })
-    if (Array.isArray(history)) {
-      for (const m of history) {
-        if (!m || !m.role || !m.content) continue
-        parts.push({ text: `[${String(m.role).toUpperCase()}]: ${String(m.content)}` })
+
+    const contents = []
+
+    if (Array.isArray(history) && history.length > 0) {
+      for (const msg of history) {
+        if (!msg || !msg.role || !msg.content) continue
+        contents.push({
+          role: msg.role === "assistant" ? "model" : "user",
+          parts: [{ text: String(msg.content) }]
+        })
       }
     }
-    parts.push({ text: `[USER]: ${String(message)}` })
-    if (mode) parts.push({ text: `[MODE]: ${String(mode)}` })
-    if (image?.data && image?.mimeType) {
-      parts.push({ inline_data: { mime_type: image.mimeType, data: image.data } })
+
+    const parts = []
+
+    if (system) {
+      parts.push({ text: `[SYSTEM INSTRUCTIONS]:\n${String(system)}\n\n` })
     }
-    const payload = { contents: [{ role: "user", parts }] }
+
+    if (context) {
+      parts.push({ text: `[CONTEXT]:\n${String(context).slice(-12000)}\n\n` })
+    }
+
+    if (mode) {
+      parts.push({ text: `[MODE]: ${String(mode)}\n\n` })
+    }
+
+    parts.push({ text: String(message) })
+
+    if (image?.data && image?.mimeType) {
+      parts.push({
+        inline_data: {
+          mime_type: image.mimeType,
+          data: image.data
+        }
+      })
+    }
+
+    contents.push({
+      role: "user",
+      parts
+    })
+
+    const payload = {
+      contents,
+      generationConfig: {
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 8192,
+      },
+      safetySettings: [
+        {
+          category: "HARM_CATEGORY_HARASSMENT",
+          threshold: "BLOCK_NONE"
+        },
+        {
+          category: "HARM_CATEGORY_HATE_SPEECH",
+          threshold: "BLOCK_NONE"
+        },
+        {
+          category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+          threshold: "BLOCK_NONE"
+        },
+        {
+          category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+          threshold: "BLOCK_NONE"
+        }
+      ]
+    }
+
+    console.log('[Gemini] Sending request to:', mdl)
+    console.log('[Gemini] Message preview:', String(message).slice(0, 100))
+
     const r = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     })
+
     const raw = await r.text()
+
+    console.log('[Gemini] Response status:', r.status)
+
     if (!r.ok) {
       let details
-      try { details = JSON.parse(raw) } catch { details = raw }
-      return res.status(502).json({ error: "Gemini upstream error", status: r.status, details })
+      try {
+        details = JSON.parse(raw)
+      } catch {
+        details = raw
+      }
+
+      console.error('[Gemini] Error details:', details)
+
+      return res.status(502).json({
+        error: "Gemini upstream error",
+        status: r.status,
+        details,
+        hint: r.status === 400 ? "Check API key and payload format" :
+          r.status === 403 ? "API key invalid or quota exceeded" :
+            r.status === 429 ? "Rate limit exceeded" :
+              "Unknown error"
+      })
     }
+
     res.type("application/json").send(raw)
-  } catch {
-    res.status(500).json({ error: "Error connecting to Gemini" })
+
+  } catch (err) {
+    console.error('[Gemini] Catch error:', err)
+    res.status(500).json({
+      error: "Error connecting to Gemini",
+      details: err instanceof Error ? err.message : String(err)
+    })
+  }
+})
+
+app.get("/gemini/test", async (_req, res) => {
+  try {
+    const API_KEY = process.env.GEMINI_API_KEY
+    if (!API_KEY) {
+      return res.status(500).json({ ok: false, error: "No API key configured" })
+    }
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`
+
+    const payload = {
+      contents: [{
+        role: "user",
+        parts: [{ text: "Say 'Hello' if you're working" }]
+      }]
+    }
+
+    const r = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+
+    const data = await r.json()
+
+    if (!r.ok) {
+      return res.status(502).json({
+        ok: false,
+        status: r.status,
+        error: data
+      })
+    }
+
+    res.json({
+      ok: true,
+      response: data.candidates?.[0]?.content?.parts?.[0]?.text || "No text"
+    })
+
+  } catch (err) {
+    res.status(500).json({
+      ok: false,
+      error: err instanceof Error ? err.message : String(err)
+    })
   }
 })
 
 const PORT = process.env.PORT || 8000
-app.listen(PORT, () => { })
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`)
+  console.log(`Health check: http://localhost:${PORT}/health`)
+  console.log(`Gemini test: http://localhost:${PORT}/gemini/test`)
+})
