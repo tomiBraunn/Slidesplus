@@ -147,6 +147,14 @@ function SignUpForm() {
                             >
                                 Sign Up
                             </button>
+                            <div className="text-center text-sm flex justify-center">
+                                <p>Go back
+                                    <a href="/" className="underline underline-offset-4">
+                                    {" "}
+                                    to Home
+                                </a></p>
+
+                            </div>
                         </form>
                     </div>
                 </div>
