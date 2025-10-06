@@ -10,7 +10,7 @@ const { Pool } = pkg
 const pool = process.env.DATABASE_URL
   ? new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: { require: true, rejectUnauthorized: false },
+    ssl: { rejectUnauthorized: false }
   })
   : null
 
@@ -78,25 +78,35 @@ app.get("/debug/routes", (_req, res) => {
   res.json({ routes })
 })
 
+
 app.post("/createuser", async (req, res) => {
   if (!pool) return res.status(500).json({ message: "Database not configured" })
   try {
+    console.log("Creating user with data:", req.body)
+    
     const { username, email, password, first_name, last_name } = req.body ?? {}
     if (!username || !email || !password || !first_name || !last_name)
       return res.status(400).json({ message: "Missing fields" })
+    
     const hashed = await bcrypt.hash(password, 10)
     const avatar = generateAvatar(String(username)[0] || "U")
+    
+    console.log("About to insert into database...")
+    
     const q = await pool.query(
       `INSERT INTO users (username, email, password, first_name, last_name, avatar)
        VALUES ($1,$2,$3,$4,$5,$6)
        RETURNING id, username, email, first_name, last_name, avatar`,
       [username, email, hashed, first_name, last_name, avatar]
     )
+    
+    console.log("User created successfully:", q.rows[0])
     res.status(201).json({ ok: true, user: q.rows[0] })
   } catch (err) {
+    console.error("ERROR CREATING USER:", err)
     if (err.code === "23505")
       return res.status(409).json({ message: "Username or email already exists" })
-    res.status(500).json({ message: "Internal error" })
+    res.status(500).json({ message: "Internal error", detail: err.message })
   }
 })
 
@@ -213,65 +223,6 @@ app.get("/projects/:id/slides", auth, async (req, res) => {
     )
     res.json({ ok: true, slides: slides.rows })
   } catch {
-    res.status(500).json({ message: "Internal error" })
-  }
-})
-
-app.post("/projects/:id/slides", auth, async (req, res) => {
-  if (!pool) return res.status(500).json({ message: "Database not configured" })
-  try {
-    const { id } = req.params
-    const { slides } = req.body ?? {}
-
-    if (!Array.isArray(slides)) {
-      return res.status(400).json({ message: "Invalid slides format" })
-    }
-
-    const projectCheck = await pool.query(
-      `SELECT id FROM projects WHERE id=$1 AND owner_id=$2`,
-      [id, req.user.sub]
-    )
-    if (projectCheck.rowCount === 0) {
-      return res.status(404).json({ message: "Project not found" })
-    }
-
-    await pool.query(`DELETE FROM slides WHERE project_id=$1`, [id])
-
-    if (slides.length > 0) {
-      const values = []
-      const placeholders = []
-
-      slides.forEach((slide, idx) => {
-        const position = slide.position ?? idx
-        const html = slide.html || ""
-        const offset = idx * 3
-        placeholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3})`)
-        values.push(id, position, html)
-      })
-
-      await pool.query(
-        `INSERT INTO slides (project_id, position, html)
-         VALUES ${placeholders.join(", ")}`,
-        values
-      )
-    }
-
-    await pool.query(
-      `UPDATE projects SET updated_at=NOW() WHERE id=$1`,
-      [id]
-    )
-
-    const result = await pool.query(
-      `SELECT id, position, html, created_at, updated_at
-       FROM slides
-       WHERE project_id=$1
-       ORDER BY position ASC`,
-      [id]
-    )
-
-    res.json({ ok: true, slides: result.rows })
-  } catch (err) {
-    console.error("Error saving slides:", err)
     res.status(500).json({ message: "Internal error" })
   }
 })
