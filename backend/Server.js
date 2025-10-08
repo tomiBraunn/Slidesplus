@@ -30,8 +30,15 @@ function generateAvatar(letter) {
 }
 
 const app = express()
-app.use(cors({ origin: "http://localhost:5173", credentials: true }))
-app.use(express.json({ limit: "4mb" }))
+app.use(express.json())
+app.use(cors({
+  origin: (origin, cb) => {
+    const allowed = ["http://localhost:5173", "https://slides-plus-backend.vercel.app"];
+    if (!origin || allowed.includes(origin)) return cb(null, true);
+    cb(new Error("Not allowed by CORS"));
+  },
+  credentials: true
+}));
 
 function auth(req, res, next) {
   const h = req.headers.authorization || ""
@@ -78,28 +85,27 @@ app.get("/debug/routes", (_req, res) => {
   res.json({ routes })
 })
 
-
 app.post("/createuser", async (req, res) => {
   if (!pool) return res.status(500).json({ message: "Database not configured" })
   try {
     console.log("Creating user with data:", req.body)
-    
+
     const { username, email, password, first_name, last_name } = req.body ?? {}
     if (!username || !email || !password || !first_name || !last_name)
       return res.status(400).json({ message: "Missing fields" })
-    
+
     const hashed = await bcrypt.hash(password, 10)
     const avatar = generateAvatar(String(username)[0] || "U")
-    
+
     console.log("About to insert into database...")
-    
+
     const q = await pool.query(
       `INSERT INTO users (username, email, password, first_name, last_name, avatar)
        VALUES ($1,$2,$3,$4,$5,$6)
        RETURNING id, username, email, first_name, last_name, avatar`,
       [username, email, hashed, first_name, last_name, avatar]
     )
-    
+
     console.log("User created successfully:", q.rows[0])
     res.status(201).json({ ok: true, user: q.rows[0] })
   } catch (err) {
@@ -213,19 +219,79 @@ app.get("/projects/:id", auth, async (req, res) => {
 })
 
 app.get("/projects/:id/slides", auth, async (req, res) => {
+  if (!pool) return res.status(500).json({ message: "Database not configured" });
   try {
-    const slides = await pool.query(
-      `SELECT id, position, html, created_at, updated_at
+    const projectId = req.params.id;
+
+    const projectCheck = await pool.query(
+      `SELECT id FROM projects WHERE id=$1 AND owner_id=$2`,
+      [projectId, req.user.sub]
+    );
+
+    if (projectCheck.rowCount === 0) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    const q = await pool.query(
+      `SELECT id, project_id, position, html, created_at, updated_at
        FROM slides
        WHERE project_id=$1
-       ORDER BY position ASC`,
-      [req.params.id]
-    )
-    res.json({ ok: true, slides: slides.rows })
-  } catch {
-    res.status(500).json({ message: "Internal error" })
+       ORDER BY position ASC, created_at ASC`,
+      [projectId]
+    );
+
+    res.json({ ok: true, slides: q.rows });
+  } catch (err) {
+    console.error("Error fetching slides:", err);
+    res.status(500).json({
+      message: "Internal error",
+      detail: err instanceof Error ? err.message : String(err)
+    });
   }
-})
+});
+
+app.post("/projects/:id/slides", auth, async (req, res) => {
+  if (!pool) return res.status(500).json({ message: "Database not configured" });
+  try {
+    const projectId = req.params.id;
+    const { slides } = req.body ?? {};
+
+    const projectCheck = await pool.query(
+      `SELECT id FROM projects WHERE id=$1 AND owner_id=$2`,
+      [projectId, req.user.sub]
+    );
+
+    if (projectCheck.rowCount === 0) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    if (!slides || !Array.isArray(slides) || slides.length === 0) {
+      return res.status(400).json({ message: "Missing slides array" });
+    }
+
+    await pool.query(`DELETE FROM slides WHERE project_id=$1`, [projectId]);
+
+    const insertedSlides = [];
+    for (const slide of slides) {
+      if (!slide.html) continue;
+      const q = await pool.query(
+        `INSERT INTO slides (project_id, position, html)
+         VALUES ($1, $2, $3)
+         RETURNING id, project_id, position, html, created_at, updated_at`,
+        [projectId, slide.position || 0, slide.html]
+      );
+      insertedSlides.push(q.rows[0]);
+    }
+
+    res.status(201).json({ ok: true, slides: insertedSlides });
+  } catch (err) {
+    console.error("Error saving slides:", err);
+    res.status(500).json({
+      message: "Internal error",
+      detail: err instanceof Error ? err.message : String(err)
+    });
+  }
+});
 
 app.post("/projects", auth, async (req, res) => {
   if (!pool) return res.status(500).json({ message: "Database not configured" })
