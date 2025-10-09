@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import AppIcon from "../MultiuseComponents/AppIcon";
 import UserPicture from "../MultiuseComponents/UserPicture";
-import Settings from "../MultiuseComponents/Settings";
 
 export type ProjectMode = "code" | "visual" | "ai";
 
@@ -9,7 +8,6 @@ type Props = {
   projectId?: string;
   name: string;
   saveState: "idle" | "saving" | "saved" | "error";
-  onRename: (next: string) => void;
   mode: ProjectMode;
   onChangeMode: (m: ProjectMode) => void;
 };
@@ -40,43 +38,8 @@ function normalizeAvatar(avatar?: string): string | undefined {
   return `data:image/png;base64,${avatar}`;
 }
 
-function ModeButton({
-  label,
-  value,
-  active,
-  onClick,
-}: {
-  label: string;
-  value: ProjectMode;
-  active: boolean;
-  onClick?: (m: ProjectMode) => void;
-}) {
-  return (
-    <button
-      onClick={() => onClick && onClick(value)}
-      className={`px-3 py-1 rounded-md text-sm transition ${active ? "bg-sky-500 text-[#121212]" : "bg-transparent text-white hover:bg-[#2B2B2B]"
-        }`}
-    >
-      {label}
-    </button>
-  );
-}
-
-
-export default function ProjectNavBar({
-  name,
-  saveState,
-  onRename,
-  mode,
-  onChangeMode,
-}: Props) {
-  const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(name);
+export default function ProjectNavBar({ name, saveState, mode, onChangeMode }: Props) {
   const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    if (!editing) setValue(name);
-  }, [name, editing]);
 
   useEffect(() => {
     try {
@@ -97,70 +60,59 @@ export default function ProjectNavBar({
     }
   }, []);
 
-  const displayLetter =
-    user?.first_name?.[0] ||
-    user?.username?.[0] ||
-    user?.email?.[0] ||
-    "?";
+  const displayLetter = user?.first_name?.[0] || user?.username?.[0] || user?.email?.[0] || "?";
 
   return (
-    <nav className="flex items-center justify-between p-3 h-20 w-screen border-b border-[#2B2B2B] bg-[#121212]">
+    <nav className="flex items-center justify-between p-3 h-18 w-screen border-b border-[#2B2B2B] bg-[#121212]">
       <div className="flex items-center gap-3">
         <AppIcon />
-        <div className="flex items-center gap-2">
-          {editing ? (
-            <input
-              autoFocus
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              onBlur={() => {
-                setEditing(false);
-                const next = value.trim();
-                if (next && next !== name) onRename(next);
-                else setValue(name);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                if (e.key === "Escape") {
-                  setValue(name);
-                  setEditing(false);
-                }
-              }}
-              className="bg-transparent text-white text-sm border-b border-[#2B2B2B] outline-none"
-            />
-          ) : (
-            <button
-              className="text-white text-sm hover:opacity-80"
-              onClick={() => {
-                setValue(name);
-                setEditing(true);
-              }}
-              title="Rename project"
-            >
-              {name || ""}
-            </button>
-          )}
-          <span className="text-xs px-2 py-0.5 rounded-full border border-[#2B2B2B] text-[#9aa0a6]">
-            {saveState === "saving"
-              ? "Saving…"
-              : saveState === "saved"
-                ? "Saved"
-                : saveState === "error"
-                  ? "Error"
-                  : "Idle"}
-          </span>
-        </div>
+        <span className="text-white text-sm">{name}</span>
+        <span className="text-xs px-2 py-0.5 rounded-full border border-[#2B2B2B] text-[#9aa0a6]">
+          {saveState === "saving"
+            ? "Saving…"
+            : saveState === "saved"
+              ? "Saved"
+              : saveState === "error"
+                ? "Error"
+                : "Idle"}
+        </span>
       </div>
 
-      <div className="flex items-center gap-2">
-        <ModeButton label="Code" value="code" active={mode === "code"} onClick={onChangeMode} />
-        <ModeButton label="Visual" value="visual" active={mode === "visual"} onClick={onChangeMode} />
-        <ModeButton label="AI" value="ai" active={mode === "ai"} onClick={onChangeMode} />
-      </div>
 
 
       <div className="flex items-center gap-2.5">
-        <Settings />
+        <div className="flex items-center justify-between gap-1 w-auto defaultStyle rounded-[20px]">
+          <span
+            onClick={() => onChangeMode("code")}
+            className={`material-symbols-outlined cursor-pointer w-[1.5em] aspect-square flex items-center justify-center rounded-l-[20px] transition ${mode === "code"
+              ? "text-white bg-gradient-to-r from-[#7182FF] to-[#3CFF52]"
+              : "text-[#4B4B4B] hover:text-white"
+              }`}
+            title="Code"
+          >
+            code
+          </span>
+          <span
+            onClick={() => onChangeMode("visual")}
+            className={`material-symbols-outlined cursor-pointer w-[1.5em] aspect-square flex items-center justify-center transition ${mode === "visual"
+              ? "text-white bg-gradient-to-r from-[#7182FF] to-[#3CFF52]"
+              : "text-[#4B4B4B] hover:text-white"
+              }`}
+            title="Visual"
+          >
+            slide_library
+          </span>
+          <span
+            onClick={() => onChangeMode("ai")}
+            className={`material-symbols-outlined cursor-pointer w-[1.5em] aspect-square flex items-center justify-center rounded-r-[20px] transition ${mode === "ai"
+              ? "text-white bg-gradient-to-r from-[#7182FF] to-[#3CFF52]"
+              : "text-[#4B4B4B] hover:text-white"
+              }`}
+            title="AI"
+          >
+            wand_stars
+          </span>
+        </div>
         <UserPicture avatar={user?.avatar} fallbackLetter={displayLetter} />
       </div>
     </nav>
