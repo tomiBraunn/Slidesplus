@@ -1,66 +1,61 @@
-import React, { useState } from 'react';
-import SplitText from "../ThirdPartyComponents/SplitText/SplitText";
-import BlurText from "../ThirdPartyComponents/BlurText/BlurText";
-import { animationMapKey } from "motion";
-import TextType from "../ThirdPartyComponents/TextType/TextType"
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import TextType from "../ThirdPartyComponents/TextType/TextType";
+import { useNavigate } from "react-router-dom";
 
-
-export default function Inicio() {
-
-  const [animationKey, setAnimationKey] = useState(0);
-
-  const handleAnimationComplete = () => {
-    console.log('All letters have animated!');
-    setTimeout(() => {
-      setAnimationKey(prev => prev + 1);
-    }, 1000);
-  };
-
-  const handleClick = () => {
-    navigate('/home')
-  }
+export default function LandingPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="relative w-screen h-screen flex flex-col items-center justify-center bg-gradient-to-r from-gray-900 via-black to-gray-800 text-white overflow-hidden">
+    <div className="font-sans text-white min-h-screen bg-gradient-to-r from-black to-neutral-800 flex flex-col">
+      <header className="fixed top-0 left-0 w-full flex justify-between items-center px-10 py-6 bg-black/50 backdrop-blur-md z-50">
+        <div className="flex items-center gap-2 text-[#d4af37] text-3xl font-bold">
+          Slides+
+        </div>
+        <button
+          onClick={() => navigate("/login")}
+          className="bg-[#d4af37] text-black px-6 py-2 rounded-full hover:bg-[#c29d2f] transition"
+        >
+          Login
+        </button>
+      </header>
 
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute w-72 h-72 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse top-10 left-10"></div>
-        <div className="absolute w-96 h-96 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-ping bottom-20 right-20"></div>
-      </div>
-
-      <h1 className="text-5xl font-bold mb-4 tracking-wide animate-fadeIn">
-      <TextType 
-  text={["Hi, welcome to"]}
-  typingSpeed={75}
-  pauseDuration={1500}
-  showCursor={true}
-  cursorCharacter="|"
-/>
-
-      </h1>
-
-      <img
-        src="S+ (1).png"
-        alt="Logo_S+"
-        className="w-32 mb-6 animate-pulse"
-        />
-
-      <p className="text-lg text-gray-300 mb-10 animate-fadeIn animation-delay-300">
-        <BlurText
-          text="Coding your presentations"
-          delay={300}
-          animateBy="words"
-          direction="top"
-          onAnimationComplete={handleAnimationComplete}
-          className="text-2xl mb-8"
+      <main className="flex-1 flex flex-col justify-center items-center text-center px-6">
+        <h1 className="text-5xl md:text-6xl font-semibold mb-4">
+          <TextType
+            strings={[
+              "Create Stunning Slides.",
+              "Share Instantly.",
+              "Collaborate with Your Team."
+            ]}
+            typeSpeed={50}
+            backSpeed={30}
+            loop
           />
-      </p>
+        </h1>
+        <p className="text-gray-300 mt-4 text-lg max-w-lg">
+          The easiest way to build, edit, create, and present slides online.
+        </p>
+        <button
+          onClick={() => navigate("/login")}
+          className="mt-8 bg-[#d4af37] text-black px-8 py-3 rounded-full text-lg hover:bg-[#c29d2f] transition"
+        >
+          Get Started
+        </button>
+      </main>
 
-      <button onClick={handleClick} className="px-8 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-95 transition transform duration-300 shadow-lg text-lg font-semibold animate-fadeIn animation-delay-500 hover:shadow-blue-500/50">
-        Start
-      </button>
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-10 px-14 py-24 bg-white text-black">
+        <div className="text-center p-10 bg-[#fafafa] rounded-lg shadow-sm hover:-translate-y-2 transition">
+          <h3 className="text-xl font-semibold mb-3">Create Slides</h3>
+          <p className="text-gray-600">
+            Build beautiful presentations.
+          </p>
+        </div>
+        <div className="text-center p-10 bg-[#fafafa] rounded-lg shadow-sm hover:-translate-y-2 transition">
+          <h3 className="text-xl font-semibold mb-3">Do it Instantly</h3>
+        </div>
+        <div className="text-center p-10 bg-[#fafafa] rounded-lg shadow-sm hover:-translate-y-2 transition">
+        </div>
+      </section>
     </div>
   );
 }

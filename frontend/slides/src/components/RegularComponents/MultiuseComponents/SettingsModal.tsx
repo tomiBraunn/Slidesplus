@@ -1,97 +1,91 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { urlbackend } from "../../../../config.js";
 
-function Settings() {
-  const [mounted, setMounted] = useState(false);
-  const [show, setShow] = useState(false);
+type Props = {
+  onClose: () => void;
+};
 
-  const openModal = () => {
-    setMounted(true);
-    document.documentElement.classList.add("overflow-hidden");
-    requestAnimationFrame(() => setShow(true));
-  };
+function SettingsModal({ onClose }: Props) {
+  const [loading, setLoading] = useState(false);
 
-  const closeModal = () => {
-    setShow(false);
-    document.documentElement.classList.remove("overflow-hidden");
-  };
+  const handleCleanAllProjects = async () => {
+    if (!confirm("Are you sure you want to delete all projects? This action cannot be undone.")) {
+      return;
+    }
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeModal();
-    };
-    if (mounted) window.addEventListener("keydown", handler);
-    return () => {
-      window.removeEventListener("keydown", handler);
-      document.documentElement.classList.remove("overflow-hidden");
-    };
-  }, [mounted]);
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${urlbackend}/projects`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
 
-  const handleTransitionEnd = () => {
-    if (!show) setMounted(false);
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data?.message || "Failed to delete projects.");
+        setLoading(false);
+        return;
+      }
+
+      alert("All projects deleted successfully.");
+      onClose();
+    } catch (e) {
+      alert("Error connecting to the server.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <>
-      <span
-        className="material-symbols-outlined flex items-center justify-center text-[#4B4B4B] text-[40px] cursor-pointer"
-        style={{ fontSize: "32.5px" }}
-        onClick={openModal}
-      >
-        settings
-      </span>
-
-      {mounted && (
-        <div
-          className={[
-            "fixed z-50 inset-0 flex items-center justify-center",
-            "bg-black/40 transition-[backdrop-filter,opacity] duration-200 ease-out",
-            show ? "opacity-100 backdrop-blur-xl" : "opacity-0 backdrop-blur-0",
-          ].join(" ")}
-          onMouseDown={closeModal}
-          onTransitionEnd={handleTransitionEnd}
-        >
-          <div
-            onMouseDown={(e) => e.stopPropagation()}
-            className={`text-white rounded-xl defaultStyle card-animate w-[70vw] max-w-[1100px] max-h-[85vh] overflow-hidden flex flex-col border border-white/10 bg-[#0b0b0bcc] transform transition-all duration-200 ease-out backdrop-bl-sm${
-              show ? " opacity-100 scale-100" : " opacity-0 scale-95"
-            }`}
+    <div className="fixed z-50 inset-0 flex items-center justify-center bg-black/40 transition-[backdrop-filter,opacity] duration-200 ease-out opacity-100 backdrop-blur-xl">
+      <div className="text-white rounded-xl defaultStyle card-animate w-[70vw] max-w-[1100px] max-h-[85vh] overflow-hidden flex flex-col border border-white/10 bg-[#0b0b0bcc] transform transition-all duration-200 ease-out backdrop-bl-sm opacity-100 scale-100">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-2 w-full p-4">
+          <div className="flex items-start flex-col">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-white" style={{ fontSize: 35 }}>
+                settings
+              </span>
+              <p className="text-white font-medium text-lg">Settings</p>
+            </div>
+            <p className="text-[#999999] text-sm">Options</p>
+          </div>
+          <button
+            className="flex items-center justify-center rounded-full p-2 hover:bg-white/10 text-white"
+            aria-label="Close"
+            title="Close"
+            onClick={onClose}
           >
-            <div className="flex items-center justify-between gap-2 w-full p-4">
-              <div className="flex items-start flex-col">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="material-symbols-outlined text-white"
-                    style={{ fontSize: 35 }}
-                  >
-                    settings
-                  </span>
-                  <p className="text-white font-medium text-lg">Settings</p>
-                </div>
-                <p className="text-[#999999] text-sm">Options</p>
-              </div>
-              <button
-                onClick={closeModal}
-                className="flex items-center justify-center rounded-full p-2 hover:bg-white/10 text-white"
-                aria-label="Close"
-                title="Close"
-              >
-                <span
-                  className="material-symbols-outlined"
-                  style={{ fontSize: 22 }}
-                >
-                  close
-                </span>
-              </button>
-            </div>
+            <span className="material-symbols-outlined" style={{ fontSize: 22 }}>
+              close
+            </span>
+          </button>
+        </div>
 
-            <div className="flex-1 flex items-center justify-center">
-              <p className="text-[#999999]">Empty content</p>
-            </div>
+        {}
+        <div className="flex items-start justify-start gap-2 w-full h-full px-4 pb-2">
+          <div className="text-white rounded-xl border border-[#2B2B2B] bg-[#0f0f0f] w-full p-4 flex flex-col gap-3">
+            <button className="text-left px-4 py-2 rounded hover:bg-[#222]">Profile Picture</button>
+            <button className="text-left px-4 py-2 rounded hover:bg-[#222]">Change Info</button>
+            <button className="text-left px-4 py-2 rounded hover:bg-[#222]">Language</button>
+            <button className="text-left px-4 py-2 rounded hover:bg-[#222]">Export Data</button>
+            <button
+              onClick={handleCleanAllProjects}
+              disabled={loading}
+              className="text-left px-4 py-2 rounded text-red-500 hover:bg-[#222] disabled:opacity-60"
+            >
+              {loading ? "Deleting..." : "Clean all projects"}
+            </button>
+            <button className="text-left px-4 py-2 rounded text-red-500 hover:bg-[#222]">Sign Out</button>
           </div>
         </div>
-      )}
-    </>
+      </div>
+    </div>
   );
 }
 
-export default Settings;
+export default SettingsModal;
