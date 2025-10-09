@@ -1,8 +1,18 @@
 import React, { useEffect, useRef } from "react"
 
-type Props = { document: string }
+type Props = {
+  document: string
+  currentSlide: number
+  totalSlides: number
+  onSlideChange: (index: number) => void
+}
 
-export default function LivePreview({ document }: Props) {
+export default function LivePreview({
+  document,
+  currentSlide,
+  totalSlides,
+  onSlideChange,
+}: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   useEffect(() => {
@@ -13,17 +23,53 @@ export default function LivePreview({ document }: Props) {
     doc.close()
   }, [document])
 
+  const handleNext = () => {
+    if (currentSlide < totalSlides - 1) onSlideChange(currentSlide + 1)
+  }
+
+  const handlePrev = () => {
+    if (currentSlide > 0) onSlideChange(currentSlide - 1)
+  }
+
+  const handleFullscreen = () => {
+    const iframe = iframeRef.current
+    if (!iframe) return
+    if (iframe.requestFullscreen) iframe.requestFullscreen()
+    else if ((iframe as any).webkitRequestFullscreen) (iframe as any).webkitRequestFullscreen()
+  }
+
   return (
     <div className="flex flex-col items-center justify-center gap-1 w-full">
       <div className="flex items-center justify-center w-full h-full select-none aspect-video defaultStyle rounded-t-xl rounded-b-none">
-        <iframe ref={iframeRef} title="Live Preview" className="w-full h-full border-none bg-white overflow-hidden rounded-t-sm" />
+        <iframe
+          ref={iframeRef}
+          title="Live Preview"
+          className="w-full h-full border-none bg-white overflow-hidden rounded-t-sm"
+        />
       </div>
       <div className="w-full flex justify-center presentationComponentsStyle rounded-none rounded-b-3xl">
         <div className="flex items-center justify-between gap-2 rounded-none rounded-b-3xl w-auto">
-          <span className="material-symbols-outlined cursor-pointer w-[1.5em] aspect-square text-[#4B4B4B]">fullscreen</span>
-          <span className="material-symbols-outlined cursor-pointer w-[1.5em] aspect-square text-[#4B4B4B]">chevron_left</span>
-          <span className="material-symbols-outlined cursor-pointer w-[1.5em] aspect-square text-[#4B4B4B]">chevron_right</span>
-          <span className="material-symbols-outlined cursor-pointer w-[1.5em] aspect-square text-[#4B4B4B]">filter_none</span>
+          <span
+            className="material-symbols-outlined cursor-pointer w-[1.5em] aspect-square text-[#4B4B4B]"
+            onClick={handleFullscreen}
+          >
+            fullscreen
+          </span>
+          <span
+            className="material-symbols-outlined cursor-pointer w-[1.5em] aspect-square text-[#4B4B4B]"
+            onClick={handlePrev}
+          >
+            chevron_left
+          </span>
+          <span
+            className="material-symbols-outlined cursor-pointer w-[1.5em] aspect-square text-[#4B4B4B]"
+            onClick={handleNext}
+          >
+            chevron_right
+          </span>
+          <span className="material-symbols-outlined cursor-pointer w-[1.5em] aspect-square text-[#4B4B4B]">
+            filter_none
+          </span>
         </div>
       </div>
     </div>

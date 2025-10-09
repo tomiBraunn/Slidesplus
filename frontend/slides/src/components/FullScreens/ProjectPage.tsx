@@ -1,118 +1,115 @@
-import React, { useEffect, useState } from "react"
-import ProjectNavBar from "../RegularComponents/ProjectComponents/ProjectNavBar"
-import ChatBotMode from "../RegularComponents/ProjectComponents/Modes/ChatBotMode"
-import CodeEditorMode from "../RegularComponents/ProjectComponents/Modes/CodeEditorMode"
-import VisualEditorMode from "../RegularComponents/ProjectComponents/Modes/VisualEditorMode"
-import { urlbackend } from "../../config.js"
+import React, { useEffect, useRef, useState } from "react"
 
-type ProjectMode = "code" | "visual" | "ai"
-type SaveState = "idle" | "saving" | "saved" | "error"
+type Props = {
+  document: string
+  onSlideChange?: (index: number) => void
+}
 
-export default function ProjectPage() {
-  const [mode, setMode] = useState<ProjectMode>("code")
-  const [projectId, setProjectId] = useState<string | null>(null)
-  const [name, setName] = useState<string>("Untitled")
-  const [saveState, setSaveState] = useState<SaveState>("idle")
-  const [doc, setDoc] = useState<string>("")
+export default function LivePreview({ document: htmlDocument, onSlideChange }: Props) {
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const [totalSlides, setTotalSlides] = useState(1)
 
   useEffect(() => {
-    const parts = window.location.pathname.split("/")
-    const id = parts[parts.length - 1]
-    if (!id) return
-    setProjectId(id)
+    const doc = iframeRef.current?.contentDocument || iframeRef.current?.contentWindow?.document
+    if (!doc) return
+    doc.open()
+    doc.write(htmlDocument || "")
+    doc.close()
 
-    const token = localStorage.getItem("token")
-    if (!token) return
+    const sections = doc.querySelectorAll('section')
+    setTotalSlides(sections.length || 1)
 
-    fetch(`${urlbackend}/projects/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
+    sections.forEach((section, index) => {
+      (section as HTMLElement).style.display = index === 0 ? 'block' : 'none'
     })
-      .then((r) => r.json())
-      .then((data) => {
-        if (data?.name) setName(data.name)
-      })
+    setCurrentSlide(0)
+  }, [htmlDocument])
 
-    fetch(`${urlbackend}/projects/${id}/slides`, {
-      headers: { Authorization: `Bearer ${token}` },
+  useEffect(() => {
+    const doc = iframeRef.current?.contentDocument || iframeRef.current?.contentWindow?.document
+    if (!doc) return
+
+    const sections = doc.querySelectorAll('section')
+    sections.forEach((section, index) => {
+      (section as HTMLElement).style.display = index === currentSlide ? 'block' : 'none'
     })
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.ok && data.slides.length > 0) {
-          setDoc(
-            "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>" +
-            data.slides.map((s: any) => s.html).join("\n") +
-            "</body></html>"
-          )
-        } else {
-          setDoc(
-            "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body><section class='slide'><h1>Slide 1</h1></section></body></html>"
-          )
-        }
-      })
+
+    if (onSlideChange) {
+      onSlideChange(currentSlide)
+    }
+  }, [currentSlide, onSlideChange])
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!window.document.fullscreenElement)
+    }
+    window.document.addEventListener("fullscreenchange", handleFullscreenChange)
+    return () => window.document.removeEventListener("fullscreenchange", handleFullscreenChange)
   }, [])
 
-  const onRename = (next: string) => {
-    setName(next)
+  const toggleFullscreen = async () => {
+    if (!containerRef.current) return
+    try {
+      if (!window.document.fullscreenElement) {
+        await containerRef.current.requestFullscreen()
+      } else {
+        await window.document.exitFullscreen()
+      }
+    } catch (err) {
+      console.error("Error toggling fullscreen:", err)
+    }
   }
 
-  const onChangeDoc = (next: string) => {
-    setDoc(next)
-    setSaveState("saving")
-    window.clearTimeout((onChangeDoc as any)._t)
-      ; (onChangeDoc as any)._t = window.setTimeout(async () => {
-        try {
-          if (!projectId) return
-          const token = localStorage.getItem("token")
-          if (!token) return
-          const slides = next
-            .split("<section")
-            .filter((s) => s.trim() !== "")
-            .map((s, i) => ({
-              html: "<section" + s,
-              position: i,
-            }))
-          await fetch(`${urlbackend}/projects/${projectId}/slides`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ slides }),
-          })
-          setSaveState("saved")
-          window.setTimeout(() => setSaveState("idle"), 800)
-        } catch {
-          setSaveState("error")
-        }
-      }, 500)
+  const goToPreviousSlide = () => {
+    if (currentSlide > 0) {
+      setCurrentSlide(currentSlide - 1)
+    }
+  }
+
+  const goToNextSlide = () => {
+    if (currentSlide < totalSlides - 1) {
+      setCurrentSlide(currentSlide + 1)
+    }
   }
 
   return (
-    <div className="w-screen h-screen flex flex-col">
-      <ProjectNavBar
-        name={name}
-        saveState={saveState}
-        onRename={onRename}
-        mode={mode}
-        onChangeMode={setMode}
-      />
-      <div className="flex-1 overflow-hidden">
-        {mode === "code" && <CodeEditorMode doc={doc} onChange={onChangeDoc} />}
-        {mode === "visual" && <VisualEditorMode doc={doc} onChange={onChangeDoc} />}
-        {mode === "ai" && (
-          <ChatBotMode
-            doc={doc}
-            onChange={onChangeDoc}
-            applySetDoc={(val) => {
-              setDoc((prev) => {
-                const next =
-                  typeof val === "function" ? (val as (v: string) => string)(prev) : val
-                onChangeDoc(next)
-                return next
-              })
-            }}
-          />
-        )}
+    <div className="flex flex-col items-center justify-center gap-1 w-full">
+      <div
+        ref={containerRef}
+        className="flex items-center justify-center w-full h-full select-none aspect-video defaultStyle rounded-t-xl rounded-b-none"
+      >
+        <iframe ref={iframeRef} title="Live Preview" className="w-full h-full border-none bg-white overflow-hidden rounded-t-sm" />
+      </div>
+      <div className="w-full flex justify-center presentationComponentsStyle rounded-none rounded-b-3xl">
+        <div className="flex items-center justify-between gap-2 rounded-none rounded-b-3xl w-auto">
+          <span
+            onClick={toggleFullscreen}
+            className="material-symbols-outlined cursor-pointer w-[1.5em] aspect-square text-[#4B4B4B] hover:text-[#6B6B6B] transition-colors"
+            title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+          >
+            {isFullscreen ? "fullscreen_exit" : "fullscreen"}
+          </span>
+          <span
+            onClick={goToPreviousSlide}
+            className={`material-symbols-outlined cursor-pointer w-[1.5em] aspect-square text-[#4B4B4B] hover:text-[#6B6B6B] transition-colors ${currentSlide === 0 ? "opacity-30 cursor-not-allowed" : ""
+              }`}
+            title="Previous slide"
+          >
+            chevron_left
+          </span>
+          <span
+            onClick={goToNextSlide}
+            className={`material-symbols-outlined cursor-pointer w-[1.5em] aspect-square text-[#4B4B4B] hover:text-[#6B6B6B] transition-colors ${currentSlide === totalSlides - 1 ? "opacity-30 cursor-not-allowed" : ""
+              }`}
+            title="Next slide"
+          >
+            chevron_right
+          </span>
+          <span className="material-symbols-outlined cursor-pointer w-[1.5em] aspect-square text-[#4B4B4B] hover:text-[#6B6B6B] transition-colors" title="Show all slides">filter_none</span>
+        </div>
       </div>
     </div>
   )

@@ -1,8 +1,7 @@
-import React, { useMemo, useState } from "react"
+import React, { useMemo, useState, useEffect } from "react"
 import { urlbackend } from "../../../config.js"
 
 type ChatMsg = { role: "user" | "assistant"; content: string }
-type AutoAction = "off" | "insert" | "replace"
 
 function extractFirstCodeBlock(s: string): { lang?: string; code: string } | null {
   const m = s.match(/```(\w+)?\s*([\s\S]*?)```/)
@@ -24,8 +23,8 @@ function normalizeLLMText(data: any): string {
 
 function classifyPrompt(msg: string): "slides" | "code" | "chat" {
   const s = msg.toLowerCase()
-  const slidesHints = ["slides", "slide deck", "presentation", "deck"]
-  if (slidesHints.some((k) => s.includes(k)) && (s.includes("html") || s.includes("web"))) return "slides"
+  const slidesHints = ["slides", "slide deck", "presentation", "deck", "slideshow", "diapositivas"]
+  if (slidesHints.some((k) => s.includes(k))) return "slides"
   const codeVerbs = ["generate", "create", "write", "build", "implement", "refactor", "convert"]
   const langs = ["html", "css", "javascript", "typescript", "react", "tsx", "jsx", "python", "java", "c#", "php", "go", "rust", "sql", "tailwind", "component"]
   const codeWords = ["snippet", "function", "component", "layout", "api", "endpoint", "hook"]
@@ -34,9 +33,40 @@ function classifyPrompt(msg: string): "slides" | "code" | "chat" {
   return "chat"
 }
 
+const SLIDES_SYSTEM_PROMPT = `
+You are an expert HTML presentation designer. When creating slides:
+
+1. STRUCTURE: Each slide must be wrapped in a <section> tag with full viewport styling:
+   <section style="width:100vw; height:100vh; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                   overflow:hidden; padding:60px; box-sizing:border-box; display:flex; 
+                   flex-direction:column; justify-content:center; align-items:center; color:white;">
+     <!-- Content here -->
+   </section>
+
+2. IMAGES: Use Unsplash for images with this exact format:
+   <img src="https://source.unsplash.com/800x600/?technology,computer" 
+        style="width:500px; height:auto; border-radius:16px; box-shadow:0 20px 40px rgba(0,0,0,0.3);" 
+        alt="Technology">
+   
+   Use relevant keywords separated by commas (technology, nature, business, startup, science, etc.)
+
+3. TYPOGRAPHY:
+   - Titles: font-size:56px; font-weight:700; margin-bottom:24px;
+   - Subtitles: font-size:32px; font-weight:600; margin-bottom:20px;
+   - Body: font-size:22px; line-height:1.6;
+
+4. LAYOUTS - Hero, Image+Text, Full bg image, Grid of images
+
+5. COLORS: Use vibrant gradients
+
+6. IMPORTANT: Include at least one image from Unsplash in most slides using relevant keywords.
+
+7. RETURN: Only HTML sections, no markdown, no explanations. Multiple <section> tags for multiple slides.
+`
+
 async function createSlidesBulk(apiBase: string, projectId: string, slides: { html: string }[]) {
   const token = localStorage.getItem("token")
-  const res = await fetch(`${apiBase}/projects/${projectId}/slides/bulk`, {
+  const res = await fetch(`${apiBase}/projects/${projectId}/slides`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -50,47 +80,47 @@ async function createSlidesBulk(apiBase: string, projectId: string, slides: { ht
   return res.json()
 }
 
-function htmlToSlides(html: string): string[] {
-  const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
-  const inner = bodyMatch ? bodyMatch[1] : html
-  return [`
-    <section style="
-      width:100vw;
-      height:100vh;
-      background:white;
-      overflow:hidden;
-      padding:32px;
-      box-sizing:border-box;
-      border-radius:16px;
-      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto;
-      color:#111;
-      display:flex;
-      flex-direction:column;
-    ">
-      ${inner}
-    </section>
-  `]
+function extractSlides(html: string): string[] {
+  const sections = html.match(/<section[\s\S]*?<\/section>/gi)
+  if (sections && sections.length > 0) return sections
+  return [html]
 }
-
 
 export default function GeminiChatbot({
   setCode,
   code,
   projectId,
+  currentSlideIndex,
+  slides,
 }: {
   setCode: (val: string | ((v: string) => string)) => void
   code?: string
   projectId?: string
+  currentSlideIndex?: number
+  slides?: string[]
 }) {
-  const [autoAction, setAutoAction] = useState<AutoAction>("off")
-  const [messages, setMessages] = useState<ChatMsg[]>([])
+  const storageKey = projectId ? `chat_${projectId}` : null
+
+  const [messages, setMessages] = useState<ChatMsg[]>(() => {
+    if (!storageKey) return []
+    try {
+      const saved = localStorage.getItem(storageKey)
+      return saved ? JSON.parse(saved) : []
+    } catch {
+      return []
+    }
+  })
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<{ [k: string]: string }>({})
-  const [customSystem, setCustomSystem] = useState("")
-  const [showSettings, setShowSettings] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (storageKey && messages.length > 0) {
+      localStorage.setItem(storageKey, JSON.stringify(messages))
+    }
+  }, [messages, storageKey])
 
   const baseSystemInstruction = useMemo(() => {
     return [
@@ -100,11 +130,6 @@ export default function GeminiChatbot({
       "If the user just wants to chat, answer briefly and clearly in English.",
     ].join(" ")
   }, [])
-
-  const systemInstruction = useMemo(() => {
-    const extra = customSystem?.trim() ? ` ${customSystem.trim()}` : ""
-    return baseSystemInstruction + extra
-  }, [baseSystemInstruction, customSystem])
 
   const sendMessage = async () => {
     if (!input.trim()) return
@@ -117,25 +142,49 @@ export default function GeminiChatbot({
     try {
       const decision = classifyPrompt(userMsg)
       let message: string
-      if (decision === "slides") {
-        message = `Return ONLY valid HTML for a presentation (slides). No explanations, no markdown. Content: ${userMsg}`
+      let systemPrompt = baseSystemInstruction
+      let contextToSend = code ? code.slice(-12000) : undefined
+
+      if (slides && currentSlideIndex !== undefined && slides[currentSlideIndex]) {
+        const currentSlide = slides[currentSlideIndex]
+        systemPrompt = SLIDES_SYSTEM_PROMPT
+        contextToSend = currentSlide
+        message = `Edit this slide. Current slide HTML:\n${currentSlide}\n\nUser request: ${userMsg}\n\nReturn ONLY the modified <section> HTML, nothing else.`
+      } else if (decision === "slides") {
+        systemPrompt = SLIDES_SYSTEM_PROMPT
+        message = `Create a presentation about: ${userMsg}. Include relevant images from Unsplash using keywords that match the topic. Use varied layouts.`
       } else if (decision === "code") {
         message = ["Return a single markdown code block (```<language>) and nothing else.", "If the language is HTML and it makes sense, return a full document.", "", "Spec:", userMsg].join("\n")
       } else {
         message = userMsg
       }
-      const body: any = { system: systemInstruction, mode: "auto", message, context: code ? code.slice(-12000) : undefined, history: messages.slice(-10) }
-      const res = await fetch(`${urlbackend}/gemini`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+
+      const body: any = {
+        system: systemPrompt,
+        mode: "auto",
+        message,
+        context: contextToSend,
+        history: messages.slice(-10)
+      }
+
+      const res = await fetch(`${urlbackend}/gemini`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      })
+
       const data = await res.json()
       if (!res.ok) {
         setErrors({ form: data?.error || "Error connecting to Gemini" })
         return
       }
+
       const raw = normalizeLLMText(data)
       const codeBlock = extractFirstCodeBlock(raw)
       const htmlOnly = !codeBlock && looksLikeHTML(raw)
       let assistantTextToShow = raw
       let snippetToApply: string | null = null
+
       if (codeBlock) {
         assistantTextToShow = "```" + (codeBlock.lang || "") + "\n" + codeBlock.code + "\n```"
         snippetToApply = codeBlock.code
@@ -143,13 +192,11 @@ export default function GeminiChatbot({
         assistantTextToShow = raw
         snippetToApply = raw
       }
+
       setMessages((prev) => [...prev, { role: "assistant", content: assistantTextToShow }])
-      if (snippetToApply && autoAction !== "off") {
-        if (autoAction === "insert") {
-          setCode((prev: any) => (prev ? `${prev}\n${snippetToApply}` : snippetToApply))
-        } else if (autoAction === "replace") {
-          setCode(snippetToApply)
-        }
+
+      if (snippetToApply && slides && currentSlideIndex !== undefined) {
+        replaceCurrentSlide(snippetToApply)
       }
     } catch {
       setErrors({ form: "Connection error" })
@@ -161,7 +208,16 @@ export default function GeminiChatbot({
   const insertIntoEditor = (snippet: string) => {
     setCode((prev: any) => (prev ? `${prev}\n${snippet}` : snippet))
   }
+
   const replaceEditor = (snippet: string) => setCode(snippet)
+
+  const replaceCurrentSlide = (newSlideHtml: string) => {
+    if (!slides || currentSlideIndex === undefined) return
+    const updatedSlides = [...slides]
+    updatedSlides[currentSlideIndex] = newSlideHtml
+    const newDoc = `<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>${updatedSlides.join("\n")}</body></html>`
+    setCode(newDoc)
+  }
 
   const findLastAssistantSnippet = (): string | null => {
     for (let i = messages.length - 1; i >= 0; i--) {
@@ -187,13 +243,22 @@ export default function GeminiChatbot({
     try {
       setSaving(true)
       setSaveMsg(null)
-      const slides = htmlToSlides(snippet).map((html) => ({ html }))
-      const created = await createSlidesBulk(urlbackend, projectId, slides)
-      setSaveMsg(`Saved ${Array.isArray(created) ? created.length : 0} slides`)
+      const slidesList = extractSlides(snippet)
+      const slidesToSave = slidesList.map((html) => ({ html }))
+      await createSlidesBulk(urlbackend, projectId, slidesToSave)
+      setSaveMsg(`Saved ${slidesToSave.length} slide${slidesToSave.length > 1 ? 's' : ''}`)
+      replaceEditor(snippet)
     } catch (e: any) {
       setSaveMsg(e?.message || "Failed to save slides")
     } finally {
       setSaving(false)
+    }
+  }
+
+  const clearChat = () => {
+    setMessages([])
+    if (storageKey) {
+      localStorage.removeItem(storageKey)
     }
   }
 
@@ -203,87 +268,109 @@ export default function GeminiChatbot({
     if (!snippet) return null
     const canSave = Boolean(projectId)
     return (
-      <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
-        <button onClick={() => insertIntoEditor(snippet)} className="rounded-md px-2 py-1 text-sm" style={{ background: "#2e7d32", color: "white", border: "none" }}>
+      <div className="flex gap-2 mt-2 flex-wrap">
+        <button
+          onClick={() => insertIntoEditor(snippet)}
+          className="px-3 py-1.5 text-xs font-medium bg-green-700 hover:bg-green-600 text-white rounded transition-colors"
+        >
           Insert
         </button>
-        <button onClick={() => replaceEditor(snippet)} className="rounded-md px-2 py-1 text-sm" style={{ background: "#1565c0", color: "white", border: "none" }}>
+        <button
+          onClick={() => replaceEditor(snippet)}
+          className="px-3 py-1.5 text-xs font-medium bg-blue-700 hover:bg-blue-600 text-white rounded transition-colors"
+        >
           Replace
         </button>
-        <button onClick={() => navigator.clipboard.writeText(snippet)} className="rounded-md px-2 py-1 text-sm" style={{ background: "#424242", color: "white", border: "none" }}>
+        <button
+          onClick={() => navigator.clipboard.writeText(snippet)}
+          className="px-3 py-1.5 text-xs font-medium bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors"
+        >
           Copy
         </button>
-        <button onClick={saveAssistantAsSlides} disabled={!canSave || saving} className="rounded-md px-2 py-1 text-sm" style={{ background: canSave ? "#9c27b0" : "#5e5e5e", color: "white", border: "none", opacity: saving ? 0.7 : 1 }}>
-          {saving ? "Saving…" : "Save as slides"}
+        <button
+          onClick={saveAssistantAsSlides}
+          disabled={!canSave || saving}
+          className="px-3 py-1.5 text-xs font-medium bg-purple-700 hover:bg-purple-600 disabled:bg-gray-700 disabled:opacity-50 text-white rounded transition-colors"
+        >
+          {saving ? "Saving…" : "Apply & Save"}
         </button>
       </div>
     )
   }
 
   return (
-    <div style={{ width: 380, maxWidth: "100vw", height: "100vh", background: "#181818", color: "white", display: "flex", flexDirection: "column", borderLeft: "1px solid #333", overflow: "hidden" }}>
-      <div style={{ display: "flex", gap: 10, alignItems: "center", padding: 12, borderBottom: "1px solid #333" }}>
-        <button onClick={() => setShowSettings((v) => !v)} style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #444", cursor: "pointer", background: "#222", color: "#ddd", fontWeight: 700 }}>
-          Settings
-        </button>
-        <label style={{ fontSize: 12, color: "#9e9e9e" }}>
-          Auto-apply:&nbsp;
-          <select value={autoAction} onChange={(e) => setAutoAction(e.target.value as AutoAction)} style={{ background: "#222", color: "white", border: "1px solid #444", borderRadius: 6, padding: "4px 6px" }}>
-            <option value="off">Off</option>
-            <option value="insert">Insert</option>
-            <option value="replace">Replace</option>
-          </select>
-        </label>
+    <div className="w-full h-full flex flex-col bg-[#1a1a1a] text-gray-100">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+        <h2 className="text-base font-semibold">🤖 AI Assistant</h2>
+        {messages.length > 0 && (
+          <button
+            onClick={clearChat}
+            className="px-3 py-1.5 text-xs font-medium bg-red-900/30 hover:bg-red-900/50 text-red-400 rounded transition-colors"
+          >
+            Clear Chat
+          </button>
+        )}
       </div>
 
-      {showSettings && (
-        <div style={{ padding: 12, borderBottom: "1px solid #333" }}>
-          <div style={{ fontSize: 12, color: "#9e9e9e", marginBottom: 6 }}>Custom system instructions (optional)</div>
-          <textarea value={customSystem} onChange={(e) => setCustomSystem(e.target.value)} rows={3} style={{ width: "100%", resize: "none", background: "#222", color: "white", borderRadius: 6, border: "1px solid #444", padding: 10 }} placeholder="e.g., Prefer Tailwind CSS, be concise, adopt a functional React style…" />
-        </div>
-      )}
-
-      <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 text-sm">
+        {messages.length === 0 && (
+          <div className="text-center text-gray-500 mt-12 space-y-2">
+            <p className="text-sm">💡 Ask me to create slides, write code, or chat</p>
+            <p className="text-xs text-gray-600">Your chat history is saved per project</p>
+          </div>
+        )}
         {messages.map((msg, i) => {
           const isAssistant = msg.role === "assistant"
           const looksLikeCode = msg.content.includes("```") || looksLikeHTML(msg.content)
           return (
-            <div key={i} style={{ marginBottom: 14 }}>
-              <div style={{ fontWeight: "bold", color: isAssistant ? "#81c784" : "#4fc3f7", marginBottom: 4 }}>{isAssistant ? "Assistant" : "You"}</div>
+            <div key={i} className="space-y-1.5">
+              <div className={`text-xs font-semibold ${isAssistant ? "text-green-400" : "text-blue-400"}`}>
+                {isAssistant ? "🤖 Assistant" : "👤 You"}
+              </div>
               {looksLikeCode ? (
-                <pre style={{ background: "#222", padding: 10, borderRadius: 6, whiteSpace: "pre-wrap", overflowX: "auto" }}>{msg.content}</pre>
+                <pre className="bg-[#0d1117] p-3 rounded-lg text-xs overflow-x-auto border border-gray-800 font-mono whitespace-pre-wrap">
+                  {msg.content}
+                </pre>
               ) : (
-                <div style={{ lineHeight: 1.4 }}>{msg.content}</div>
+                <div className="text-sm leading-relaxed text-gray-300 whitespace-pre-wrap">{msg.content}</div>
               )}
               {isAssistant && renderActionsForAssistant(msg.content)}
             </div>
           )
         })}
-        {errors.form && <div style={{ color: "tomato" }}>{errors.form}</div>}
-        {saveMsg && <div style={{ color: "#b39ddb", marginTop: 6 }}>{saveMsg}</div>}
+        {loading && (
+          <div className="flex items-center gap-2 text-gray-400 text-sm">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            Processing...
+          </div>
+        )}
+        {errors.form && <div className="text-red-400 text-sm">{errors.form}</div>}
+        {saveMsg && <div className="text-purple-400 text-sm">{saveMsg}</div>}
       </div>
 
-      <div style={{ padding: 12, borderTop: "1px solid #333" }}>
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          rows={3}
-          style={{ width: "100%", resize: "none", background: "#222", color: "white", borderRadius: 6, border: "none", marginBottom: 8, padding: 10 }}
-          placeholder="Type your request (the bot will auto-detect chat vs code vs slides)…"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey && !loading) {
-              e.preventDefault()
-              sendMessage()
-            }
-            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && !loading) {
-              e.preventDefault()
-              sendMessage()
-            }
-          }}
-        />
-        <button onClick={sendMessage} disabled={loading || !input.trim()} style={{ width: "100%", background: "#4fc3f7", color: "#181818", border: "none", borderRadius: 6, padding: 10, fontWeight: "bold" }}>
-          {loading ? "Sending…" : "Send"}
-        </button>
+      <div className="p-4 border-t border-gray-800">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            className="flex-1 bg-[#0d1117] text-gray-100 rounded-lg border border-gray-700 px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+            placeholder="Ask me anything..."
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !loading) {
+                e.preventDefault()
+                sendMessage()
+              }
+            }}
+          />
+          <button
+            onClick={sendMessage}
+            disabled={loading || !input.trim()}
+            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:opacity-50 text-white rounded-lg px-6 py-2.5 font-medium text-sm transition-colors disabled:cursor-not-allowed"
+          >
+            {loading ? "..." : "Send"}
+          </button>
+        </div>
       </div>
     </div>
   )

@@ -12,7 +12,7 @@ function ensureDataUrl(v?: string | null): string | undefined {
   return `data:image/svg+xml;base64,${v}`;
 }
 
-export default function UserPicture({ avatar, size = 48 }: Props) {
+export default function UserPicture({ avatar, size = 38 }: Props) {
   const localUser = useMemo(() => {
     try {
       return JSON.parse(localStorage.getItem("user") || "null");
