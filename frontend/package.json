@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "gsap": "^3.13.0",
+    "react-typed": "^2.0.12"
+  }
+}
