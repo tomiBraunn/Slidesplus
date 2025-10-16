@@ -14,42 +14,43 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen w-full bg-[#050505] text-white overflow-x-hidden">
-      {}
-      <header className="fixed top-0 left-0 w-full px-10 py-6 flex justify-between items-center z-50 bg-black/20 backdrop-blur-md">
-        <h1 className="text-2xl font-bold tracking-wide">S+</h1>
+      { }
+      <header className="fixed w-full p-2 flex justify-between items-center z-50 glassBackground">
+        {/* bg-[#0f0f0f] border-b border-[#2B2B2B] */}
+        <h1 className="text-2xl font-bold tracking-wide">Slides+</h1>
         <div className="flex gap-4">
           <button
             onClick={() => navigate("/login")}
-            className="px-6 py-2 rounded-full bg-gradient-to-r from-[#249931] to-[#7182FF] hover:opacity-90 transition font-semibold"
+            className="defaultStyle p-1 rounded-md text-sm"
           >
-            Login
+            login
           </button>
           <button
             onClick={() => navigate("/signup")}
-            className="px-6 py-2 rounded-full bg-gradient-to-r from-[#249931] to-[#7182FF] hover:opacity-90 transition font-semibold"
+            className="defaultStyle p-1 rounded-md text-sm"
           >
-            Sign Up
+            sign up
           </button>
         </div>
       </header>
 
-      {}
+      { }
       <section className="h-screen flex flex-col justify-center items-center text-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#249931]/20 via-[#7182FF]/30 to-[#050505] animate-gradient-slow"></div>
+        <div className=""></div>
         <motion.h1
           className="text-5xl md:text-7xl font-extrabold mb-4 max-w-3xl z-10 leading-tight"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
         >
-        <TextType 
-  text={["Boost your presentations with S+"]}
-  typingSpeed={100}
-  pauseDuration={1000}
-  showCursor={true}
-  cursorCharacter="|"
-  loop = {true}
-/>
+          <TextType
+            text={["Boost your presentations with S+"]}
+            typingSpeed={100}
+            pauseDuration={1000}
+            showCursor={true}
+            cursorCharacter=""
+            loop={true}
+          />
 
         </motion.h1>
         <motion.h2
@@ -65,7 +66,7 @@ export default function LandingPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.6 }}
         >
-           Everything for you to make your work and experience better.
+          Everything for you to make your work and experience better.
         </motion.p>
         <motion.button
           onClick={() => navigate("/login")}
@@ -78,7 +79,7 @@ export default function LandingPage() {
         </motion.button>
       </section>
 
-      {}
+      { }
       <motion.section
         className="py-32 px-8 md:px-20 grid grid-cols-1 md:grid-cols-3 gap-10"
         initial="hidden"
@@ -116,7 +117,7 @@ export default function LandingPage() {
           </h2>
           <p className="text-white/70 mb-6">
             Clean design and colors. <br></br>
-             Easy to navigate for any user.
+            Easy to navigate for any user.
           </p>
           <button
             onClick={() => navigate("/login")}
@@ -129,11 +130,11 @@ export default function LandingPage() {
           variants={reveal}
           className="w-full md:w-[500px] h-[300px] bg-white/5 rounded-xl border border-white/10 backdrop-blur-lg flex items-center justify-center text-white/40 z-10"
         >
-           <img src={homePageImage} alt="Home Page" />
+          <img src={homePageImage} alt="Home Page" />
         </motion.div>
       </motion.section>
 
-      {}
+      { }
       <motion.section
         className="py-28 text-center bg-gradient-to-r from-[#249931]/20 via-[#7182FF]/20 to-[#050505]"
         initial="hidden"

@@ -53,7 +53,6 @@ input::placeholder {
     border: solid 1px #2B2B2B;
     color: white;
     transition: background-color 0.3s, border-color 0.3s;
-
 }
 
 .defaultStyleHover:hover {
