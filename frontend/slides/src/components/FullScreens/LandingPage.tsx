@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import TextType from "../ThirdPartyComponents/TextType/TextType";
+import homePageImage from '../../assets/homePage.png';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -127,7 +128,7 @@ export default function LandingPage() {
           variants={reveal}
           className="w-full md:w-[500px] h-[300px] bg-white/5 rounded-xl border border-white/10 backdrop-blur-lg flex items-center justify-center text-white/40 z-10"
         >
-          Preview Placeholder
+           <img src={homePageImage} alt="Home Page" />
         </motion.div>
       </motion.section>
 
@@ -140,7 +141,7 @@ export default function LandingPage() {
         variants={reveal}
       >
         <h2 className="text-4xl md:text-5xl font-bold mb-6">Get started now</h2>
-        <p className="text-white/70 mb-10">/* Alguna descripcion si pinta */</p>
+        <p className="text-white/70 mb-10">Boost your presentations with us!</p>
         <button
           onClick={() => navigate("/login")}
           className="px-10 py-3 rounded-full bg-gradient-to-r from-[#249931] to-[#7182FF] font-semibold hover:opacity-90 transition"
