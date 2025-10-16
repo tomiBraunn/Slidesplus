@@ -43,13 +43,14 @@ export default function LandingPage() {
           transition={{ duration: 1 }}
         >
         <TextType 
-  text={["Hi, welcome"]}
-  typingSpeed={140}
+  text={["Boost your presentations with S+"]}
+  typingSpeed={100}
   pauseDuration={1000}
   showCursor={true}
   cursorCharacter="|"
   loop = {true}
 />
+
         </motion.h1>
         <motion.h2
           className="text-6xl font-bold tracking-wide z-10 mb-6"
@@ -141,7 +142,7 @@ export default function LandingPage() {
         variants={reveal}
       >
         <h2 className="text-4xl md:text-5xl font-bold mb-6">Get started now</h2>
-        <p className="text-white/70 mb-10">Boost your presentations with us!</p>
+        <p className="text-white/70 mb-10">Craft ideas, not just slides.</p>
         <button
           onClick={() => navigate("/login")}
           className="px-10 py-3 rounded-full bg-gradient-to-r from-[#249931] to-[#7182FF] font-semibold hover:opacity-90 transition"
