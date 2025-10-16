@@ -45,18 +45,31 @@ function LogInForm() {
         <div className="px-6 pb-6 pt-4">
           <form onSubmit={handleSubmit} className="grid gap-6">
             <div className="flex flex-col gap-4">
-              <button
-                type="button"
-                className="w-full rounded-xl border border-[#2B2B2B] px-4 py-2.5 text-sm font-medium hover:bg-[#161616] transition cursor-pointer"
-              >
-                Login with Google
-              </button>
-              <button
-                type="button"
-                className="w-full rounded-xl border border-[#2B2B2B] px-4 py-2.5 text-sm font-medium hover:bg-[#161616] transition cursor-pointer"
-              >
-                Login with Github
-              </button>
+            <button
+  type="button"
+  className="w-full flex items-center justify-center gap-3 rounded-xl border border-[#2B2B2B] px-4 py-2.5 text-sm font-medium hover:bg-[#161616] transition cursor-pointer"
+>
+  <img
+    src="https://img.icons8.com/?size=512&id=17949&format=png"
+    alt="Google icon"
+    width={24}
+    height={24}
+  />
+  <span>Login with Google</span>
+</button>
+
+<button
+  type="button"
+  className="w-full flex items-center justify-center gap-3 rounded-xl border border-[#2B2B2B] px-4 py-2.5 text-sm font-medium hover:bg-[#161616] transition cursor-pointer mt-3"
+>
+  <img
+    src="https://cdn-icons-png.flaticon.com/512/25/25231.png"
+    alt="GitHub icon"
+    width={24}
+    height={24}
+  />
+  <span>Login with GitHub</span>
+</button>
             </div>
 
             <div className="relative text-center text-sm">

@@ -13,7 +13,8 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#050505] text-white overflow-x-hidden">
+    <div className="min-h-screen w-full bg-[#050505] text-white overflow-x-hidden cursor-text">
+
       { }
       <header className="fixed w-full p-2 flex justify-between items-center z-50 glassBackground">
         {/* bg-[#0f0f0f] border-b border-[#2B2B2B] */}
@@ -38,14 +39,14 @@ export default function LandingPage() {
       <section className="h-screen flex flex-col justify-center items-center text-center relative overflow-hidden">
         <div className=""></div>
         <motion.h1
-          className="text-5xl md:text-7xl font-extrabold mb-4 max-w-3xl z-10 leading-tight"
+          className="text-5xl md:text-7xl font-extrabold mb-4 z-10 leading-tight"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
         >
           <TextType
             text={["Boost your presentations with S+"]}
-            typingSpeed={100}
+            typingSpeed={67}
             pauseDuration={1000}
             showCursor={true}
             cursorCharacter=""
@@ -151,6 +152,7 @@ export default function LandingPage() {
           Start For Free
         </button>
       </motion.section>
+      
     </div>
   );
 }
