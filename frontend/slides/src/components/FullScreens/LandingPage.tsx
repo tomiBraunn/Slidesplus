@@ -16,7 +16,7 @@ export default function LandingPage() {
     <div className="min-h-screen w-full bg-[#050505] text-white overflow-x-hidden cursor-text">
 
       { }
-      <header className="fixed w-full p-2 flex justify-between items-center z-50 glassBackground">
+      <header className="fixed w-full p-2 flex justify-between items-center z-50">
         {/* bg-[#0f0f0f] border-b border-[#2B2B2B] */}
         <h1 className="text-2xl font-bold tracking-wide">Slides+</h1>
         <div className="flex gap-4">
@@ -24,13 +24,13 @@ export default function LandingPage() {
             onClick={() => navigate("/login")}
             className="defaultStyle p-1 rounded-md text-sm"
           >
-            login
+            Login
           </button>
           <button
             onClick={() => navigate("/signup")}
             className="defaultStyle p-1 rounded-md text-sm"
           >
-            sign up
+            Sign Up
           </button>
         </div>
       </header>
