@@ -1,4 +1,3 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import TextType from "../ThirdPartyComponents/TextType/TextType";
@@ -82,7 +81,7 @@ export default function LandingPage() {
 
       { }
       <motion.section
-        className="py-32 px-8 md:px-20 grid grid-cols-1 md:grid-cols-3 gap-10"
+        className="py-23 px-8 md:px-20 grid grid-cols-1 md:grid-cols-3 gap-10"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.3 }}

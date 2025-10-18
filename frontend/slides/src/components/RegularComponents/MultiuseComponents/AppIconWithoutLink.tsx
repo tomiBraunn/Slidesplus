@@ -1,5 +1,3 @@
-import React from "react";
-
 function AppIconWithoutLink() {
     return (
         <div className="flex items-start justify-start flex-column">

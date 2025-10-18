@@ -1,5 +1,3 @@
-import React from 'react';
-import AppIconWithoutLink from '../RegularComponents/MultiuseComponents/AppIconWithoutLink';
 import SignUpForm from '../RegularComponents/MultiuseComponents/SignUpForm';
 import Threads from "../ThirdPartyComponents/Threads/Threads";
 

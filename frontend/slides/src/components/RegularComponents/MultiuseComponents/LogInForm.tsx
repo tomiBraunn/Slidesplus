@@ -4,6 +4,7 @@ import { urlbackend } from "../../../config.js";
 function LogInForm() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,34 +45,36 @@ function LogInForm() {
 
         <div className="px-6 pb-6 pt-4">
           <form onSubmit={handleSubmit} className="grid gap-6">
+            {/* Botones de login externo */}
             <div className="flex flex-col gap-4">
-            <button
-  type="button"
-  className="w-full flex items-center justify-center gap-3 rounded-xl border border-[#2B2B2B] px-4 py-2.5 text-sm font-medium hover:bg-[#161616] transition cursor-pointer"
->
-  <img
-    src="https://img.icons8.com/?size=512&id=17949&format=png"
-    alt="Google icon"
-    width={24}
-    height={24}
-  />
-  <span>Login with Google</span>
-</button>
+              <button
+                type="button"
+                className="w-full flex items-center justify-center gap-3 rounded-xl border border-[#2B2B2B] px-4 py-2.5 text-sm font-medium hover:bg-[#161616] transition cursor-pointer"
+              >
+                <img
+                  src="https://img.icons8.com/?size=512&id=17949&format=png"
+                  alt="Google icon"
+                  width={24}
+                  height={24}
+                />
+                <span>Login with Google</span>
+              </button>
 
-<button
-  type="button"
-  className="w-full flex items-center justify-center gap-3 rounded-xl border border-[#2B2B2B] px-4 py-2.5 text-sm font-medium hover:bg-[#161616] transition cursor-pointer mt-3"
->
-  <img
-    src="https://cdn-icons-png.flaticon.com/512/25/25231.png"
-    alt="GitHub icon"
-    width={24}
-    height={24}
-  />
-  <span>Login with GitHub</span>
-</button>
+              <button
+                type="button"
+                className="w-full flex items-center justify-center gap-3 rounded-xl border border-[#2B2B2B] px-4 py-2.5 text-sm font-medium hover:bg-[#161616] transition cursor-pointer mt-3"
+              >
+                <img
+                  src="https://cdn-icons-png.flaticon.com/512/25/25231.png"
+                  alt="GitHub icon"
+                  width={24}
+                  height={24}
+                />
+                <span>Login with GitHub</span>
+              </button>
             </div>
 
+            {/* Divider */}
             <div className="relative text-center text-sm">
               <span className="bg-[#0f0f0f] relative z-10 px-2 text-gray-400">
                 Or continue with
@@ -79,6 +82,7 @@ function LogInForm() {
               <div className="absolute inset-0 top-1/2 -translate-y-1/2 border-t border-[#2B2B2B]" />
             </div>
 
+            {/* Username/Email */}
             <div className="grid gap-3">
               <label htmlFor="identifier" className="text-sm font-medium">
                 Username/Email
@@ -95,7 +99,8 @@ function LogInForm() {
               />
             </div>
 
-            <div className="grid gap-3">
+            {/* Password con ojo */}
+            <div className="grid gap-3 relative">
               <div className="flex items-center">
                 <label htmlFor="password" className="text-sm font-medium">
                   Password
@@ -107,21 +112,60 @@ function LogInForm() {
                   Forgot your password?
                 </a>
               </div>
-              <input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="bg-[#121212] px-3 py-2 w-full text-sm rounded-lg border border-[#2B2B2B]
-                focus:outline-none"
-              />
+
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="bg-[#121212] px-3 py-2 w-full text-sm rounded-lg border border-[#2B2B2B]
+                  focus:outline-none pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center text-gray-400 hover:text-gray-200 w-8 h-8"
+                >
+                  {showPassword ? (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M17.94 17.94A10 10 0 0 1 12 20c-5.52 0-10-4.48-10-10 0-1.85.5-3.57 1.36-5.06" />
+                      <path d="M1 1l22 22" />
+                    </svg>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
 
             {error && (
               <p className="text-red-500 text-sm text-center">{error}</p>
             )}
 
+            {/* Login button */}
             <button
               type="submit"
               className="w-full rounded-xl px-4 py-3 font-medium text-black bg-[#d0d0d0] cursor-pointer hover:bg-[#bcbcbc] transition"
@@ -139,18 +183,6 @@ function LogInForm() {
           </form>
         </div>
       </div>
-
-      {/* <div className="text-center text-xs text-gray-400">
-        By clicking continue, you agree to our{" "}
-        <a href="#" className="underline underline-offset-4 hover:text-white">
-          Terms of Service
-        </a>{" "}
-        and{" "}
-        <a href="#" className="underline underline-offset-4 hover:text-white">
-          Privacy Policy
-        </a>
-        .
-      </div> */}
     </div>
   );
 }
