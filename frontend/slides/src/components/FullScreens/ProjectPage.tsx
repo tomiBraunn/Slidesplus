@@ -206,7 +206,7 @@ export default function ProjectPage() {
 
           <div
             onMouseDown={handleMouseDown}
-            className="w-1 bg-[#2a2a2a] hover:bg-blue-500 cursor-col-resize transition-colors relative group"
+            className="w-1 bg-[#2a2a2a hover:bg-blue-500 cursor-col-resize transition-colors relative group"
           >
             <div className="absolute inset-y-0 -left-1 -right-1" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">

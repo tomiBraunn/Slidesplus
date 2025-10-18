@@ -4,17 +4,28 @@ import Editor from "@monaco-editor/react";
 type Props = {
   code: string;
   setCode?: (val: string) => void;
+  language?: string;
 };
 
-export default function CodeEditor({ code, setCode = () => {} }: Props) {
+export default function CodeEditor({ code, setCode = () => { }, language = "html" }: Props) {
   return (
     <Editor
       height="100%"
-      width="200px"
+      width="100%"
       theme="vs-dark"
-      defaultLanguage="html"
+      language={language}
       value={code}
-      onChange={v => setCode(v || "")}
+      onChange={(v) => setCode(v || "")}
+      options={{
+        minimap: { enabled: false },
+        automaticLayout: true,
+        fontSize: 13,
+        fontFamily: '"JetBrains Mono", "Cascadia Code", Consolas, "Courier New", monospace',
+        fontLigatures: true,
+        lineHeight: 20,
+        wordWrap: "on",
+        tabSize: 2,
+      }}
     />
   );
 }

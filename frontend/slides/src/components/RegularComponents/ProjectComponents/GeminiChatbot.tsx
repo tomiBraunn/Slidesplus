@@ -33,36 +33,7 @@ function classifyPrompt(msg: string): "slides" | "code" | "chat" {
   return "chat"
 }
 
-const SLIDES_SYSTEM_PROMPT = `
-You are an expert HTML presentation designer. When creating slides:
-
-1. STRUCTURE: Each slide must be wrapped in a <section> tag with full viewport styling:
-   <section style="width:100vw; height:100vh; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                   overflow:hidden; padding:60px; box-sizing:border-box; display:flex; 
-                   flex-direction:column; justify-content:center; align-items:center; color:white;">
-     <!-- Content here -->
-   </section>
-
-2. IMAGES: Use Unsplash for images with this exact format:
-   <img src="https://source.unsplash.com/800x600/?technology,computer" 
-        style="width:500px; height:auto; border-radius:16px; box-shadow:0 20px 40px rgba(0,0,0,0.3);" 
-        alt="Technology">
-   
-   Use relevant keywords separated by commas (technology, nature, business, startup, science, etc.)
-
-3. TYPOGRAPHY:
-   - Titles: font-size:56px; font-weight:700; margin-bottom:24px;
-   - Subtitles: font-size:32px; font-weight:600; margin-bottom:20px;
-   - Body: font-size:22px; line-height:1.6;
-
-4. LAYOUTS - Hero, Image+Text, Full bg image, Grid of images
-
-5. COLORS: Use vibrant gradients
-
-6. IMPORTANT: Include at least one image from Unsplash in most slides using relevant keywords.
-
-7. RETURN: Only HTML sections, no markdown, no explanations. Multiple <section> tags for multiple slides.
-`
+const SLIDES_SYSTEM_PROMPT = `You are an elite presentation designer specializing in modern, stunning visual designs. Create presentations that look professional and captivating. Use modern gradients, glassmorphism, system fonts, and high-quality Unsplash images. Return ONLY HTML <section> tags with inline styles.`
 
 async function createSlidesBulk(apiBase: string, projectId: string, slides: { html: string }[]) {
   const token = localStorage.getItem("token")
@@ -99,28 +70,61 @@ export default function GeminiChatbot({
   currentSlideIndex?: number
   slides?: string[]
 }) {
-  const storageKey = projectId ? `chat_${projectId}` : null
-
-  const [messages, setMessages] = useState<ChatMsg[]>(() => {
-    if (!storageKey) return []
-    try {
-      const saved = localStorage.getItem(storageKey)
-      return saved ? JSON.parse(saved) : []
-    } catch {
-      return []
-    }
-  })
+  const [messages, setMessages] = useState<ChatMsg[]>([])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
+  const [loadingHistory, setLoadingHistory] = useState(true)
   const [errors, setErrors] = useState<{ [k: string]: string }>({})
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
 
   useEffect(() => {
-    if (storageKey && messages.length > 0) {
-      localStorage.setItem(storageKey, JSON.stringify(messages))
+    if (!projectId) {
+      setLoadingHistory(false)
+      return
     }
-  }, [messages, storageKey])
+
+    const token = localStorage.getItem("token")
+    if (!token) {
+      setLoadingHistory(false)
+      return
+    }
+
+    fetch(`${urlbackend}/projects/${projectId}/chat`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.ok && data.messages) {
+          setMessages(data.messages.map((m: any) => ({
+            role: m.role,
+            content: m.content
+          })))
+        }
+      })
+      .catch(err => console.error("Error loading chat history:", err))
+      .finally(() => setLoadingHistory(false))
+  }, [projectId])
+
+  const saveMessage = async (role: "user" | "assistant", content: string) => {
+    if (!projectId) return
+
+    const token = localStorage.getItem("token")
+    if (!token) return
+
+    try {
+      await fetch(`${urlbackend}/projects/${projectId}/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ role, content })
+      })
+    } catch (err) {
+      console.error("Error saving message:", err)
+    }
+  }
 
   const baseSystemInstruction = useMemo(() => {
     return [
@@ -137,7 +141,11 @@ export default function GeminiChatbot({
     setSaveMsg(null)
     setLoading(true)
     const userMsg = input.trim()
-    setMessages((prev) => [...prev, { role: "user", content: userMsg }])
+
+    const newUserMessage = { role: "user" as const, content: userMsg }
+    setMessages((prev) => [...prev, newUserMessage])
+    await saveMessage("user", userMsg)
+
     setInput("")
     try {
       const decision = classifyPrompt(userMsg)
@@ -193,7 +201,9 @@ export default function GeminiChatbot({
         snippetToApply = raw
       }
 
-      setMessages((prev) => [...prev, { role: "assistant", content: assistantTextToShow }])
+      const assistantMessage = { role: "assistant" as const, content: assistantTextToShow }
+      setMessages((prev) => [...prev, assistantMessage])
+      await saveMessage("assistant", assistantTextToShow)
 
       if (snippetToApply && slides && currentSlideIndex !== undefined) {
         replaceCurrentSlide(snippetToApply)
@@ -255,10 +265,20 @@ export default function GeminiChatbot({
     }
   }
 
-  const clearChat = () => {
-    setMessages([])
-    if (storageKey) {
-      localStorage.removeItem(storageKey)
+  const clearChat = async () => {
+    if (!projectId) return
+
+    const token = localStorage.getItem("token")
+    if (!token) return
+
+    try {
+      await fetch(`${urlbackend}/projects/${projectId}/chat`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      setMessages([])
+    } catch (err) {
+      console.error("Error clearing chat:", err)
     }
   }
 
@@ -313,12 +333,17 @@ export default function GeminiChatbot({
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4 text-sm">
-        {messages.length === 0 && (
+        {loadingHistory ? (
+          <div className="flex items-center justify-center gap-2 text-gray-400 text-sm mt-12">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            Loading chat history...
+          </div>
+        ) : messages.length === 0 ? (
           <div className="text-center text-gray-500 mt-12 space-y-2">
             <p className="text-sm">💡 Ask me to create slides, write code, or chat</p>
-            <p className="text-xs text-gray-600">Your chat history is saved per project</p>
+            <p className="text-xs text-gray-600">Your chat history is saved in the database</p>
           </div>
-        )}
+        ) : null}
         {messages.map((msg, i) => {
           const isAssistant = msg.role === "assistant"
           const looksLikeCode = msg.content.includes("```") || looksLikeHTML(msg.content)
