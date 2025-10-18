@@ -206,7 +206,7 @@ app.get("/projects/:id", auth, async (req, res) => {
   if (!pool) return res.status(500).json({ message: "Database not configured" })
   try {
     const q = await pool.query(
-      `SELECT id, owner_id, name, document, created_at, updated_at
+      `SELECT id, owner_id, name, document, chat_history, created_at, updated_at
        FROM projects
        WHERE id=$1 AND owner_id=$2`,
       [req.params.id, req.user.sub]
@@ -286,6 +286,102 @@ app.post("/projects/:id/slides", auth, async (req, res) => {
     res.status(201).json({ ok: true, slides: insertedSlides });
   } catch (err) {
     console.error("Error saving slides:", err);
+    res.status(500).json({
+      message: "Internal error",
+      detail: err instanceof Error ? err.message : String(err)
+    });
+  }
+});
+
+app.get("/projects/:id/chat", auth, async (req, res) => {
+  if (!pool) return res.status(500).json({ message: "Database not configured" });
+  try {
+    const projectId = req.params.id;
+
+    const q = await pool.query(
+      `SELECT chat_history FROM projects WHERE id=$1 AND owner_id=$2`,
+      [projectId, req.user.sub]
+    );
+
+    if (q.rowCount === 0) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    const chatHistory = q.rows[0].chat_history || [];
+    res.json({ ok: true, messages: chatHistory });
+  } catch (err) {
+    console.error("Error fetching chat:", err);
+    res.status(500).json({
+      message: "Internal error",
+      detail: err instanceof Error ? err.message : String(err)
+    });
+  }
+});
+
+app.post("/projects/:id/chat", auth, async (req, res) => {
+  if (!pool) return res.status(500).json({ message: "Database not configured" });
+  try {
+    const projectId = req.params.id;
+    const { role, content } = req.body ?? {};
+
+    if (!role || !content) {
+      return res.status(400).json({ message: "Missing role or content" });
+    }
+
+    if (!["user", "assistant"].includes(role)) {
+      return res.status(400).json({ message: "Invalid role" });
+    }
+
+    const newMessage = {
+      role,
+      content,
+      created_at: new Date().toISOString()
+    };
+
+    const q = await pool.query(
+      `UPDATE projects 
+       SET chat_history = COALESCE(chat_history, '[]'::jsonb) || $1::jsonb,
+           updated_at = NOW()
+       WHERE id=$2 AND owner_id=$3
+       RETURNING chat_history`,
+      [JSON.stringify(newMessage), projectId, req.user.sub]
+    );
+
+    if (q.rowCount === 0) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    res.status(201).json({ ok: true, message: newMessage });
+  } catch (err) {
+    console.error("Error saving chat message:", err);
+    res.status(500).json({
+      message: "Internal error",
+      detail: err instanceof Error ? err.message : String(err)
+    });
+  }
+});
+
+app.delete("/projects/:id/chat", auth, async (req, res) => {
+  if (!pool) return res.status(500).json({ message: "Database not configured" });
+  try {
+    const projectId = req.params.id;
+
+    const q = await pool.query(
+      `UPDATE projects 
+       SET chat_history = '[]'::jsonb,
+           updated_at = NOW()
+       WHERE id=$1 AND owner_id=$2
+       RETURNING id`,
+      [projectId, req.user.sub]
+    );
+
+    if (q.rowCount === 0) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    res.json({ ok: true, message: "Chat history cleared" });
+  } catch (err) {
+    console.error("Error clearing chat:", err);
     res.status(500).json({
       message: "Internal error",
       detail: err instanceof Error ? err.message : String(err)
