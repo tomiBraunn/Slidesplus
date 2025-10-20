@@ -17,14 +17,14 @@ export default function CodeEditor({ code, setCode = () => { }, language = "html
       value={code}
       onChange={(v) => setCode(v || "")}
       options={{
-        minimap: { enabled: false },
+        minimap: { enabled: true },
         automaticLayout: true,
-        fontSize: 13,
+        fontSize: 14,
         fontFamily: '"JetBrains Mono", "Cascadia Code", Consolas, "Courier New", monospace',
         fontLigatures: true,
         lineHeight: 20,
-        wordWrap: "on",
-        tabSize: 2,
+        wordWrap: "off",
+        tabSize: 3,
       }}
     />
   );
