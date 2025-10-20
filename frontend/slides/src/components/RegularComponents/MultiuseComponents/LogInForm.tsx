@@ -99,7 +99,7 @@ function LogInForm() {
               />
             </div>
 
-            {/* Password con ojo */}
+            {/* Password con ojito de Material Symbols */}
             <div className="grid gap-3 relative">
               <div className="flex items-center">
                 <label htmlFor="password" className="text-sm font-medium">
@@ -128,35 +128,12 @@ function LogInForm() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center text-gray-400 hover:text-gray-200 w-8 h-8"
                 >
-                  {showPassword ? (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M17.94 17.94A10 10 0 0 1 12 20c-5.52 0-10-4.48-10-10 0-1.85.5-3.57 1.36-5.06" />
-                      <path d="M1 1l22 22" />
-                    </svg>
-                  ) : (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                  )}
+                  <span
+                    className="material-symbols-outlined text-[22px]"
+                    style={{ fontSize: "22px" }}
+                  >
+                    {showPassword ? "visibility_off" : "visibility"}
+                  </span>
                 </button>
               </div>
             </div>
