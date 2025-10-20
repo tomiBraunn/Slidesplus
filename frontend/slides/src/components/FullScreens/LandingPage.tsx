@@ -6,9 +6,16 @@ import homePageImage from "../../assets/homePage.png";
 export default function LandingPage() {
   const navigate = useNavigate();
 
-  const reveal = {
-    hidden: { opacity: 0, y: 40 },
-    visible: { opacity: 1, y: 0 },
+  const sectionReveal = {
+    hidden: { opacity: 0, y: 80 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 1,
+        ease: "easeOut",
+      },
+    },
   };
 
   return (
@@ -16,7 +23,7 @@ export default function LandingPage() {
       {/* Header */}
       <header className="fixed w-full p-2 flex justify-between items-center z-50">
         <h1 className="text-2xl font-bold tracking-wide">Slides+</h1>
-        <div className="flex gap-4">
+        <div className="flex gap-4 mr-4">
           <button
             onClick={() => navigate("/login")}
             className="defaultStyle p-1 rounded-md text-sm"
@@ -87,11 +94,11 @@ export default function LandingPage() {
 
       {/* Features Section */}
       <motion.section
-        className="py-23 px-8 md:px-20 grid grid-cols-1 md:grid-cols-3 gap-10"
+        className="py-40 px-8 md:px-20 grid grid-cols-1 md:grid-cols-3 gap-10"
+        variants={sectionReveal}
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: true, amount: 0.3 }}
-        transition={{ staggerChildren: 0.25 }}
+        viewport={{ once: true, amount: 0.4 }}
       >
         {[
           { title: "Fast Editor", desc: "Real-time editing." },
@@ -100,7 +107,7 @@ export default function LandingPage() {
         ].map((f, i) => (
           <motion.div
             key={i}
-            variants={reveal}
+            variants={sectionReveal}
             className="bg-white/5 backdrop-blur-xl rounded-2xl p-8 text-center border border-white/10 hover:-translate-y-2 transition"
           >
             <h3 className="text-2xl font-semibold mb-3">{f.title}</h3>
@@ -109,15 +116,33 @@ export default function LandingPage() {
         ))}
       </motion.section>
 
+      {/* Extra Section to Make Landing Longer */}
+      <motion.section
+        className="py-52 flex flex-col items-center justify-center text-center relative"
+        variants={sectionReveal}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.4 }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-[#249931]/10 to-[#7182FF]/10 blur-3xl"></div>
+        <motion.h2 className="text-4xl font-bold mb-6 z-10">
+          Present smarter. Do it faster.
+        </motion.h2>
+        <motion.p className="text-white/70 max-w-2xl z-10">
+          Our platform adapts to you. <br></br>Integrate AI into your workflow and present like a pro.
+        </motion.p>
+      </motion.section>
+
       {/* Preview Section */}
       <motion.section
         className="py-40 px-10 flex flex-col md:flex-row items-center justify-center gap-12 relative overflow-hidden"
+        variants={sectionReveal}
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: true, amount: 0.3 }}
+        viewport={{ once: true, amount: 0.4 }}
       >
         <div className="absolute inset-0 bg-gradient-to-tr from-[#7182FF]/15 to-[#249931]/15 blur-3xl"></div>
-        <motion.div variants={reveal} className="max-w-lg z-10">
+        <motion.div variants={sectionReveal} className="max-w-lg z-10">
           <h2 className="text-4xl font-bold mb-4 leading-snug">
             Our Home with UX/UI.
           </h2>
@@ -133,7 +158,7 @@ export default function LandingPage() {
           </button>
         </motion.div>
         <motion.div
-          variants={reveal}
+          variants={sectionReveal}
           className="w-full md:w-[500px] h-[300px] bg-white/5 rounded-xl border border-white/10 backdrop-blur-lg flex items-center justify-center text-white/40 z-10"
         >
           <img src={homePageImage} alt="Home Page" />
@@ -142,13 +167,15 @@ export default function LandingPage() {
 
       {/* CTA Section */}
       <motion.section
-        className="py-28 text-center bg-gradient-to-r from-[#249931]/20 via-[#7182FF]/20 to-[#050505]"
+        className="py-40 text-center bg-gradient-to-r from-[#249931]/20 via-[#7182FF]/20 to-[#050505]"
+        variants={sectionReveal}
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: true, amount: 0.3 }}
-        variants={reveal}
+        viewport={{ once: true, amount: 0.4 }}
       >
-        <h2 className="text-4xl md:text-5xl font-bold mb-6">Get started now</h2>
+        <h2 className="text-4xl md:text-5xl font-bold mb-6">
+          Get started now
+        </h2>
         <p className="text-white/70 mb-10">Craft ideas, not just slides.</p>
         <button
           onClick={() => navigate("/login")}
