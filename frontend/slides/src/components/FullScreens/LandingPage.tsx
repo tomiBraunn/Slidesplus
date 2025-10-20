@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import TextType from "../ThirdPartyComponents/TextType/TextType";
-import homePageImage from '../../assets/homePage.png';
+import homePageImage from "../../assets/homePage.png";
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -13,10 +13,8 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen w-full bg-[#050505] text-white overflow-x-hidden cursor-text">
-
-      { }
+      {/* Header */}
       <header className="fixed w-full p-2 flex justify-between items-center z-50">
-        {/* bg-[#0f0f0f] border-b border-[#2B2B2B] */}
         <h1 className="text-2xl font-bold tracking-wide">Slides+</h1>
         <div className="flex gap-4">
           <button
@@ -34,9 +32,8 @@ export default function LandingPage() {
         </div>
       </header>
 
-      { }
+      {/* Hero Section */}
       <section className="h-screen flex flex-col justify-center items-center text-center relative overflow-hidden">
-        <div className=""></div>
         <motion.h1
           className="text-5xl md:text-7xl font-extrabold mb-4 z-10 leading-tight"
           initial={{ opacity: 0, y: 30 }}
@@ -51,15 +48,7 @@ export default function LandingPage() {
             cursorCharacter=""
             loop={true}
           />
-
         </motion.h1>
-        <motion.h2
-          className="text-6xl font-bold tracking-wide z-10 mb-6"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.4 }}
-        >
-        </motion.h2>
         <motion.p
           className="text-white/70 text-lg max-w-xl z-10"
           initial={{ opacity: 0, y: 30 }}
@@ -77,9 +66,26 @@ export default function LandingPage() {
         >
           Get Started
         </motion.button>
+
+        {/* Scroll Indicator */}
+        <motion.div
+          className="absolute bottom-8 flex flex-col items-center z-10"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.5 }}
+        >
+          <motion.div
+            animate={{ y: [0, 10, 0] }}
+            transition={{ repeat: Infinity, duration: 1.5 }}
+            className="text-white/60 text-2xl"
+          >
+            ↓
+          </motion.div>
+          <span className="text-xs text-white/50 mt-1">Scroll Down</span>
+        </motion.div>
       </section>
 
-      { }
+      {/* Features Section */}
       <motion.section
         className="py-23 px-8 md:px-20 grid grid-cols-1 md:grid-cols-3 gap-10"
         initial="hidden"
@@ -90,7 +96,7 @@ export default function LandingPage() {
         {[
           { title: "Fast Editor", desc: "Real-time editing." },
           { title: "Work with AI", desc: "We implemented Gemini-AI to make your work easy." },
-          { title: "Cloud Based", desc: "Access anywhere, anytime." }
+          { title: "Cloud Based", desc: "Access anywhere, anytime." },
         ].map((f, i) => (
           <motion.div
             key={i}
@@ -116,7 +122,7 @@ export default function LandingPage() {
             Our Home with UX/UI.
           </h2>
           <p className="text-white/70 mb-6">
-            Clean design and colors. <br></br>
+            Clean design and colors. <br />
             Easy to navigate for any user.
           </p>
           <button
@@ -134,7 +140,7 @@ export default function LandingPage() {
         </motion.div>
       </motion.section>
 
-      { }
+      {/* CTA Section */}
       <motion.section
         className="py-28 text-center bg-gradient-to-r from-[#249931]/20 via-[#7182FF]/20 to-[#050505]"
         initial="hidden"
@@ -151,7 +157,6 @@ export default function LandingPage() {
           Start For Free
         </button>
       </motion.section>
-      
     </div>
   );
 }
