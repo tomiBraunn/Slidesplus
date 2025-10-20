@@ -1,5 +1,3 @@
-import React from 'react';
-
 function SlideTile() {
     return (
         <div className='presentationComponentsStyleBorderLess w-full'>

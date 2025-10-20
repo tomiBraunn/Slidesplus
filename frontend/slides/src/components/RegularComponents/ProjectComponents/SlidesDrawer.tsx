@@ -1,4 +1,3 @@
-import React from 'react';
 import SlidesDrawerController from "./SlidesDrawerController";
 import SlideTile from "./SlideTile";
 
