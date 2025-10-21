@@ -65,7 +65,7 @@ function SettingsModal({ onClose }: Props) {
               className="flex items-center gap-3"
             >
               <motion.span
-                animate={{ rotate: [0, 90, 0] }}
+                animate={{ rotate: [0, 180, 0] }}
                 transition={{ repeat: Infinity, duration: 8, ease: "linear" }}
                 className="material-symbols-outlined text-[#8a8aff]"
                 style={{ fontSize: 30 }}
