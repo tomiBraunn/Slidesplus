@@ -9,10 +9,11 @@ function ProjectTile({ name, description, onClick, listMode = false }: Props) {
     return (
         <button
             onClick={onClick}
-            className={`rounded-xl defaultStyle defaultStyleHover w-full cursor-pointer ${listMode
-                ? "flex flex-row items-center py-2 px-3 gap-3 w-full rounded-full"
-                : "flex flex-col items-start justify-start gap-2 p-3 text-left"
-                }`}
+            className={`rounded-xl defaultStyle defaultStyleHover w-full cursor-pointer ${
+                listMode
+                    ? "flex flex-row items-center py-2 px-3 gap-3 rounded-full"
+                    : "flex flex-col items-start justify-start gap-2 p-3 text-left"
+            }`}
         >
             <span
                 className="material-symbols-outlined aspect-square shrink-0"
@@ -22,24 +23,29 @@ function ProjectTile({ name, description, onClick, listMode = false }: Props) {
             </span>
 
             <div
-                className={`flex ${listMode
-                    ? "flex-row items-center justify-start w-full gap-3"
-                    : "flex-col items-start gap-1 w-full"
-                    }`}
+                className={`flex w-full min-w-0 ${
+                    listMode
+                        ? "flex-row items-center justify-start gap-3"
+                        : "flex-col items-start gap-1"
+                }`}
             >
                 <p
-                    className={`truncate ${listMode
-                        ? "text-[clamp(14px,1.5vw,20px)]"
-                        : "text-[clamp(16px,2vw,32px)]"
-                        }`}
+                    className={`truncate w-full min-w-0 ${
+                        listMode
+                            ? "text-[clamp(14px,1.5vw,20px)]"
+                            : "text-[clamp(16px,2vw,32px)]"
+                    }`}
+                    title={name}
                 >
                     {name}
                 </p>
                 <p
-                    className={`truncate ${listMode
-                        ? "text-[clamp(10px,1vw,14px)] text-[#999999]"
-                        : "text-[clamp(12px,1.5vw,16px)] text-[#999999]"
-                        }`}
+                    className={`truncate w-full min-w-0 ${
+                        listMode
+                            ? "text-[clamp(10px,1vw,14px)] text-[#999999]"
+                            : "text-[clamp(12px,1.5vw,16px)] text-[#999999]"
+                    }`}
+                    title={description}
                 >
                     {description}
                 </p>

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { urlbackend } from "../../../config.js";
 
 type Props = {
@@ -9,9 +10,7 @@ function SettingsModal({ onClose }: Props) {
   const [loading, setLoading] = useState(false);
 
   const handleCleanAllProjects = async () => {
-    if (!confirm("Are you sure you want to delete all projects? This action cannot be undone.")) {
-      return;
-    }
+    if (!confirm("Are you sure you want to delete all projects? This action cannot be undone.")) return;
 
     setLoading(true);
     try {
@@ -41,50 +40,76 @@ function SettingsModal({ onClose }: Props) {
   };
 
   return (
-    <div className="fixed z-50 inset-0 flex items-center justify-center bg-black/40 transition-[backdrop-filter,opacity] duration-200 ease-out opacity-100 backdrop-blur-xl">
-      <div className="text-white rounded-xl defaultStyle card-animate w-[70vw] max-w-[1100px] max-h-[85vh] overflow-hidden flex flex-col border border-white/10 bg-[#0b0b0bcc] transform transition-all duration-200 ease-out backdrop-bl-sm opacity-100 scale-100">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-2 w-full p-4">
-          <div className="flex items-start flex-col">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-white" style={{ fontSize: 35 }}>
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-lg"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        <motion.div
+          initial={{ y: 50, opacity: 0, scale: 0.9 }}
+          animate={{ y: 0, opacity: 1, scale: 1 }}
+          exit={{ y: 50, opacity: 0, scale: 0.9 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+          className="relative w-[70vw] max-w-[600px] rounded-2xl border border-white/10 bg-gradient-to-br from-[#0b0b0b]/90 to-[#101010]/90 shadow-2xl backdrop-blur-xl p-6 text-white"
+        >
+          {}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-[#8a8aff]" style={{ fontSize: 30 }}>
                 settings
               </span>
-              <p className="text-white font-medium text-lg">Settings</p>
+              <div>
+                <h2 className="text-xl font-semibold">Settings</h2>
+                <p className="text-sm text-white/60">Program Options</p>
+              </div>
             </div>
-            <p className="text-[#999999] text-sm">Options</p>
-          </div>
-          <button
-            className="flex items-center justify-center rounded-full p-2 hover:bg-white/10 text-white"
-            aria-label="Close"
-            title="Close"
-            onClick={onClose}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 22 }}>
-              close
-            </span>
-          </button>
-        </div>
 
-        {}
-        <div className="flex items-start justify-start gap-2 w-full h-full px-4 pb-2">
-          <div className="text-white rounded-xl border border-[#2B2B2B] bg-[#0f0f0f] w-full p-4 flex flex-col gap-3">
-            <button className="text-left px-4 py-2 rounded hover:bg-[#222]">Profile Picture</button>
-            <button className="text-left px-4 py-2 rounded hover:bg-[#222]">Change Info</button>
-            <button className="text-left px-4 py-2 rounded hover:bg-[#222]">Language</button>
-            <button className="text-left px-4 py-2 rounded hover:bg-[#222]">Export Data</button>
+            <button
+              onClick={onClose}
+              className="flex items-center justify-center rounded-full p-2 hover:bg-white/10 transition"
+              aria-label="Close"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 22 }}>
+                close
+              </span>
+            </button>
+          </div>
+
+          {}
+          <div className="w-full h-px bg-white/10 mb-4" />
+
+          {}
+          <div className="flex flex-col gap-2">
+            {[
+              { label: "Profile Picture", color: "text-white" },
+              { label: "Change Info", color: "text-white" },
+              { label: "Language", color: "text-white" },
+              { label: "Export Data", color: "text-white" },
+            ].map((item, index) => (
+              <button
+                key={index}
+                className={`w-full text-left px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 hover:pl-5 transition-all duration-200 ${item.color}`}
+              >
+                {item.label}
+              </button>
+            ))}
+
             <button
               onClick={handleCleanAllProjects}
               disabled={loading}
-              className="text-left px-4 py-2 rounded text-red-500 hover:bg-[#222] disabled:opacity-60"
+              className="w-full text-left px-4 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 hover:pl-5 text-red-400 transition-all duration-200 disabled:opacity-60"
             >
               {loading ? "Deleting..." : "Clean all projects"}
             </button>
-            <button className="text-left px-4 py-2 rounded text-red-500 hover:bg-[#222]">Sign Out</button>
           </div>
-        </div>
-      </div>
-    </div>
+
+          {}
+          <div className="absolute inset-0 rounded-2xl pointer-events-none border border-white/5 shadow-[0_0_30px_#7182ff15]" />
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 }
 
