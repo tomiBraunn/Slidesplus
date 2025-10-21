@@ -11,35 +11,30 @@ export default function LandingPage() {
     visible: {
       opacity: 1,
       y: 0,
-      transition: {
-        duration: 1,
-        ease: "easeOut",
-      },
+      transition: { duration: 1, ease: "easeOut" },
     },
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#050505] text-white overflow-x-hidden cursor-text">
-      {}
-      <header className="fixed w-full p-2 flex justify-between items-center z-50">
-        <h1 className="text-2xl font-bold tracking-wide">Slides+</h1>
+    <div className="min-h-screen w-full bg-[#121212] text-white overflow-x-hidden cursor-text">
+      <header className="fixed w-full p-2 flex justify-between items-center z-50 bg-[#121212]/70 backdrop-blur-md">
+        <h1 className="text-2xl font-bold tracking-wide text-[#7182FF]">Slides+</h1>
         <div className="flex gap-4 mr-4">
           <button
             onClick={() => navigate("/login")}
-            className="defaultStyle p-1 rounded-md text-sm"
+            className="p-1 px-3 rounded-md text-sm border border-[#7182FF]/60 hover:bg-[#7182FF]/10 transition"
           >
             Login
           </button>
           <button
             onClick={() => navigate("/signup")}
-            className="defaultStyle p-1 rounded-md text-sm"
+            className="p-1 px-3 rounded-md text-sm bg-gradient-to-r from-[#249931] to-[#7182FF] font-semibold hover:opacity-90 transition"
           >
             Sign Up
           </button>
         </div>
       </header>
 
-      {}
       <section className="h-screen flex flex-col justify-center items-center text-center relative overflow-hidden">
         <motion.h1
           className="text-5xl md:text-7xl font-extrabold mb-4 z-10 leading-tight"
@@ -56,6 +51,7 @@ export default function LandingPage() {
             loop={true}
           />
         </motion.h1>
+
         <motion.p
           className="text-white/70 text-lg max-w-xl z-10"
           initial={{ opacity: 0, y: 30 }}
@@ -64,9 +60,10 @@ export default function LandingPage() {
         >
           Everything for you to make your work and experience better.
         </motion.p>
+
         <motion.button
           onClick={() => navigate("/login")}
-          className="mt-10 px-10 py-3 rounded-full bg-gradient-to-r from-[#249931] to-[#7182FF] font-semibold hover:opacity-90 transition z-10"
+          className="mt-10 px-10 py-3 rounded-full bg-gradient-to-r from-[#249931] to-[#7182FF] font-semibold hover:opacity-90 transition z-10 shadow-lg shadow-[#7182FF]/30"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.8 }}
@@ -74,7 +71,6 @@ export default function LandingPage() {
           Get Started
         </motion.button>
 
-        {}
         <motion.div
           className="absolute bottom-8 flex flex-col items-center z-10"
           initial={{ opacity: 0, y: 10 }}
@@ -92,7 +88,6 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
-      {}
       <motion.section
         className="py-40 px-8 md:px-20 grid grid-cols-1 md:grid-cols-3 gap-10"
         variants={sectionReveal}
@@ -108,15 +103,14 @@ export default function LandingPage() {
           <motion.div
             key={i}
             variants={sectionReveal}
-            className="bg-white/5 backdrop-blur-xl rounded-2xl p-8 text-center border border-white/10 hover:-translate-y-2 transition"
+            className="bg-[#1a1a1a] backdrop-blur-xl rounded-2xl p-8 text-center border border-[#7182FF]/20 hover:-translate-y-2 transition"
           >
-            <h3 className="text-2xl font-semibold mb-3">{f.title}</h3>
+            <h3 className="text-2xl font-semibold mb-3 text-[#7182FF]">{f.title}</h3>
             <p className="text-white/60">{f.desc}</p>
           </motion.div>
         ))}
       </motion.section>
 
-      {}
       <motion.section
         className="py-52 flex flex-col items-center justify-center text-center relative"
         variants={sectionReveal}
@@ -124,16 +118,15 @@ export default function LandingPage() {
         whileInView="visible"
         viewport={{ once: true, amount: 0.4 }}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-[#249931]/10 to-[#7182FF]/10 blur-3xl"></div>
-        <motion.h2 className="text-4xl font-bold mb-6 z-10">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#249931]/15 to-[#7182FF]/15 blur-3xl"></div>
+        <motion.h2 className="text-4xl font-bold mb-6 z-10 text-[#7182FF]">
           Present smarter. Do it faster.
         </motion.h2>
         <motion.p className="text-white/70 max-w-2xl z-10">
-          Our platform adapts to you. <br></br>Integrate AI into your workflow and present like a pro.
+          Our platform adapts to you. <br />Integrate AI into your workflow and present like a pro.
         </motion.p>
       </motion.section>
 
-      {/* Preview Section */}
       <motion.section
         className="py-40 px-10 flex flex-col md:flex-row items-center justify-center gap-12 relative overflow-hidden"
         variants={sectionReveal}
@@ -142,8 +135,9 @@ export default function LandingPage() {
         viewport={{ once: true, amount: 0.4 }}
       >
         <div className="absolute inset-0 bg-gradient-to-tr from-[#7182FF]/15 to-[#249931]/15 blur-3xl"></div>
+
         <motion.div variants={sectionReveal} className="max-w-lg z-10">
-          <h2 className="text-4xl font-bold mb-4 leading-snug">
+          <h2 className="text-4xl font-bold mb-4 leading-snug text-[#249931]">
             Our Home with UX/UI.
           </h2>
           <p className="text-white/70 mb-6">
@@ -152,28 +146,32 @@ export default function LandingPage() {
           </p>
           <button
             onClick={() => navigate("/login")}
-            className="px-8 py-3 rounded-full bg-gradient-to-r from-[#249931] to-[#7182FF] hover:opacity-90 transition"
+            className="px-8 py-3 rounded-full bg-gradient-to-r from-[#249931] to-[#7182FF] hover:opacity-90 transition shadow-md shadow-[#249931]/40"
           >
             Try Now
           </button>
         </motion.div>
+
         <motion.div
-          variants={sectionReveal}
-          className="w-full md:w-[500px] h-[300px] bg-white/5 rounded-xl border border-white/10 backdrop-blur-lg flex items-center justify-center text-white/40 z-10"
-        >
-          <img src={homePageImage} alt="Home Page" />
-        </motion.div>
+  variants={sectionReveal}
+  className="w-full md:w-[600px] rounded-xl overflow-hidden border border-white/10 backdrop-blur-lg flex items-center justify-center bg-[#121212]/60 shadow-lg z-10"
+>
+  <img
+    src={homePageImage}
+    alt="Home Page"
+    className="w-full h-auto object-contain"
+  />
+</motion.div>
       </motion.section>
 
-      {/* CTA Section */}
       <motion.section
-        className="py-40 text-center bg-gradient-to-r from-[#249931]/20 via-[#7182FF]/20 to-[#050505]"
+        className="py-40 text-center bg-gradient-to-r from-[#249931]/20 via-[#7182FF]/20 to-[#121212]"
         variants={sectionReveal}
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.4 }}
       >
-        <h2 className="text-4xl md:text-5xl font-bold mb-6">
+        <h2 className="text-4xl md:text-5xl font-bold mb-6 text-[#7182FF]">
           Get started now
         </h2>
         <p className="text-white/70 mb-10">Craft ideas, not just slides.</p>
