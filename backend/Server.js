@@ -99,6 +99,7 @@ app.post("/createuser", async (req, res) => {
 
     console.log("About to insert into database...")
 
+    // La columna id ahora es UUID y se genera automáticamente
     const q = await pool.query(
       `INSERT INTO users (username, email, password, first_name, last_name, avatar)
        VALUES ($1,$2,$3,$4,$5,$6)
@@ -121,29 +122,36 @@ app.post("/login", async (req, res) => {
   try {
     const { identifier, password } = req.body ?? {}
     if (!identifier || !password) return res.status(400).json({ message: "Missing fields" })
+
     const r = await pool.query(
       `SELECT id, username, email, password, first_name, last_name, avatar
        FROM users WHERE username=$1 OR email=$1`,
       [identifier]
     )
+
     if (r.rowCount === 0) return res.status(404).json({ message: "User not found" })
+
     const u = r.rows[0]
     const valid = await bcrypt.compare(password, u.password)
     if (!valid) return res.status(401).json({ message: "Invalid password" })
+
     if (!u.avatar || String(u.avatar).trim() === "") {
       const fix = generateAvatar(String(u.username)[0] || "U")
       await pool.query(`UPDATE users SET avatar=$1, updated_at=NOW() WHERE id=$2`, [fix, u.id])
       u.avatar = fix
     }
+
+    // El JWT ahora contiene el UUID en el campo 'sub'
     const token = jwt.sign(
       { sub: u.id, username: u.username, email: u.email },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     )
+
     res.json({
       ok: true,
       user: {
-        id: u.id,
+        id: u.id, // Ahora es UUID
         username: u.username,
         email: u.email,
         first_name: u.first_name,
