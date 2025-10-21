@@ -165,7 +165,7 @@ export default function LandingPage() {
         </motion.div>
       </motion.section>
 
-      {/* CTA Section */}
+      {}
       <motion.section
         className="py-40 text-center bg-gradient-to-r from-[#249931]/20 via-[#7182FF]/20 to-[#050505]"
         variants={sectionReveal}

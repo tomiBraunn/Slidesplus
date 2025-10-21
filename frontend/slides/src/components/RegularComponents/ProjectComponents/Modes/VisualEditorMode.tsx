@@ -1,4 +1,3 @@
-import React from "react";
 import LivePreview from "../LivePreview";
 
 export default function VisualEditorMode({ doc }: { doc: string; onChange: (d: string) => void }) {
