@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef } from "react"
 import { urlbackend } from "../../../config.js"
 
-type ChatMsg = { role: "user" | "assistant"; content: string; attachments?: FileAttachment[] }
+type ChatMsg = { role: "user" | "assistant"; content: string; attachments?: FileAttachment[]; previewSlides?: string[] }
 type FileAttachment = { name: string; type: string; size: number; url: string }
 
 function extractFirstCodeBlock(s: string): { lang?: string; code: string } | null {
@@ -34,7 +34,7 @@ function classifyPrompt(msg: string): "slides" | "code" | "chat" {
   return "chat"
 }
 
-const SLIDES_SYSTEM_PROMPT = `You are an elite presentation designer specializing in modern, stunning visual designs. Create presentations that look professional and captivating. Use modern gradients, glassmorphism, system fonts, and high-quality Unsplash images. Return ONLY HTML <section> tags with inline styles.`
+const SLIDES_SYSTEM_PROMPT = `You are an elite presentation designer specializing in modern, stunning visual designs. Create presentations that look professional and captivating. Use modern gradients, glassmorphism, system fonts, and high-quality Unsplash images. Return ONLY HTML <section> tags with inline styles. NEVER include <!doctype html>, <html>, <head>, or <body> tags. Return ONLY the <section> elements.`
 
 async function createSlidesBulk(apiBase: string, projectId: string, slides: { html: string }[]) {
   const token = localStorage.getItem("token")
@@ -85,15 +85,6 @@ async function uploadFileToStorage(file: File, projectId: string): Promise<strin
   return data.url
 }
 
-async function readFileAsText(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = reject
-    reader.readAsText(file)
-  })
-}
-
 export default function GeminiChatbot({
   setCode,
   code,
@@ -116,6 +107,7 @@ export default function GeminiChatbot({
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const [uploadingFiles, setUploadingFiles] = useState(false)
+  const [previewSlideIndex, setPreviewSlideIndex] = useState(0)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -180,7 +172,7 @@ export default function GeminiChatbot({
     return [
       "Act like a technical assistant similar to GitHub Copilot.",
       "If the user asks for code, return a single markdown code block (```lang) with no extra text.",
-      "If the user asks for HTML slides, return ONLY valid HTML (no markdown, no explanations).",
+      "If the user asks for HTML slides, return ONLY <section> tags (no doctype, no html/head/body tags).",
       "If the user just wants to chat, answer briefly and clearly in English.",
     ].join(" ")
   }, [])
@@ -194,7 +186,6 @@ export default function GeminiChatbot({
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
 
-      // Limit file size to 10MB
       if (file.size > 10 * 1024 * 1024) {
         setErrors({ form: `File "${file.name}" is too large. Max size is 10MB.` })
         continue
@@ -225,7 +216,6 @@ export default function GeminiChatbot({
     setLoading(true)
     const userMsg = input.trim()
 
-    // Upload files first
     let uploadedAttachments: FileAttachment[] = []
     if (attachedFiles.length > 0) {
       setUploadingFiles(true)
@@ -264,9 +254,8 @@ export default function GeminiChatbot({
       const decision = classifyPrompt(userMsg)
       let message: string
       let systemPrompt = baseSystemInstruction
-      let contextToSend = code ? code.slice(-12000) : undefined
+      let contextToSend = code || undefined
 
-      // Fetch and add file contents to context for text files
       let filesContext = ""
       if (uploadedAttachments.length > 0) {
         const fileContents = await Promise.all(
@@ -297,14 +286,13 @@ export default function GeminiChatbot({
         message = `Edit this slide. Current slide HTML:\n${currentSlide}\n\nUser request: ${userMsg}${filesContext}\n\nReturn ONLY the modified <section> HTML, nothing else.`
       } else if (decision === "slides") {
         systemPrompt = SLIDES_SYSTEM_PROMPT
-        message = `Create a presentation about: ${userMsg}${filesContext}. Include relevant images from Unsplash using keywords that match the topic. Use varied layouts.`
+        message = `Create presentation slides about: ${userMsg}${filesContext}. Return ONLY <section> tags with inline styles. Do NOT include doctype, html, head, or body tags.`
       } else if (decision === "code") {
         message = ["Return a single markdown code block (```<language>) and nothing else.", "If the language is HTML and it makes sense, return a full document.", "", "Spec:", userMsg, filesContext].join("\n")
       } else {
         message = userMsg + filesContext
       }
 
-      // Build conversation history with full context
       const conversationHistory = messages.slice(-10).map(msg => ({
         role: msg.role,
         content: msg.content,
@@ -335,6 +323,7 @@ export default function GeminiChatbot({
       const htmlOnly = !codeBlock && looksLikeHTML(raw)
       let assistantTextToShow = raw
       let snippetToApply: string | null = null
+      let previewSlides: string[] | undefined = undefined
 
       if (codeBlock) {
         assistantTextToShow = "```" + (codeBlock.lang || "") + "\n" + codeBlock.code + "\n```"
@@ -344,11 +333,19 @@ export default function GeminiChatbot({
         snippetToApply = raw
       }
 
-      const assistantMessage: ChatMsg = { role: "assistant" as const, content: assistantTextToShow }
+      if (snippetToApply && decision === "slides") {
+        previewSlides = extractSlides(snippetToApply)
+      }
+
+      const assistantMessage: ChatMsg = {
+        role: "assistant" as const,
+        content: assistantTextToShow,
+        previewSlides: previewSlides
+      }
       setMessages((prev) => [...prev, assistantMessage])
       await saveMessage("assistant", assistantTextToShow)
 
-      if (snippetToApply && slides && currentSlideIndex !== undefined) {
+      if (snippetToApply && slides && currentSlideIndex !== undefined && !previewSlides) {
         replaceCurrentSlide(snippetToApply)
       }
     } catch {
@@ -368,6 +365,23 @@ export default function GeminiChatbot({
     if (!slides || currentSlideIndex === undefined) return
     const updatedSlides = [...slides]
     updatedSlides[currentSlideIndex] = newSlideHtml
+    const newDoc = `<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>${updatedSlides.join("\n")}</body></html>`
+    setCode(newDoc)
+  }
+
+  const insertSlidesAtPosition = (newSlides: string[]) => {
+    if (!slides) {
+      const newDoc = `<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>${newSlides.join("\n")}</body></html>`
+      setCode(newDoc)
+      return
+    }
+
+    const insertPosition = currentSlideIndex !== undefined ? currentSlideIndex + 1 : slides.length
+    const updatedSlides = [
+      ...slides.slice(0, insertPosition),
+      ...newSlides,
+      ...slides.slice(insertPosition)
+    ]
     const newDoc = `<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>${updatedSlides.join("\n")}</body></html>`
     setCode(newDoc)
   }
@@ -425,11 +439,62 @@ export default function GeminiChatbot({
     }
   }
 
-  const renderActionsForAssistant = (msg: string) => {
-    const block = extractFirstCodeBlock(msg)
-    const snippet = block ? block.code : looksLikeHTML(msg) ? msg : ""
+  const renderActionsForAssistant = (msg: ChatMsg, msgIndex: number) => {
+    const block = extractFirstCodeBlock(msg.content)
+    const snippet = block ? block.code : looksLikeHTML(msg.content) ? msg.content : ""
+
+    if (msg.previewSlides && msg.previewSlides.length > 0) {
+      return (
+        <div className="mt-3 space-y-3">
+          <div className="bg-[#121212] border border-[#2B2B2B] rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs text-gray-400">
+                Preview ({previewSlideIndex + 1} / {msg.previewSlides.length})
+              </span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPreviewSlideIndex(Math.max(0, previewSlideIndex - 1))}
+                  disabled={previewSlideIndex === 0}
+                  className="p-1 text-gray-400 hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setPreviewSlideIndex(Math.min(msg.previewSlides!.length - 1, previewSlideIndex + 1))}
+                  disabled={previewSlideIndex === msg.previewSlides.length - 1}
+                  className="p-1 text-gray-400 hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="w-full aspect-video bg-white rounded overflow-hidden">
+              <iframe
+                srcDoc={`<!doctype html><html><head><meta charset='utf-8'><style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;}</style></head><body>${msg.previewSlides[previewSlideIndex]}</body></html>`}
+                className="w-full h-full border-none"
+                title="Slide preview"
+              />
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              insertSlidesAtPosition(msg.previewSlides!)
+              setPreviewSlideIndex(0)
+            }}
+            className="w-full px-4 py-2.5 text-sm font-medium bg-[#d0d0d0] hover:bg-[#bcbcbc] text-black rounded-lg transition-all"
+          >
+            Insert {msg.previewSlides.length} Slide{msg.previewSlides.length > 1 ? 's' : ''} After Current
+          </button>
+        </div>
+      )
+    }
+
     if (!snippet) return null
-    const canSave = Boolean(projectId)
+
     return (
       <div className="flex gap-2 mt-3 flex-wrap">
         <button
@@ -449,13 +514,6 @@ export default function GeminiChatbot({
           className="px-3 py-1.5 text-xs font-medium bg-[#2B2B2B] hover:bg-[#3a3a3a] text-gray-200 rounded-lg border border-[#3a3a3a] transition-all"
         >
           Copy
-        </button>
-        <button
-          onClick={saveAssistantAsSlides}
-          disabled={!canSave || saving}
-          className="px-3 py-1.5 text-xs font-medium bg-[#d0d0d0] hover:bg-[#bcbcbc] disabled:bg-[#2B2B2B] disabled:opacity-50 text-black disabled:text-gray-500 rounded-lg transition-all"
-        >
-          {saving ? "Saving..." : "Apply & Save"}
         </button>
       </div>
     )
@@ -544,7 +602,7 @@ export default function GeminiChatbot({
                   {msg.content}
                 </div>
               )}
-              {isAssistant && renderActionsForAssistant(msg.content)}
+              {isAssistant && renderActionsForAssistant(msg, i)}
             </div>
           )
         })}

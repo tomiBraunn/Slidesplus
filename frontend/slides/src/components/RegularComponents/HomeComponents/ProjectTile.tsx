@@ -23,14 +23,14 @@ function ProjectTile({ name, description, onClick, listMode = false }: Props) {
             </span>
 
             <div
-                className={`flex w-full min-w-0 ${
+                className={`flex w-full min-w-0 text-left ${
                     listMode
                         ? "flex-row items-center justify-start gap-3"
                         : "flex-col items-start gap-1"
                 }`}
             >
                 <p
-                    className={`truncate w-full min-w-0 ${
+                    className={`truncate w-full min-w-0 text-left ${
                         listMode
                             ? "text-[clamp(14px,1.5vw,20px)]"
                             : "text-[clamp(16px,2vw,32px)]"
@@ -40,7 +40,7 @@ function ProjectTile({ name, description, onClick, listMode = false }: Props) {
                     {name}
                 </p>
                 <p
-                    className={`truncate w-full min-w-0 ${
+                    className={`truncate w-full min-w-0 text-left ${
                         listMode
                             ? "text-[clamp(10px,1vw,14px)] text-[#999999]"
                             : "text-[clamp(12px,1.5vw,16px)] text-[#999999]"
