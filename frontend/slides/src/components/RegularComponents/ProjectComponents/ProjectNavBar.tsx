@@ -113,7 +113,7 @@ export default function ProjectNavBar({ name, saveState, mode, onChangeMode }: P
             wand_stars
           </span>
         </div>
-        <UserPicture avatar={user?.avatar} fallbackLetter={displayLetter} />
+        <UserPicture avatar={user?.avatar} username={user?.username} size={38} />
       </div>
     </nav>
   );

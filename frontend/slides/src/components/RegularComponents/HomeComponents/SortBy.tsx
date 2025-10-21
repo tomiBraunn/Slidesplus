@@ -39,7 +39,7 @@ function SortBy({ selected, setSelected }: Props) {
     <div ref={containerRef} className="relative flex items-center justify-center gap-1">
       <div
         onClick={toggleDropdown}
-        className={`flex items-center justify-center border border-[#2B2B2B] bg-[#0f0f0f] text-white gap-1 px-3 h-fit cursor-pointer select-none text-lg
+        className={`flex items-center justify-center border border-[#2B2B2B] bg-[#0f0f0f] text-white defaultStyleHover  gap-1 px-3 h-fit cursor-pointer select-none text-lg
                     transition-all duration-300 ease-out ${isOpen ? 'rounded-t-[20px] gap-9' : 'rounded-full gap-1'}`}
       >
         <p>Sort by</p>

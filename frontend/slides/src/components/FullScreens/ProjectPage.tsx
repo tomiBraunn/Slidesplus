@@ -15,7 +15,7 @@ export default function ProjectPage() {
   const [name, setName] = useState<string>("Untitled")
   const [saveState, setSaveState] = useState<SaveState>("idle")
   const [doc, setDoc] = useState<string>("")
-  const [previewWidth, setPreviewWidth] = useState(35)
+  const [previewWidth, setPreviewWidth] = useState(55)
   const [currentSlide, setCurrentSlide] = useState(0)
   const [slides, setSlides] = useState<string[]>([])
   const isDragging = useRef(false)

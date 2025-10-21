@@ -6,7 +6,7 @@ import CreateProject from "../RegularComponents/HomeComponents/Modals/CreateProj
 import ProjectPreview from "../RegularComponents/HomeComponents/Modals/ProjectPreview"
 import { useEffect, useState } from "react"
 import { urlbackend } from "../../config.js"
-import SettingsModal from "../RegularComponents/MultiuseComponents/SettingsModal"
+import SettingsModal from "../RegularComponents/MultiuseComponents/SettingsModal.js"
 
 type Project = {
   id: string
