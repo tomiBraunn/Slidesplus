@@ -20,7 +20,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen w-full bg-[#050505] text-white overflow-x-hidden cursor-text">
-      {/* Header */}
+      {}
       <header className="fixed w-full p-2 flex justify-between items-center z-50">
         <h1 className="text-2xl font-bold tracking-wide">Slides+</h1>
         <div className="flex gap-4 mr-4">
@@ -39,7 +39,7 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
+      {}
       <section className="h-screen flex flex-col justify-center items-center text-center relative overflow-hidden">
         <motion.h1
           className="text-5xl md:text-7xl font-extrabold mb-4 z-10 leading-tight"
@@ -74,7 +74,7 @@ export default function LandingPage() {
           Get Started
         </motion.button>
 
-        {/* Scroll Indicator */}
+        {}
         <motion.div
           className="absolute bottom-8 flex flex-col items-center z-10"
           initial={{ opacity: 0, y: 10 }}
@@ -92,7 +92,7 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
-      {/* Features Section */}
+      {}
       <motion.section
         className="py-40 px-8 md:px-20 grid grid-cols-1 md:grid-cols-3 gap-10"
         variants={sectionReveal}
@@ -116,7 +116,7 @@ export default function LandingPage() {
         ))}
       </motion.section>
 
-      {/* Extra Section to Make Landing Longer */}
+      {}
       <motion.section
         className="py-52 flex flex-col items-center justify-center text-center relative"
         variants={sectionReveal}
