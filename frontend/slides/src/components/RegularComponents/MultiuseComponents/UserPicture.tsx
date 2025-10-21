@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from "react";
-import SettingsModal from "../MultiuseComponents/SettingsModal"; // ⚠️ ajustá esta ruta según tu estructura
+import SettingsModal from "../MultiuseComponents/SettingsModal";
 
 type Props = {
   avatar?: string | null;
@@ -74,16 +74,51 @@ export default function UserPicture({ avatar, size = 38 }: Props) {
           )}
         </div>
 
-        {/** Dropdown del usuario */}
         <div
-          className={`absolute right-0 mt-2 bg-[#0f0f0f] border border-[#2B2B2B] rounded-xl overflow-hidden transition-all duration-300 ease-out origin-top-right z-50 ${
-            isOpen
+          className={`absolute right-0 mt-2 bg-[#0f0f0f] border border-[#2B2B2B] rounded-xl overflow-hidden transition-all duration-300 ease-out origin-top-right z-50 ${isOpen
               ? "opacity-100 scale-100 translate-y-0"
               : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
-          }`}
+            }`}
         >
           <div className="p-6 pb-0 border-b border-[#2B2B2B] flex flex-col items-center gap-2 relative">
-            <div className="relative z-10 flex flex-col items-center gap-2 pb-4">
+            <div className="absolute inset-0 overflow-visible -z-10">
+              <svg
+                style={{ position: "absolute", left: 0, right: 0, bottom: "-28px", width: "100%", height: "auto" }}
+                preserveAspectRatio="xMidYMax slice"
+                width="839"
+                height="995"
+                viewBox="0 0 839 995"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <g clipPath="url(#clip0_3022_626)">
+                  <g filter="url(#filter0_f_3022_626)">
+                    <path d="M202.748 208.104L0 -206H828L580.129 208.104H202.748Z" fill="#7182FF" />
+                  </g>
+                  <g filter="url(#filter1_f_3022_626)">
+                    <path d="M249.067 319L28 36.1171L771 0.350281L571.232 319H249.067Z" fill="#249931" />
+                    <path d="M249.067 319L28 36.1171L771 0.350281L571.232 319H249.067Z" stroke="black" />
+                  </g>
+                </g>
+                <defs>
+                  <filter id="filter0_f_3022_626" x="-400" y="-606" width="1628" height="1214.1" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+                    <feFlood floodOpacity="0" result="BackgroundImageFix" />
+                    <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+                    <feGaussianBlur stdDeviation="200" result="effect1_foregroundBlur_3022_626" />
+                  </filter>
+                  <filter id="filter1_f_3022_626" x="-172.989" y="-200.195" width="1144.92" height="719.695" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+                    <feFlood floodOpacity="0" result="BackgroundImageFix" />
+                    <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+                    <feGaussianBlur stdDeviation="100" result="effect1_foregroundBlur_3022_626" />
+                  </filter>
+                  <clipPath id="clip0_3022_626">
+                    <rect width="839" height="995" />
+                  </clipPath>
+                </defs>
+              </svg>
+            </div>
+
+            <div className="relative z-10 flex flex-col items-center gap-2 pb-5">
               <div className="flex items-center gap-2">
                 <div
                   className="rounded-full overflow-hidden bg-gray-200 flex-shrink-0"
@@ -115,14 +150,12 @@ export default function UserPicture({ avatar, size = 38 }: Props) {
                 <span className="text-sm font-medium">Theme</span>
               </div>
               <div
-                className={`w-11 h-6 rounded-full transition-colors ${
-                  isDark ? "bg-[#d0d0d0]" : "bg-gray-600"
-                }`}
+                className={`w-11 h-6 rounded-full transition-colors ${isDark ? "bg-[#d0d0d0]" : "bg-gray-600"
+                  }`}
               >
                 <div
-                  className={`w-5 h-5 rounded-full bg-black mt-0.5 transition-transform ${
-                    isDark ? "translate-x-5" : "translate-x-0.5"
-                  }`}
+                  className={`w-5 h-5 rounded-full bg-black mt-0.5 transition-transform ${isDark ? "translate-x-5" : "translate-x-0.5"
+                    }`}
                 />
               </div>
             </button>
