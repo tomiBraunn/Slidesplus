@@ -45,7 +45,7 @@ function LogInForm() {
 
         <div className="px-6 pb-6 pt-4">
           <form onSubmit={handleSubmit} className="grid gap-6">
-            {/* Botones de login externo */}
+            {}
             <div className="flex flex-col gap-4">
               <button
                 type="button"
@@ -74,7 +74,7 @@ function LogInForm() {
               </button>
             </div>
 
-            {/* Divider */}
+            {}
             <div className="relative text-center text-sm">
               <span className="bg-[#0f0f0f] relative z-10 px-2 text-gray-400">
                 Or continue with
@@ -82,7 +82,7 @@ function LogInForm() {
               <div className="absolute inset-0 top-1/2 -translate-y-1/2 border-t border-[#2B2B2B]" />
             </div>
 
-            {/* Username/Email */}
+            {}
             <div className="grid gap-3">
               <label htmlFor="identifier" className="text-sm font-medium">
                 Username/Email
@@ -99,7 +99,7 @@ function LogInForm() {
               />
             </div>
 
-            {/* Password con ojito de Material Symbols */}
+            {}
             <div className="grid gap-3 relative">
               <div className="flex items-center">
                 <label htmlFor="password" className="text-sm font-medium">
@@ -142,7 +142,7 @@ function LogInForm() {
               <p className="text-red-500 text-sm text-center">{error}</p>
             )}
 
-            {/* Login button */}
+            {}
             <button
               type="submit"
               className="w-full rounded-xl px-4 py-3 font-medium text-black bg-[#d0d0d0] cursor-pointer hover:bg-[#bcbcbc] transition"
