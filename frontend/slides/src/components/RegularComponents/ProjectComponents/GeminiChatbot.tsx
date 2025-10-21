@@ -1,7 +1,8 @@
-import React, { useMemo, useState, useEffect } from "react"
+import React, { useMemo, useState, useEffect, useRef } from "react"
 import { urlbackend } from "../../../config.js"
 
-type ChatMsg = { role: "user" | "assistant"; content: string }
+type ChatMsg = { role: "user" | "assistant"; content: string; attachments?: FileAttachment[] }
+type FileAttachment = { name: string; type: string; size: number; url: string }
 
 function extractFirstCodeBlock(s: string): { lang?: string; code: string } | null {
   const m = s.match(/```(\w+)?\s*([\s\S]*?)```/)
@@ -57,6 +58,42 @@ function extractSlides(html: string): string[] {
   return [html]
 }
 
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+}
+
+async function uploadFileToStorage(file: File, projectId: string): Promise<string> {
+  const token = localStorage.getItem("token")
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const res = await fetch(`${urlbackend}/projects/${projectId}/upload`, {
+    method: "POST",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: formData
+  })
+
+  if (!res.ok) {
+    throw new Error("Failed to upload file")
+  }
+
+  const data = await res.json()
+  return data.url
+}
+
+async function readFileAsText(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsText(file)
+  })
+}
+
 export default function GeminiChatbot({
   setCode,
   code,
@@ -77,6 +114,18 @@ export default function GeminiChatbot({
   const [errors, setErrors] = useState<{ [k: string]: string }>({})
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([])
+  const [uploadingFiles, setUploadingFiles] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages, loading])
 
   useEffect(() => {
     if (!projectId) {
@@ -98,7 +147,8 @@ export default function GeminiChatbot({
         if (data.ok && data.messages) {
           setMessages(data.messages.map((m: any) => ({
             role: m.role,
-            content: m.content
+            content: m.content,
+            attachments: m.attachments || []
           })))
         }
       })
@@ -106,7 +156,7 @@ export default function GeminiChatbot({
       .finally(() => setLoadingHistory(false))
   }, [projectId])
 
-  const saveMessage = async (role: "user" | "assistant", content: string) => {
+  const saveMessage = async (role: "user" | "assistant", content: string, attachments?: FileAttachment[]) => {
     if (!projectId) return
 
     const token = localStorage.getItem("token")
@@ -119,7 +169,7 @@ export default function GeminiChatbot({
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ role, content })
+        body: JSON.stringify({ role, content, attachments })
       })
     } catch (err) {
       console.error("Error saving message:", err)
@@ -135,44 +185,137 @@ export default function GeminiChatbot({
     ].join(" ")
   }, [])
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    const newFiles: File[] = []
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+
+      // Limit file size to 10MB
+      if (file.size > 10 * 1024 * 1024) {
+        setErrors({ form: `File "${file.name}" is too large. Max size is 10MB.` })
+        continue
+      }
+
+      newFiles.push(file)
+    }
+
+    setAttachedFiles(prev => [...prev, ...newFiles])
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const removeFile = (index: number) => {
+    setAttachedFiles(prev => prev.filter((_, i) => i !== index))
+  }
+
   const sendMessage = async () => {
-    if (!input.trim()) return
+    if (!input.trim() && attachedFiles.length === 0) return
+    if (!projectId) {
+      setErrors({ form: "Project ID is required to send messages" })
+      return
+    }
+
     setErrors({})
     setSaveMsg(null)
     setLoading(true)
     const userMsg = input.trim()
 
-    const newUserMessage = { role: "user" as const, content: userMsg }
+    // Upload files first
+    let uploadedAttachments: FileAttachment[] = []
+    if (attachedFiles.length > 0) {
+      setUploadingFiles(true)
+      try {
+        const uploadPromises = attachedFiles.map(async (file) => {
+          const url = await uploadFileToStorage(file, projectId)
+          return {
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            url
+          }
+        })
+        uploadedAttachments = await Promise.all(uploadPromises)
+      } catch (err) {
+        setErrors({ form: "Failed to upload files" })
+        setLoading(false)
+        setUploadingFiles(false)
+        return
+      }
+      setUploadingFiles(false)
+    }
+
+    const newUserMessage: ChatMsg = {
+      role: "user" as const,
+      content: userMsg,
+      attachments: uploadedAttachments.length > 0 ? uploadedAttachments : undefined
+    }
     setMessages((prev) => [...prev, newUserMessage])
-    await saveMessage("user", userMsg)
+    await saveMessage("user", userMsg, uploadedAttachments.length > 0 ? uploadedAttachments : undefined)
 
     setInput("")
+    setAttachedFiles([])
+
     try {
       const decision = classifyPrompt(userMsg)
       let message: string
       let systemPrompt = baseSystemInstruction
       let contextToSend = code ? code.slice(-12000) : undefined
 
+      // Fetch and add file contents to context for text files
+      let filesContext = ""
+      if (uploadedAttachments.length > 0) {
+        const fileContents = await Promise.all(
+          uploadedAttachments.map(async (file) => {
+            const isText = file.type.startsWith('text/') ||
+              file.type === 'application/json' ||
+              file.type === 'application/javascript'
+
+            if (isText) {
+              try {
+                const response = await fetch(file.url)
+                const content = await response.text()
+                return `File: ${file.name} (${file.type})\n${content}`
+              } catch {
+                return `File: ${file.name} (${file.type})\n[Failed to read file]`
+              }
+            }
+            return `File: ${file.name} (${file.type}) - ${formatFileSize(file.size)}\n[Image file - available at ${file.url}]`
+          })
+        )
+        filesContext = "\n\nAttached files:\n" + fileContents.join("\n\n")
+      }
+
       if (slides && currentSlideIndex !== undefined && slides[currentSlideIndex]) {
         const currentSlide = slides[currentSlideIndex]
         systemPrompt = SLIDES_SYSTEM_PROMPT
         contextToSend = currentSlide
-        message = `Edit this slide. Current slide HTML:\n${currentSlide}\n\nUser request: ${userMsg}\n\nReturn ONLY the modified <section> HTML, nothing else.`
+        message = `Edit this slide. Current slide HTML:\n${currentSlide}\n\nUser request: ${userMsg}${filesContext}\n\nReturn ONLY the modified <section> HTML, nothing else.`
       } else if (decision === "slides") {
         systemPrompt = SLIDES_SYSTEM_PROMPT
-        message = `Create a presentation about: ${userMsg}. Include relevant images from Unsplash using keywords that match the topic. Use varied layouts.`
+        message = `Create a presentation about: ${userMsg}${filesContext}. Include relevant images from Unsplash using keywords that match the topic. Use varied layouts.`
       } else if (decision === "code") {
-        message = ["Return a single markdown code block (```<language>) and nothing else.", "If the language is HTML and it makes sense, return a full document.", "", "Spec:", userMsg].join("\n")
+        message = ["Return a single markdown code block (```<language>) and nothing else.", "If the language is HTML and it makes sense, return a full document.", "", "Spec:", userMsg, filesContext].join("\n")
       } else {
-        message = userMsg
+        message = userMsg + filesContext
       }
+
+      // Build conversation history with full context
+      const conversationHistory = messages.slice(-10).map(msg => ({
+        role: msg.role,
+        content: msg.content,
+      }))
 
       const body: any = {
         system: systemPrompt,
         mode: "auto",
         message,
         context: contextToSend,
-        history: messages.slice(-10)
+        history: conversationHistory
       }
 
       const res = await fetch(`${urlbackend}/gemini`, {
@@ -201,7 +344,7 @@ export default function GeminiChatbot({
         snippetToApply = raw
       }
 
-      const assistantMessage = { role: "assistant" as const, content: assistantTextToShow }
+      const assistantMessage: ChatMsg = { role: "assistant" as const, content: assistantTextToShow }
       setMessages((prev) => [...prev, assistantMessage])
       await saveMessage("assistant", assistantTextToShow)
 
@@ -288,101 +431,213 @@ export default function GeminiChatbot({
     if (!snippet) return null
     const canSave = Boolean(projectId)
     return (
-      <div className="flex gap-2 mt-2 flex-wrap">
+      <div className="flex gap-2 mt-3 flex-wrap">
         <button
           onClick={() => insertIntoEditor(snippet)}
-          className="px-3 py-1.5 text-xs font-medium bg-green-700 hover:bg-green-600 text-white rounded transition-colors"
+          className="px-3 py-1.5 text-xs font-medium bg-[#2B2B2B] hover:bg-[#3a3a3a] text-gray-200 rounded-lg border border-[#3a3a3a] transition-all"
         >
           Insert
         </button>
         <button
           onClick={() => replaceEditor(snippet)}
-          className="px-3 py-1.5 text-xs font-medium bg-blue-700 hover:bg-blue-600 text-white rounded transition-colors"
+          className="px-3 py-1.5 text-xs font-medium bg-[#2B2B2B] hover:bg-[#3a3a3a] text-gray-200 rounded-lg border border-[#3a3a3a] transition-all"
         >
           Replace
         </button>
         <button
           onClick={() => navigator.clipboard.writeText(snippet)}
-          className="px-3 py-1.5 text-xs font-medium bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors"
+          className="px-3 py-1.5 text-xs font-medium bg-[#2B2B2B] hover:bg-[#3a3a3a] text-gray-200 rounded-lg border border-[#3a3a3a] transition-all"
         >
           Copy
         </button>
         <button
           onClick={saveAssistantAsSlides}
           disabled={!canSave || saving}
-          className="px-3 py-1.5 text-xs font-medium bg-purple-700 hover:bg-purple-600 disabled:bg-gray-700 disabled:opacity-50 text-white rounded transition-colors"
+          className="px-3 py-1.5 text-xs font-medium bg-[#d0d0d0] hover:bg-[#bcbcbc] disabled:bg-[#2B2B2B] disabled:opacity-50 text-black disabled:text-gray-500 rounded-lg transition-all"
         >
-          {saving ? "Saving…" : "Apply & Save"}
+          {saving ? "Saving..." : "Apply & Save"}
         </button>
       </div>
     )
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-[#1a1a1a] text-gray-100">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
-        <h2 className="text-base font-semibold">🤖 AI Assistant</h2>
+    <div className="w-full h-full flex flex-col bg-[#0f0f0f] text-gray-100">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-[#2B2B2B]">
+        <h2 className="text-sm font-semibold text-gray-200">AI Assistant</h2>
         {messages.length > 0 && (
           <button
             onClick={clearChat}
-            className="px-3 py-1.5 text-xs font-medium bg-red-900/30 hover:bg-red-900/50 text-red-400 rounded transition-colors"
+            className="px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-gray-200 transition-colors"
           >
-            Clear Chat
+            Clear
           </button>
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 text-sm">
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
         {loadingHistory ? (
-          <div className="flex items-center justify-center gap-2 text-gray-400 text-sm mt-12">
-            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-            Loading chat history...
+          <div className="flex items-center justify-center gap-2 text-gray-500 text-sm mt-12">
+            <div className="flex gap-1">
+              <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+              <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+            </div>
           </div>
         ) : messages.length === 0 ? (
-          <div className="text-center text-gray-500 mt-12 space-y-2">
-            <p className="text-sm">💡 Ask me to create slides, write code, or chat</p>
-            <p className="text-xs text-gray-600">Your chat history is saved in the database</p>
+          <div className="text-center text-gray-500 mt-12 space-y-3">
+            <p className="text-sm">How can I help you today?</p>
+            <p className="text-xs text-gray-600">Ask me to create slides, write code, or chat</p>
           </div>
         ) : null}
+
         {messages.map((msg, i) => {
           const isAssistant = msg.role === "assistant"
           const looksLikeCode = msg.content.includes("```") || looksLikeHTML(msg.content)
           return (
-            <div key={i} className="space-y-1.5">
-              <div className={`text-xs font-semibold ${isAssistant ? "text-green-400" : "text-blue-400"}`}>
-                {isAssistant ? "🤖 Assistant" : "👤 You"}
+            <div
+              key={i}
+              className="space-y-2 animate-fadeIn"
+              style={{
+                animation: 'fadeIn 0.3s ease-in',
+                opacity: 0,
+                animationFillMode: 'forwards',
+                animationDelay: `${i * 0.05}s`
+              }}
+            >
+              <div className={`text-xs font-medium ${isAssistant ? "text-gray-400" : "text-gray-300"}`}>
+                {isAssistant ? "Assistant" : "You"}
               </div>
+
+              {msg.attachments && msg.attachments.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {msg.attachments.map((file, idx) => (
+                    <a
+                      key={idx}
+                      href={file.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-3 py-1.5 bg-[#121212] border border-[#2B2B2B] rounded-lg text-xs hover:bg-[#1a1a1a] transition-colors"
+                    >
+                      {file.type.startsWith('image/') ? (
+                        <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      )}
+                      <span className="text-gray-300">{file.name}</span>
+                      <span className="text-gray-500">({formatFileSize(file.size)})</span>
+                    </a>
+                  ))}
+                </div>
+              )}
+
               {looksLikeCode ? (
-                <pre className="bg-[#0d1117] p-3 rounded-lg text-xs overflow-x-auto border border-gray-800 font-mono whitespace-pre-wrap">
+                <pre className="bg-[#121212] p-4 rounded-lg text-xs overflow-x-auto border border-[#2B2B2B] font-mono whitespace-pre-wrap">
                   {msg.content}
                 </pre>
               ) : (
-                <div className="text-sm leading-relaxed text-gray-300 whitespace-pre-wrap">{msg.content}</div>
+                <div className="text-sm leading-relaxed text-gray-300 whitespace-pre-wrap">
+                  {msg.content}
+                </div>
               )}
               {isAssistant && renderActionsForAssistant(msg.content)}
             </div>
           )
         })}
+
         {loading && (
-          <div className="flex items-center gap-2 text-gray-400 text-sm">
-            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-            Processing...
+          <div className="flex items-center gap-2 animate-fadeIn">
+            <div className="text-xs font-medium text-gray-400">Assistant</div>
+            <div className="flex gap-1 mt-1">
+              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            </div>
           </div>
         )}
-        {errors.form && <div className="text-red-400 text-sm">{errors.form}</div>}
-        {saveMsg && <div className="text-purple-400 text-sm">{saveMsg}</div>}
+
+        {uploadingFiles && (
+          <div className="text-blue-400 text-sm">Uploading files...</div>
+        )}
+
+        {errors.form && (
+          <div className="text-red-400 text-sm bg-red-900/20 border border-red-900/50 rounded-lg px-4 py-2">
+            {errors.form}
+          </div>
+        )}
+
+        {saveMsg && (
+          <div className="text-green-400 text-sm bg-green-900/20 border border-green-900/50 rounded-lg px-4 py-2">
+            {saveMsg}
+          </div>
+        )}
+        <div ref={messagesEndRef} />
       </div>
 
-      <div className="p-4 border-t border-gray-800">
+      <div className="px-6 py-4 border-t border-[#2B2B2B]">
+        {attachedFiles.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {attachedFiles.map((file, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-2 px-3 py-1.5 bg-[#121212] border border-[#2B2B2B] rounded-lg text-xs"
+              >
+                {file.type.startsWith('image/') ? (
+                  <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                )}
+                <span className="text-gray-300">{file.name}</span>
+                <span className="text-gray-500">({formatFileSize(file.size)})</span>
+                <button
+                  onClick={() => removeFile(index)}
+                  className="ml-1 text-gray-400 hover:text-gray-200 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="flex gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            onChange={handleFileSelect}
+            className="hidden"
+            accept="*/*"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingFiles || loading}
+            className="bg-[#121212] hover:bg-[#2B2B2B] border border-[#2B2B2B] text-gray-300 rounded-lg px-3 py-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Attach files"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            className="flex-1 bg-[#0d1117] text-gray-100 rounded-lg border border-gray-700 px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-            placeholder="Ask me anything..."
+            disabled={uploadingFiles || loading}
+            className="flex-1 bg-[#121212] text-gray-100 rounded-lg border border-[#2B2B2B] px-4 py-3 text-sm focus:outline-none focus:border-[#3a3a3a] transition-colors disabled:opacity-50"
+            placeholder="Message AI Assistant..."
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !loading) {
+              if (e.key === "Enter" && !loading && !uploadingFiles) {
                 e.preventDefault()
                 sendMessage()
               }
@@ -390,13 +645,29 @@ export default function GeminiChatbot({
           />
           <button
             onClick={sendMessage}
-            disabled={loading || !input.trim()}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:opacity-50 text-white rounded-lg px-6 py-2.5 font-medium text-sm transition-colors disabled:cursor-not-allowed"
+            disabled={loading || uploadingFiles || (!input.trim() && attachedFiles.length === 0)}
+            className="bg-[#d0d0d0] hover:bg-[#bcbcbc] disabled:bg-[#2B2B2B] disabled:opacity-50 text-black disabled:text-gray-600 rounded-lg px-6 py-3 font-medium text-sm transition-all disabled:cursor-not-allowed"
           >
-            {loading ? "..." : "Send"}
+            {uploadingFiles ? "Uploading..." : loading ? "..." : "Send"}
           </button>
         </div>
       </div>
+
+      <style>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-in forwards;
+        }
+      `}</style>
     </div>
   )
 }
