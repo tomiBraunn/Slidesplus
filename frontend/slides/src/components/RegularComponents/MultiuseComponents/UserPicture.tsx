@@ -38,7 +38,7 @@ export default function UserPicture({ avatar, size = 38 }: Props) {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    window.location.href = "/login";
+    window.location.href = "/";
   };
 
   useEffect(() => {
