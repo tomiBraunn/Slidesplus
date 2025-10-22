@@ -5,7 +5,9 @@ import jwt from "jsonwebtoken"
 import bcrypt from "bcrypt"
 import pkg from "pg"
 import { createClient } from "@supabase/supabase-js"
+import fetch from "node-fetch"
 import multer from "multer"
+import https from "https"
 
 const { Pool } = pkg
 
@@ -16,9 +18,30 @@ const pool = process.env.DATABASE_URL
   })
   : null
 
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false
+})
+
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_KEY,
+  {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false
+    },
+    global: {
+      headers: {
+        'User-Agent': 'nodejs'
+      },
+      fetch: (url, options = {}) => {
+        return fetch(url, {
+          ...options,
+          agent: url.startsWith('https') ? httpsAgent : undefined
+        })
+      }
+    }
+  }
 )
 
 const upload = multer({
