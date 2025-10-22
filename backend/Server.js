@@ -4,6 +4,8 @@ import cors from "cors"
 import jwt from "jsonwebtoken"
 import bcrypt from "bcrypt"
 import pkg from "pg"
+import { createClient } from "@supabase/supabase-js"
+import multer from "multer"
 
 const { Pool } = pkg
 
@@ -13,6 +15,23 @@ const pool = process.env.DATABASE_URL
     ssl: { rejectUnauthorized: false }
   })
   : null
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+)
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true)
+    } else {
+      cb(new Error('Only images are allowed'))
+    }
+  }
+})
 
 function generateAvatar(letter) {
   const l = (letter || "U").toUpperCase().slice(0, 1)
@@ -66,6 +85,8 @@ app.get("/health", (_req, res) => {
       hasDB: !!process.env.DATABASE_URL,
       hasJWT: !!process.env.JWT_SECRET,
       hasGeminiKey: !!process.env.GEMINI_API_KEY,
+      hasSupabase: !!process.env.SUPABASE_URL && !!process.env.SUPABASE_SERVICE_KEY,
+      hasUnsplash: !!process.env.UNSPLASH_ACCESS_KEY,
       node: process.version,
     },
   })
@@ -99,11 +120,10 @@ app.post("/createuser", async (req, res) => {
 
     console.log("About to insert into database...")
 
-    // La columna id ahora es UUID y se genera automáticamente
     const q = await pool.query(
       `INSERT INTO users (username, email, password, first_name, last_name, avatar)
        VALUES ($1,$2,$3,$4,$5,$6)
-       RETURNING id, username, email, first_name, last_name, avatar`,
+       RETURNING id, username, email, first_name, last_name, avatar, user_number`,
       [username, email, hashed, first_name, last_name, avatar]
     )
 
@@ -168,7 +188,7 @@ app.post("/login", async (req, res) => {
 app.get("/me", auth, async (req, res) => {
   try {
     const q = await pool.query(
-      `SELECT id, username, email, first_name, last_name, avatar FROM users WHERE id=$1`,
+      `SELECT id, username, email, first_name, last_name, avatar, user_number FROM users WHERE id=$1`,
       [req.user.sub]
     )
     if (q.rowCount === 0) return res.status(404).json({ message: "User not found" })
@@ -178,18 +198,210 @@ app.get("/me", auth, async (req, res) => {
   }
 })
 
+app.post("/users/me/avatar", auth, upload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file provided" })
+    }
+
+    const userId = req.user.sub
+    const fileExt = req.file.originalname.split('.').pop()
+    const fileName = `${userId}.${fileExt}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: true
+      })
+
+    if (uploadError) {
+      console.error('Supabase upload error:', uploadError)
+      return res.status(500).json({ message: "Error uploading file", detail: uploadError.message })
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(fileName)
+
+    const q = await pool.query(
+      `UPDATE users SET avatar=$1, updated_at=NOW() WHERE id=$2
+       RETURNING id, username, email, first_name, last_name, avatar, user_number`,
+      [publicUrl, userId]
+    )
+
+    if (q.rowCount === 0) {
+      return res.status(404).json({ message: "User not found" })
+    }
+
+    res.json({ ok: true, user: q.rows[0] })
+  } catch (error) {
+    console.error('Error:', error)
+    res.status(500).json({ message: "Internal error" })
+  }
+})
+
+app.delete("/users/me/avatar", auth, async (req, res) => {
+  try {
+    const userId = req.user.sub
+
+    const current = await pool.query(
+      `SELECT avatar FROM users WHERE id=$1`,
+      [userId]
+    )
+
+    if (current.rowCount > 0 && current.rows[0].avatar) {
+      const avatarUrl = current.rows[0].avatar
+
+      if (avatarUrl.includes('supabase.co/storage')) {
+        const fileName = avatarUrl.split('/').pop()
+        await supabase.storage
+          .from('avatars')
+          .remove([fileName])
+      }
+    }
+
+    const user = await pool.query(
+      `SELECT username FROM users WHERE id=$1`,
+      [userId]
+    )
+
+    const avatar = generateAvatar(String(user.rows[0].username)[0] || "U")
+
+    const q = await pool.query(
+      `UPDATE users SET avatar=$1, updated_at=NOW() WHERE id=$2
+       RETURNING id, username, email, first_name, last_name, avatar, user_number`,
+      [avatar, userId]
+    )
+
+    res.json({ ok: true, user: q.rows[0] })
+  } catch (error) {
+    console.error('Error:', error)
+    res.status(500).json({ message: "Internal error" })
+  }
+})
+
 app.patch("/users/me/avatar/regenerate", auth, async (req, res) => {
   try {
-    const q = await pool.query(`SELECT username FROM users WHERE id=$1`, [req.user.sub])
+    const userId = req.user.sub
+
+    const current = await pool.query(
+      `SELECT avatar FROM users WHERE id=$1`,
+      [userId]
+    )
+
+    if (current.rowCount > 0 && current.rows[0].avatar) {
+      const avatarUrl = current.rows[0].avatar
+
+      if (avatarUrl.includes('supabase.co/storage')) {
+        const fileName = avatarUrl.split('/').pop()
+        await supabase.storage
+          .from('avatars')
+          .remove([fileName])
+      }
+    }
+
+    const q = await pool.query(`SELECT username FROM users WHERE id=$1`, [userId])
     if (q.rowCount === 0) return res.status(404).json({ message: "User not found" })
+
     const avatar = generateAvatar(String(q.rows[0].username)[0] || "U")
     const u = await pool.query(
       `UPDATE users SET avatar=$1, updated_at=NOW() WHERE id=$2
-       RETURNING id, username, email, first_name, last_name, avatar`,
-      [avatar, req.user.sub]
+       RETURNING id, username, email, first_name, last_name, avatar, user_number`,
+      [avatar, userId]
     )
     res.json({ ok: true, user: u.rows[0] })
   } catch {
+    res.status(500).json({ message: "Internal error" })
+  }
+})
+
+app.post("/projects/:id/upload", auth, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file provided" })
+    }
+
+    const projectId = req.params.id
+
+    const projectCheck = await pool.query(
+      `SELECT id FROM projects WHERE id=$1 AND owner_id=$2`,
+      [projectId, req.user.sub]
+    )
+
+    if (projectCheck.rowCount === 0) {
+      return res.status(404).json({ message: "Project not found" })
+    }
+
+    const fileExt = req.file.originalname.split('.').pop()
+    const fileName = `${projectId}/${Date.now()}-${req.file.originalname}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('slides-assets')
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype
+      })
+
+    if (uploadError) {
+      console.error('Supabase upload error:', uploadError)
+      return res.status(500).json({ message: "Error uploading file", detail: uploadError.message })
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('slides-assets')
+      .getPublicUrl(fileName)
+
+    res.json({
+      ok: true,
+      url: publicUrl,
+      filename: req.file.originalname,
+      size: req.file.size,
+      mimetype: req.file.mimetype
+    })
+  } catch (error) {
+    console.error('Error:', error)
+    res.status(500).json({ message: "Internal error" })
+  }
+})
+
+app.post("/chat/upload", auth, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file provided" })
+    }
+
+    const fileExt = req.file.originalname.split('.').pop()
+    const fileName = `${req.user.sub}/${Date.now()}-${req.file.originalname}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('chat-files')
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype
+      })
+
+    if (uploadError) {
+      console.error('Supabase upload error:', uploadError)
+      return res.status(500).json({ message: "Error uploading file", detail: uploadError.message })
+    }
+
+    const { data: signedUrlData, error: signedError } = await supabase.storage
+      .from('chat-files')
+      .createSignedUrl(fileName, 3600)
+
+    if (signedError) {
+      console.error('Error creating signed URL:', signedError)
+      return res.status(500).json({ message: "Error creating file URL" })
+    }
+
+    res.json({
+      ok: true,
+      url: signedUrlData.signedUrl,
+      filename: req.file.originalname,
+      size: req.file.size,
+      mimetype: req.file.mimetype
+    })
+  } catch (error) {
+    console.error('Error:', error)
     res.status(500).json({ message: "Internal error" })
   }
 })
@@ -482,6 +694,78 @@ app.delete("/projects/:id", auth, async (req, res) => {
   }
 })
 
+app.get("/unsplash/search", async (req, res) => {
+  try {
+    const { query, page = 1, per_page = 20 } = req.query
+
+    if (!query) {
+      return res.status(400).json({ error: "Missing search query" })
+    }
+
+    const API_KEY = process.env.UNSPLASH_ACCESS_KEY
+    if (!API_KEY) {
+      return res.status(500).json({ error: "Unsplash API key not configured" })
+    }
+
+    const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&page=${page}&per_page=${per_page}`
+
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Client-ID ${API_KEY}`
+      }
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      return res.status(response.status).json({ error })
+    }
+
+    const data = await response.json()
+    res.json(data)
+  } catch (err) {
+    console.error('Unsplash API error:', err)
+    res.status(500).json({
+      error: "Error connecting to Unsplash",
+      detail: err instanceof Error ? err.message : String(err)
+    })
+  }
+})
+
+app.get("/unsplash/test", async (_req, res) => {
+  try {
+    const API_KEY = process.env.UNSPLASH_ACCESS_KEY
+    if (!API_KEY) {
+      return res.status(500).json({ ok: false, error: "No API key configured" })
+    }
+
+    const response = await fetch('https://api.unsplash.com/photos/random?count=1', {
+      headers: {
+        Authorization: `Client-ID ${API_KEY}`
+      }
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      return res.status(response.status).json({
+        ok: false,
+        error
+      })
+    }
+
+    const data = await response.json()
+    res.json({
+      ok: true,
+      photo: data[0],
+      message: "Unsplash API is working!"
+    })
+  } catch (err) {
+    res.status(500).json({
+      ok: false,
+      error: err instanceof Error ? err.message : String(err)
+    })
+  }
+})
+
 app.post("/gemini", async (req, res) => {
   try {
     const { system, mode, message, history, context, model, image } = req.body ?? {}
@@ -665,4 +949,5 @@ app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`)
   console.log(`Health check: http://localhost:${PORT}/health`)
   console.log(`Gemini test: http://localhost:${PORT}/gemini/test`)
+  console.log(`Unsplash test: http://localhost:${PORT}/unsplash/test`)
 })
