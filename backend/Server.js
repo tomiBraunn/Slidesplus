@@ -124,7 +124,7 @@ app.post("/login", async (req, res) => {
     if (!identifier || !password) return res.status(400).json({ message: "Missing fields" })
 
     const r = await pool.query(
-      `SELECT id, username, email, password, first_name, last_name, avatar
+      `SELECT id, username, email, password, first_name, last_name, avatar, user_number
        FROM users WHERE username=$1 OR email=$1`,
       [identifier]
     )
@@ -141,7 +141,6 @@ app.post("/login", async (req, res) => {
       u.avatar = fix
     }
 
-    // El JWT ahora contiene el UUID en el campo 'sub'
     const token = jwt.sign(
       { sub: u.id, username: u.username, email: u.email },
       process.env.JWT_SECRET,
@@ -151,12 +150,13 @@ app.post("/login", async (req, res) => {
     res.json({
       ok: true,
       user: {
-        id: u.id, // Ahora es UUID
+        id: u.id,
         username: u.username,
         email: u.email,
         first_name: u.first_name,
         last_name: u.last_name,
         avatar: u.avatar,
+        user_number: u.user_number,
       },
       token,
     })
