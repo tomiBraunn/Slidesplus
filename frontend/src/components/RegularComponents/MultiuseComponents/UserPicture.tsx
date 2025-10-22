@@ -20,16 +20,19 @@ type User = {
 function ensureDataUrl(v?: string | null): string | undefined {
   if (!v) return undefined;
   if (v.startsWith("data:")) return v;
+  if (v.startsWith("http")) return v;
   return `data:image/svg+xml;base64,${v}`;
 }
 
 export default function UserPicture({ avatar, size = 38 }: Props) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isDark, setIsDark] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -59,6 +62,86 @@ export default function UserPicture({ avatar, size = 38 }: Props) {
 
     fetchUser();
   }, []);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${urlbackend}/users/me/avatar`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+        alert('Avatar updated successfully!');
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Error uploading avatar');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error uploading avatar');
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRegenerateAvatar = async () => {
+    if (!confirm('Regenerate default avatar? This will remove your current photo.')) {
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${urlbackend}/users/me/avatar/regenerate`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+        alert('Avatar regenerated!');
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Error regenerating avatar');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error regenerating avatar');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const src = ensureDataUrl(avatar ?? user?.avatar ?? null);
   const username = user?.username || "Guest";
@@ -98,7 +181,7 @@ export default function UserPicture({ avatar, size = 38 }: Props) {
       <div ref={containerRef} className="relative inline-block">
         <div
           onClick={toggleDropdown}
-          className="rounded-full overflow-hidden bg-gray-200 cursor-pointer"
+          className="rounded-full overflow-hidden bg-gray-200 cursor-pointer relative"
           style={{ width: size, height: size }}
           title="User"
         >
@@ -112,6 +195,11 @@ export default function UserPicture({ avatar, size = 38 }: Props) {
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-500 font-bold">
               {username.charAt(0).toUpperCase()}
+            </div>
+          )}
+          {isUploading && (
+            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
             </div>
           )}
         </div>
@@ -163,7 +251,7 @@ export default function UserPicture({ avatar, size = 38 }: Props) {
             <div className="relative z-10 flex flex-col items-center gap-2 pb-5">
               <div className="flex items-center gap-2">
                 <div
-                  className="rounded-full overflow-hidden bg-gray-200 flex-shrink-0"
+                  className="rounded-full overflow-hidden bg-gray-200 flex-shrink-0 relative group"
                   style={{ width: 56, height: 56 }}
                 >
                   {src ? (
@@ -173,6 +261,16 @@ export default function UserPicture({ avatar, size = 38 }: Props) {
                       {username.charAt(0).toUpperCase()}
                     </div>
                   )}
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-60 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer"
+                    title="Change avatar"
+                  >
+                    <span className="material-symbols-outlined text-white text-2xl">
+                      photo_camera
+                    </span>
+                  </button>
                 </div>
                 <div className="flex flex-col min-w-0">
                   <p className="text-base font-semibold text-gray-100 truncate">{fullName}</p>
@@ -184,6 +282,26 @@ export default function UserPicture({ avatar, size = 38 }: Props) {
           </div>
 
           <div className="[&>button]:w-full [&>button]:flex [&>button]:items-center [&>button]:gap-3 [&>button]:px-6 [&>button]:py-3 [&>button]:text-gray-200 [&>button]:hover:bg-[#1a1a1a] [&>button]:transition-colors [&>button]:text-left">
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className="disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined text-xl">photo_camera</span>
+              <span className="text-sm font-medium">
+                {isUploading ? 'Uploading...' : 'Upload Photo'}
+              </span>
+            </button>
+
+            <button 
+              onClick={handleRegenerateAvatar}
+              disabled={isUploading}
+              className="disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined text-xl">refresh</span>
+              <span className="text-sm font-medium">Regenerate Avatar</span>
+            </button>
+
             <button onClick={toggleDarkMode} className="justify-between">
               <div className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-xl">
@@ -219,6 +337,14 @@ export default function UserPicture({ avatar, size = 38 }: Props) {
           </div>
         </div>
       </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
 
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </>
