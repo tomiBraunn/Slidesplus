@@ -1,9 +1,20 @@
-import React, { useMemo, useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import SettingsModal from "../MultiuseComponents/SettingsModal";
+import { urlbackend } from "../../../config.js";
 
 type Props = {
   avatar?: string | null;
   size?: number;
+};
+
+type User = {
+  id: string;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  avatar: string;
+  user_number: number;
 };
 
 function ensureDataUrl(v?: string | null): string | undefined {
@@ -13,25 +24,47 @@ function ensureDataUrl(v?: string | null): string | undefined {
 }
 
 export default function UserPicture({ avatar, size = 38 }: Props) {
-  const localUser = useMemo(() => {
-    try {
-      return JSON.parse(localStorage.getItem("user") || "null");
-    } catch {
-      return null;
-    }
-  }, []);
-
-  const raw = avatar ?? localUser?.avatar ?? null;
-  const src = ensureDataUrl(raw);
-  const username = localUser?.username || "Guest";
-  const userId = localUser?.id || "0000";
-  const fullName =
-    `${localUser?.first_name || ""} ${localUser?.last_name || ""}`.trim() || "User";
-
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [isDark, setIsDark] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setIsLoading(false);
+          return;
+        }
+
+        const response = await fetch(`${urlbackend}/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  const src = ensureDataUrl(avatar ?? user?.avatar ?? null);
+  const username = user?.username || "Guest";
+  const userNumber = user?.user_number || 0;
+  const fullName =
+    `${user?.first_name || ""} ${user?.last_name || ""}`.trim() || "User";
 
   const toggleDropdown = () => setIsOpen(!isOpen);
   const toggleDarkMode = () => setIsDark(!isDark);
@@ -50,6 +83,15 @@ export default function UserPicture({ avatar, size = 38 }: Props) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  if (isLoading) {
+    return (
+      <div
+        className="rounded-full overflow-hidden bg-gray-200 animate-pulse"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
 
   return (
     <>
@@ -76,8 +118,8 @@ export default function UserPicture({ avatar, size = 38 }: Props) {
 
         <div
           className={`absolute right-0 mt-2 bg-[#0f0f0f] border border-[#2B2B2B] rounded-xl overflow-hidden transition-all duration-300 ease-out origin-top-right z-50 ${isOpen
-              ? "opacity-100 scale-100 translate-y-0"
-              : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+            ? "opacity-100 scale-100 translate-y-0"
+            : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
             }`}
         >
           <div className="p-6 pb-0 border-b border-[#2B2B2B] flex flex-col items-center gap-2 relative">
@@ -137,7 +179,7 @@ export default function UserPicture({ avatar, size = 38 }: Props) {
                   <p className="text-xs text-gray-400 truncate">@{username}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-400 truncate">User #{userId}</p>
+              <p className="text-sm text-gray-400 truncate">User #{userNumber}</p>
             </div>
           </div>
 
