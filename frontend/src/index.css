@@ -50,7 +50,7 @@ input::placeholder {
 
 .defaultStyle {
     background: #0f0f0f;
-    border: solid 1px #2B2B2B;
+    border: solid 1px #666666;
     color: white;
     transition: background-color 0.3s, border-color 0.3s;
 }
@@ -61,7 +61,14 @@ input::placeholder {
 
 .glassPanel {
     background-color: rgba(255, 255, 255, 0.012);
-    border: 2px solid rgba(255, 255, 255, 0.239);
+    border: 2px solid #666666;
+    backdrop-filter: blur(10.2px) brightness(100%);
+    -webkit-backdrop-filter: blur(10.2px) brightness(100%);
+}
+
+.glassPanelOpaque {
+    background-color: rgba(0, 0, 0, 0.400);
+    border: 1px solid #666666;
     backdrop-filter: blur(10.2px) brightness(100%);
     -webkit-backdrop-filter: blur(10.2px) brightness(100%);
 }

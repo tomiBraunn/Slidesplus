@@ -248,7 +248,7 @@ function ProjectPreview({
               </span>
               <p className="text-white font-medium text-lg">{name || "Untitled"}</p>
             </div>
-            <p className="text-[#999999] text-sm">{description}</p>
+            <p className="text-[#ffffff] text-sm">{description}</p>
           </div>
           <button
             onClick={handleClose}
@@ -296,12 +296,12 @@ function ProjectPreview({
               <button
                 key={item.label}
                 onClick={item.onClick}
-                className="flex-1 min-w-[100px] flex items-center justify-center text-[#999999] border border-[#2B2B2B] bg-[#0f0f0f] rounded-3xl p-2.5 hover:bg-[#222]"
+                className="flex-1 min-w-[100px] flex items-center justify-center defaultStyle defaultStyleHover rounded-3xl p-2.5 hover:bg-[#222]"
                 title={item.label}
                 disabled={item.label === "Open" && !projectId}
               >
                 <div className="flex items-center justify-center gap-1">
-                  <span className="material-symbols-outlined" style={{ fontSize: 18, color: "#4B4B4B" }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 18, color: "#ffffff" }}>
                     {item.icon}
                   </span>
                   <span className="text-xs">{item.label}</span>

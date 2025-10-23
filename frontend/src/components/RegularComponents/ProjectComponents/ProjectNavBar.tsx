@@ -63,7 +63,7 @@ export default function ProjectNavBar({ name, saveState, mode, onChangeMode }: P
   const displayLetter = user?.first_name?.[0] || user?.username?.[0] || user?.email?.[0] || "?";
 
   return (
-    <nav className="flex items-center justify-between p-3 h-18 w-screen border-b border-[#2B2B2B] bg-[#121212]">
+    <nav className="flex items-center justify-between p-3 h-18 w-screen border-b border-[#222831] bg-[#121212]">
       <div className="flex items-center gap-3">
         <AppIcon />
         <span className="text-white text-sm">{name}</span>

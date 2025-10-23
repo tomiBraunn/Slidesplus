@@ -520,7 +520,7 @@ export default function GeminiChatbot({
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-[#0f0f0f] text-gray-100">
+    <div className="flex flex-col bg-[#0f0f0f] glassPanelOpaque rounded-xl h-full w-full p-5 overflow-hidden">
       <div className="flex items-center justify-between px-6 py-4 border-b border-[#2B2B2B]">
         <h2 className="text-sm font-semibold text-gray-200">AI Assistant</h2>
         {messages.length > 0 && (
@@ -531,9 +531,10 @@ export default function GeminiChatbot({
             Clear
           </button>
         )}
+      
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-6">
         {loadingHistory ? (
           <div className="flex items-center justify-center gap-2 text-gray-500 text-sm mt-12">
             <div className="flex gap-1">
