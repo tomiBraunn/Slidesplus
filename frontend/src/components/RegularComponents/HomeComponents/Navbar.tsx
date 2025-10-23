@@ -1,5 +1,4 @@
 import AppIcon from "../MultiuseComponents/AppIcon"
-import Settings from "../MultiuseComponents/Settings"
 import UserPicture from "../MultiuseComponents/UserPicture"
 
 function NavBar() {

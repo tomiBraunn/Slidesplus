@@ -1,7 +1,19 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import TextType from "../ThirdPartyComponents/TextType/TextType";
+import RotatingText from "../ThirdPartyComponents/TextType/RotatingText";
+import LogoLoop from "../ThirdPartyComponents/TextType/LogoLoop";
 import homePageImage from "../../assets/homePage.png";
+
+import {
+  SiReact,
+  SiTypescript,
+  SiTailwindcss,
+  SiVercel,
+  SiSupabase,
+  SiGithub,
+  SiGoogle,
+} from "react-icons/si";
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -14,6 +26,16 @@ export default function LandingPage() {
       transition: { duration: 1, ease: "easeOut" },
     },
   };
+
+  const techLogos = [
+    { node: <SiReact />, title: "React", href: "https://react.dev" },
+    { node: <SiTypescript />, title: "TypeScript", href: "https://www.typescriptlang.org" },
+    { node: <SiTailwindcss />, title: "Tailwind", href: "https://tailwindcss.com" },
+    { node: <SiVercel />, title: "Vercel", href: "https://vercel.com" },
+    { node: <SiSupabase />, title: "Supabase", href: "https://supabase.com" },
+    { node: <SiGithub />, title: "GitHub", href: "https://github.com" },
+    { node: <SiGoogle />, title: "Google", },
+  ];
 
   return (
     <div className="min-h-screen w-full bg-[#121212] text-white overflow-x-hidden cursor-text">
@@ -54,8 +76,30 @@ export default function LandingPage() {
           />
         </motion.h1>
 
+        {}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, delay: 0.4 }}
+          className="z-10 mt-2 md:mt-4"
+        >
+          <RotatingText
+            texts={["Smarter", "Faster", "Easier", "With AI"]}
+            mainClassName="px-3 py-1 text-xl md:text-2xl bg-white/10 text-[#7182FF] font-semibold rounded-lg backdrop-blur-md"
+            staggerFrom="last"
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "-120%" }}
+            staggerDuration={0.03}
+            splitLevelClassName="overflow-hidden"
+            transition={{ type: "spring", damping: 30, stiffness: 400 }}
+            rotationInterval={1900}
+            loop={true}
+          />
+        </motion.div>
+
         <motion.p
-          className="text-white/70 text-lg max-w-xl z-10"
+          className="text-white/70 text-lg max-w-xl z-10 mt-6"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.6 }}
@@ -171,7 +215,7 @@ export default function LandingPage() {
 
       {}
       <motion.section
-        className="py-40 text-center bg-gradient-to-r from-[#249931]/20 via-[#7182FF]/20 to-[#121212]"
+        className="py-40 text-center bg-gradient-to-r from-[#249931]/20 via-[#7182FF]/20 to-[#121212] relative"
         variants={sectionReveal}
         initial="hidden"
         whileInView="visible"
@@ -187,6 +231,22 @@ export default function LandingPage() {
         >
           Start For Free
         </button>
+
+        {}
+        <div className="mt-20 flex justify-center">
+          <LogoLoop
+            logos={techLogos}
+            speed={100}
+            direction="left"
+            logoHeight={44}
+            gap={50}
+            pauseOnHover
+            scaleOnHover
+            fadeOut
+            fadeOutColor="#121212"
+            ariaLabel="Technology partners"
+          />
+        </div>
       </motion.section>
     </div>
   );
