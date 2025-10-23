@@ -55,10 +55,18 @@ export default function SettingsModal({ onClose }: Props) {
     setMounted(true);
     document.documentElement.classList.add("overflow-hidden");
     requestAnimationFrame(() => setShow(true));
+  
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleClose();
+    };
+    document.addEventListener("keydown", handleEsc);
+  
     return () => {
       document.documentElement.classList.remove("overflow-hidden");
+      document.removeEventListener("keydown", handleEsc);
     };
   }, []);
+  
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -363,18 +371,23 @@ export default function SettingsModal({ onClose }: Props) {
           }`}
       >
         <div className="w-64 bg-[#0f0f0f] border-r border-[#2B2B2B] flex flex-col p-4">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold">Settings</h2>
-            <button
-              onClick={handleClose}
-              className="flex items-center justify-center rounded-full p-1.5 hover:bg-white/10"
-              aria-label="Close"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
-                close
-              </span>
-            </button>
-          </div>
+        <div className="flex items-center mb-6">
+  <div className="flex items-center gap-2">
+    <span className="material-symbols-outlined text-2xl animate-spin-slow">settings</span>
+    <h2 className="text-lg font-semibold">Settings</h2>
+  </div>
+  {}
+  <button
+    onClick={handleClose}
+    className="ml-auto flex items-center justify-center rounded-full p-1.5 hover:bg-white/10"
+    aria-label="Close"
+  >
+    <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+      close
+    </span>
+  </button>
+</div>
+
 
           <div className="flex flex-col gap-1">
             <button
