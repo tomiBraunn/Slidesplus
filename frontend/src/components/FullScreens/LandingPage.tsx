@@ -34,7 +34,7 @@ export default function LandingPage() {
     { node: <SiVercel />, title: "Vercel", href: "https://vercel.com" },
     { node: <SiSupabase />, title: "Supabase", href: "https://supabase.com" },
     { node: <SiGithub />, title: "GitHub", href: "https://github.com" },
-    { node: <SiGoogle />, title: "Google", },
+    { node: <SiGoogle />, title: "Gemini (by Google)", href: "https://gemini.google.com" },
   ];
 
   return (
@@ -232,7 +232,6 @@ export default function LandingPage() {
           Start For Free
         </button>
 
-        {}
         <div className="mt-20 flex justify-center">
           <LogoLoop
             logos={techLogos}
