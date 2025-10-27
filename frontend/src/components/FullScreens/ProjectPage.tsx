@@ -4,10 +4,42 @@ import CodeEditorMode from "../RegularComponents/ProjectComponents/Modes/CodeEdi
 import VisualEditorMode from "../RegularComponents/ProjectComponents/Modes/VisualEditorMode"
 import LivePreview from "../RegularComponents/ProjectComponents/LivePreview"
 import GeminiChatbot from "../RegularComponents/ProjectComponents/GeminiChatbot"
+import { ActiveUsers } from "../RegularComponents/MultiuseComponents/ActiveUsers"
+import { useRealtimeProject } from "../../useRealtimeProject.js"
 import { urlbackend } from "../../config.js"
 
 type ProjectMode = "code" | "visual" | "ai"
 type SaveState = "idle" | "saving" | "saved" | "error"
+
+function getUserFromStorage() {
+  try {
+    const stored = localStorage.getItem("user")
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      return {
+        id: parsed.id,
+        username: parsed.username,
+        avatar: parsed.avatar,
+        firstName: parsed.first_name,
+        lastName: parsed.last_name
+      }
+    }
+
+    const token = localStorage.getItem("token")
+    if (token) {
+      const [, payload] = token.split(".")
+      if (payload) {
+        const json = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")))
+        return {
+          id: json.sub || json.userId,
+          username: json.username,
+          avatar: localStorage.getItem("avatar") || undefined
+        }
+      }
+    }
+  } catch { }
+  return null
+}
 
 export default function ProjectPage() {
   const [mode, setMode] = useState<ProjectMode>("code")
@@ -20,6 +52,25 @@ export default function ProjectPage() {
   const [slides, setSlides] = useState<string[]>([])
   const isDragging = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const isApplyingRemoteChange = useRef(false)
+
+  const user = getUserFromStorage()
+
+  const {
+    activeUsers,
+    lastChange,
+    isConnected,
+    broadcastChange,
+    updatePresence,
+    clearLastChange
+  } = useRealtimeProject(
+    projectId,
+    user?.id || '',
+    user?.username || 'Anonymous',
+    user?.firstName,
+    user?.lastName,
+    user?.avatar
+  )
 
   useEffect(() => {
     const parts = window.location.pathname.split("/")
@@ -58,6 +109,20 @@ export default function ProjectPage() {
   }, [])
 
   useEffect(() => {
+    if (!lastChange) return
+
+    if (lastChange.change_type === 'doc_update') {
+      isApplyingRemoteChange.current = true
+      setDoc(lastChange.change_data.doc)
+      setTimeout(() => {
+        isApplyingRemoteChange.current = false
+      }, 100)
+    }
+
+    clearLastChange()
+  }, [lastChange, clearLastChange])
+
+  useEffect(() => {
     const extractedSlides = doc
       .split(/<section/i)
       .slice(1)
@@ -69,13 +134,28 @@ export default function ProjectPage() {
     }
   }, [doc, currentSlide])
 
+  useEffect(() => {
+    if (projectId && currentSlide !== undefined) {
+      updatePresence(currentSlide)
+    }
+  }, [currentSlide, projectId, updatePresence])
+
   const onRename = (next: string) => {
     setName(next)
   }
 
   const onChangeDoc = (next: string) => {
+    if (isApplyingRemoteChange.current) {
+      return
+    }
+
     setDoc(next)
     setSaveState("saving")
+
+    if (isConnected && projectId) {
+      broadcastChange('doc_update', { doc: next })
+    }
+
     window.clearTimeout((onChangeDoc as any)._t)
       ; (onChangeDoc as any)._t = window.setTimeout(async () => {
         try {
@@ -154,7 +234,18 @@ export default function ProjectPage() {
         onRename={onRename}
         mode={mode}
         onChangeMode={setMode}
+        activeUsers={activeUsers as any}
+        currentUserId={user?.id}
       />
+
+      {user && (
+        <ActiveUsers
+          users={activeUsers as any}
+          currentUserId={user.id}
+          isConnected={isConnected}
+        />
+      )}
+
       <div className="flex-1 overflow-hidden">
         <div ref={containerRef} className="w-full h-full flex bg-[#121212]">
           <div

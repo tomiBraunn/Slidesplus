@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import AppIcon from "../MultiuseComponents/AppIcon";
 import UserPicture from "../MultiuseComponents/UserPicture";
+import { ActiveUsersAvatars } from "../MultiuseComponents/ActiveUsers";
 
 export type ProjectMode = "code" | "visual" | "ai";
 
@@ -10,6 +11,15 @@ type Props = {
   saveState: "idle" | "saving" | "saved" | "error";
   mode: ProjectMode;
   onChangeMode: (m: ProjectMode) => void;
+  activeUsers?: Array<{
+    userId: string;
+    username: string;
+    avatar?: string;
+    firstName?: string;
+    lastName?: string;
+    activity: any;
+  }>;
+  currentUserId?: string;
 };
 
 type User = {
@@ -38,7 +48,14 @@ function normalizeAvatar(avatar?: string): string | undefined {
   return `data:image/png;base64,${avatar}`;
 }
 
-export default function ProjectNavBar({ name, saveState, mode, onChangeMode }: Props) {
+export default function ProjectNavBar({
+  name,
+  saveState,
+  mode,
+  onChangeMode,
+  activeUsers = [],
+  currentUserId
+}: Props) {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
@@ -60,8 +77,6 @@ export default function ProjectNavBar({ name, saveState, mode, onChangeMode }: P
     }
   }, []);
 
-  const displayLetter = user?.first_name?.[0] || user?.username?.[0] || user?.email?.[0] || "?";
-
   return (
     <nav className="flex items-center justify-between p-3 h-18 w-screen border-b border-[#222831] bg-[#121212]">
       <div className="flex items-center gap-3">
@@ -78,9 +93,15 @@ export default function ProjectNavBar({ name, saveState, mode, onChangeMode }: P
         </span>
       </div>
 
-
-
       <div className="flex items-center gap-2.5">
+        {currentUserId && activeUsers.length > 0 && (
+          <ActiveUsersAvatars
+            users={activeUsers}
+            currentUserId={currentUserId}
+            isConnected={true}
+          />
+        )}
+
         <div className="flex items-center justify-between gap-1 w-auto defaultStyle rounded-[20px]">
           <span
             onClick={() => onChangeMode("code")}
