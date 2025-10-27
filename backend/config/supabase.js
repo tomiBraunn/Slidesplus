@@ -1,1 +1,2 @@
-export { supabase } from "../services/supabaseService.js"
+import { supabase } from "../services/supabaseService.js"
+export { supabase }
