@@ -4,7 +4,6 @@ import TextType from "../ThirdPartyComponents/TextType/TextType";
 import RotatingText from "../ThirdPartyComponents/TextType/RotatingText";
 import LogoLoop from "../ThirdPartyComponents/TextType/LogoLoop";
 import homePageImage from "../../assets/homePage.png";
-import GradualBlur from "../ThirdPartyComponents/GradualBlur/GradualBlur";
 import StaggeredMenu from "../ThirdPartyComponents/StaggredMenu/StaggredMenu";
 
 import {
@@ -23,12 +22,6 @@ const menuItems = [
   { label: "Collaborative", ariaLabel: "Go to AI section", link: "#ai" },
   { label: "UI Preview", ariaLabel: "Go to design section", link: "#design" },
   { label: "Get Started", ariaLabel: "Go to CTA section", link: "#start" },
-];
-
-const socialItems = [
-  { label: "Twitter", link: "https://twitter.com" },
-  { label: "GitHub", link: "https://github.com" },
-  { label: "LinkedIn", link: "https://linkedin.com" },
 ];
 
 const techLogos = [
@@ -53,17 +46,14 @@ export default function LandingPage() {
     },
   };
 
-  // Función para scroll suave a secciones
   const scrollToSection = (hash: string) => {
     const section = document.querySelector(hash);
-    if (section) {
-      section.scrollIntoView({ behavior: "smooth" });
-    }
+    if (section) section.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
     <div className="min-h-screen w-full bg-[#121212] text-white overflow-x-hidden cursor-text relative">
-      {/* HEADER */}
+      { }
       <header className="sticky top-0 w-full p-2 flex justify-between items-center z-50 bg-[#121212]/70 backdrop-blur-md">
         <h1 className="text-2xl font-bold tracking-wide text-[#7182FF]">Slides+</h1>
         <div className="flex gap-4 mr-4">
@@ -82,27 +72,26 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* STAGGERED MENU FLOTANTE */}
-      <StaggeredMenu
-        position="right"
-        items={menuItems.map((item) => ({
-          ...item,
-          onClick: () => scrollToSection(item.link),
-        }))}
-        socialItems={socialItems}
-        displaySocials={true}
-        displayItemNumbering={true}
-        menuButtonColor="#fff"
-        openMenuButtonColor="#fff"
-        changeMenuColorOnOpen={true}
-        colors={["#B19EEF", "#5227FF"]}
-        logoUrl="/path-to-your-logo.svg"
-        accentColor="#ff6b6b"
-        onMenuOpen={() => console.log("Menu opened")}
-        onMenuClose={() => console.log("Menu closed")}
-      />
+      { }
+      <div>
+        <StaggeredMenu
+          position="right"
+          items={menuItems.map((item) => ({
+            ...item,
+            onClick: () => scrollToSection(item.link),
+          }))}
+          displaySocials={false}
+          menuButtonColor="#ffffff"
+          openMenuButtonColor="#000"
+          changeMenuColorOnOpen={true}
+          accentColor="#ff6b6b"
+          closeButtonColor="#ffffff"
+          fullScreenOnOpen={true}
+          logoUrl="-"
+        />
+      </div>
 
-      {/* HERO */}
+      { }
       <section
         id="hero"
         className="h-screen flex flex-col justify-center items-center text-center relative overflow-hidden"
@@ -189,11 +178,9 @@ export default function LandingPage() {
         whileInView="visible"
         viewport={{ once: true, amount: 0.4 }}
       >
-        {[
-          { title: "Fast Editor", desc: "Real-time editing." },
-          { title: "Work with AI", desc: "We implemented Gemini-AI to make your work easy." },
-          { title: "Cloud Based", desc: "Access anywhere, anytime." },
-        ].map((f, i) => (
+        {[{ title: "Fast Editor", desc: "Real-time editing." },
+        { title: "Work with AI", desc: "We implemented Gemini-AI to make your work easy." },
+        { title: "Cloud Based", desc: "Access anywhere, anytime." }].map((f, i) => (
           <motion.div
             key={i}
             variants={sectionReveal}
@@ -258,6 +245,7 @@ export default function LandingPage() {
             src={homePageImage}
             alt="Home Page"
             className="w-full h-auto object-contain"
+            draggable={false}
           />
         </motion.div>
       </motion.section>
