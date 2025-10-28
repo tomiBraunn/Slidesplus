@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { Canvas, useThree, CanvasProps, ThreeEvent } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
+import type { ComponentProps } from 'react';
 import { shaderMaterial, useTrailTexture } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -30,7 +31,7 @@ interface PixelTrailProps {
   maxAge?: number;
   interpolate?: number;
   easingFunction?: (x: number) => number;
-  canvasProps?: Partial<CanvasProps>;
+  canvasProps?: Partial<ComponentProps<typeof Canvas>>;
   glProps?: WebGLContextAttributes & { powerPreference?: string };
   gooeyFilter?: { id: string; strength: number };
   color?: string;
@@ -107,7 +108,7 @@ function Scene({ gridSize, trailSize, maxAge, interpolate, easingFunction, pixel
     maxAge: maxAge,
     interpolate: interpolate || 0.1,
     ease: easingFunction || ((x: number) => x)
-  }) as [THREE.Texture | null, (e: ThreeEvent<PointerEvent>) => void];
+  }) as [THREE.Texture | null, (e: any) => void];
 
   if (trail) {
     trail.minFilter = THREE.NearestFilter;

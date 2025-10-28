@@ -499,19 +499,19 @@ export default function GeminiChatbot({
       <div className="flex gap-2 mt-3 flex-wrap">
         <button
           onClick={() => insertIntoEditor(snippet)}
-          className="px-3 py-1.5 text-xs font-medium bg-[#2B2B2B] hover:bg-[#3a3a3a] text-gray-200 rounded-lg border border-[#3a3a3a] transition-all"
+          className="px-3 py-1.5 text-xs font-medium text-gray-300 rounded-lg border transition-all"
         >
           Insert
         </button>
         <button
           onClick={() => replaceEditor(snippet)}
-          className="px-3 py-1.5 text-xs font-medium bg-[#2B2B2B] hover:bg-[#3a3a3a] text-gray-200 rounded-lg border border-[#3a3a3a] transition-all"
+          className="px-3 py-1.5 text-xs font-medium text-gray-300 rounded-lg border transition-all"
         >
           Replace
         </button>
         <button
           onClick={() => navigator.clipboard.writeText(snippet)}
-          className="px-3 py-1.5 text-xs font-medium bg-[#2B2B2B] hover:bg-[#3a3a3a] text-gray-200 rounded-lg border border-[#3a3a3a] transition-all"
+          className="px-3 py-1.5 text-xs font-medium text-gray-300 rounded-lg border transition-all"
         >
           Copy
         </button>
@@ -595,7 +595,7 @@ export default function GeminiChatbot({
               )}
 
               {looksLikeCode ? (
-                <pre className="bg-[#121212] p-4 rounded-lg text-xs overflow-x-auto border border-[#2B2B2B] font-mono whitespace-pre-wrap">
+                <pre className="glassPanel p-4 rounded-lg text-xs text-gray-300 overflow-x-auto border border whitespace-pre-wrap">
                   {msg.content}
                 </pre>
               ) : (
