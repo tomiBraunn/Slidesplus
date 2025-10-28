@@ -117,3 +117,11 @@ input::placeholder {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+
+@font-face {
+    font-family: 'NType82';
+    src: url('/src/assets/NType82-Headline.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+}

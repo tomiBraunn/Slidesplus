@@ -4,14 +4,24 @@ import CodeEditorMode from "../RegularComponents/ProjectComponents/Modes/CodeEdi
 import VisualEditorMode from "../RegularComponents/ProjectComponents/Modes/VisualEditorMode"
 import LivePreview from "../RegularComponents/ProjectComponents/LivePreview"
 import GeminiChatbot from "../RegularComponents/ProjectComponents/GeminiChatbot"
-import { ActiveUsers } from "../RegularComponents/MultiuseComponents/ActiveUsers"
-import { useRealtimeProject } from "../../useRealtimeProject.js"
+import { ActiveUsers } from "../RegularComponents/ProjectComponents/ActiveUsers"
+import { LiveCursors } from "../RegularComponents/ProjectComponents/LiveCursors"
+import { ShareModal } from "../RegularComponents/MultiuseComponents/ShareModal"
+import { useRealtimeCollaboration } from "../../useRealtimeProject"
 import { urlbackend } from "../../config.js"
 
 type ProjectMode = "code" | "visual" | "ai"
 type SaveState = "idle" | "saving" | "saved" | "error"
 
-function getUserFromStorage() {
+interface User {
+  id: string
+  username: string
+  avatar?: string
+  firstName?: string
+  lastName?: string
+}
+
+function getUserFromStorage(): User | null {
   try {
     const stored = localStorage.getItem("user")
     if (stored) {
@@ -50,8 +60,10 @@ export default function ProjectPage() {
   const [previewWidth, setPreviewWidth] = useState(55)
   const [currentSlide, setCurrentSlide] = useState(0)
   const [slides, setSlides] = useState<string[]>([])
+  const [shareModalOpen, setShareModalOpen] = useState(false)
   const isDragging = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const editorRef = useRef<HTMLDivElement>(null)
   const isApplyingRemoteChange = useRef(false)
 
   const user = getUserFromStorage()
@@ -59,11 +71,15 @@ export default function ProjectPage() {
   const {
     activeUsers,
     lastChange,
+    chatMessages,
+    cursors,
     isConnected,
     broadcastChange,
     updatePresence,
+    updateCursor,
+    sendChatMessage,
     clearLastChange
-  } = useRealtimeProject(
+  } = useRealtimeCollaboration(
     projectId,
     user?.id || '',
     user?.username || 'Anonymous',
@@ -139,6 +155,23 @@ export default function ProjectPage() {
       updatePresence(currentSlide)
     }
   }, [currentSlide, projectId, updatePresence])
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (editorRef.current && projectId) {
+        const rect = editorRef.current.getBoundingClientRect()
+        const x = e.clientX - rect.left
+        const y = e.clientY - rect.top
+
+        if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
+          updateCursor(e.clientX, e.clientY, currentSlide)
+        }
+      }
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    return () => window.removeEventListener('mousemove', handleMouseMove)
+  }, [projectId, currentSlide, updateCursor])
 
   const onRename = (next: string) => {
     setName(next)
@@ -236,15 +269,25 @@ export default function ProjectPage() {
         onChangeMode={setMode}
         activeUsers={activeUsers as any}
         currentUserId={user?.id}
+        onShareClick={() => setShareModalOpen(true)}
       />
 
       {user && (
-        <ActiveUsers
-          users={activeUsers as any}
-          currentUserId={user.id}
-          isConnected={isConnected}
-        />
+        <>
+          <ActiveUsers
+            users={activeUsers as any}
+            currentUserId={user.id}
+            isConnected={isConnected}
+          />
+          <LiveCursors cursors={cursors} currentSlideIndex={currentSlide} />
+        </>
       )}
+
+      <ShareModal
+        projectId={projectId}
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+      />
 
       <div className="flex-1 overflow-hidden">
         <div ref={containerRef} className="w-full h-full flex bg-[#121212]">
@@ -297,7 +340,7 @@ export default function ProjectPage() {
 
           <div
             onMouseDown={handleMouseDown}
-            className="w-1 bg-[#2a2a2a hover:bg-blue-500 cursor-col-resize transition-colors relative group"
+            className="w-1 bg-[#2a2a2a] hover:bg-blue-500 cursor-col-resize transition-colors relative group"
           >
             <div className="absolute inset-y-0 -left-1 -right-1" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -309,6 +352,7 @@ export default function ProjectPage() {
           </div>
 
           <div
+            ref={editorRef}
             className="h-full flex-1 relative flex justify-center items-center p-3"
             style={{
               width: `${100 - previewWidth}%`,

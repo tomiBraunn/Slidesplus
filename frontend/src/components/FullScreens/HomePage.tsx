@@ -1,5 +1,6 @@
 import ProjectTile from "../RegularComponents/HomeComponents/ProjectTile"
 import AppTextLogo from "../RegularComponents/MultiuseComponents/AppTextLogo"
+import WelcomeMessages from "../RegularComponents/MultiuseComponents/WelcomeMessages"
 import ProjectSearchBar from "../RegularComponents/HomeComponents/ProjectSearchBar"
 import NavBar from "../RegularComponents/HomeComponents/Navbar"
 import CreateProject from "../RegularComponents/HomeComponents/Modals/CreateProject"
@@ -140,8 +141,6 @@ function HomePage() {
       setFilteredProjects(fp)
     }
   }
-
-  // Escribi aca la funcion que los ordena y pasala por parametro a ProjectSearchbar
   const [sortOption, setSortOption] = useState("Recent")
 
   const sortProjects = (criteria: string) => {
@@ -184,6 +183,7 @@ function HomePage() {
           <div className="flex flex-col items-center justify-start text-white w-[70vw]">
             <div className="searchbar flex flex-col items-center justify-start w-full">
               <AppTextLogo />
+              {/* <WelcomeMessages username={user?.username}/> */}
               <ProjectSearchBar
                 onAddClick={() => setShowCreate(true)}
                 viewMode={viewMode}

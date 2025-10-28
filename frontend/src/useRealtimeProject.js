@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, RealtimeChannel } from '@supabase/supabase-js'
 import { urlbackend } from './config'
 
 let supabaseClient = null
@@ -21,7 +21,13 @@ const initSupabase = async () => {
     return supabaseClient
 }
 
-export const useRealtimeProject = (
+const generateColor = (userId) => {
+    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2']
+    const index = parseInt(userId.slice(0, 8), 16) % colors.length
+    return colors[index]
+}
+
+export const useRealtimeCollaboration = (
     projectId,
     currentUserId,
     username,
@@ -31,15 +37,19 @@ export const useRealtimeProject = (
 ) => {
     const [activeUsers, setActiveUsers] = useState([])
     const [lastChange, setLastChange] = useState(null)
+    const [chatMessages, setChatMessages] = useState([])
+    const [cursors, setCursors] = useState([])
     const channelRef = useRef(null)
     const presenceIntervalRef = useRef(null)
+    const cursorIntervalRef = useRef(null)
     const [isConnected, setIsConnected] = useState(false)
+    const userColor = useRef(generateColor(currentUserId))
 
     const updatePresence = async (slideId = 0) => {
         if (!projectId || !supabaseClient) return
 
         try {
-            const { error } = await supabaseClient
+            await supabaseClient
                 .from('user_presence')
                 .upsert({
                     project_id: projectId,
@@ -53,10 +63,34 @@ export const useRealtimeProject = (
                 }, {
                     onConflict: 'project_id,user_id'
                 })
-
-            if (error) console.error('Error updating presence:', error)
         } catch (err) {
             console.error('Error in updatePresence:', err)
+        }
+    }
+
+    const updateCursor = async (x, y, slideIndex = 0) => {
+        if (!projectId || !supabaseClient) return
+
+        try {
+            await supabaseClient
+                .from('user_cursors')
+                .upsert({
+                    project_id: projectId,
+                    user_id: currentUserId,
+                    username,
+                    first_name: firstName,
+                    last_name: lastName,
+                    avatar,
+                    cursor_x: x,
+                    cursor_y: y,
+                    slide_index: slideIndex,
+                    color: userColor.current,
+                    last_seen: new Date().toISOString()
+                }, {
+                    onConflict: 'project_id,user_id'
+                })
+        } catch (err) {
+            console.error('Error updating cursor:', err)
         }
     }
 
@@ -64,7 +98,7 @@ export const useRealtimeProject = (
         if (!projectId || !supabaseClient) return
 
         try {
-            const { error } = await supabaseClient
+            await supabaseClient
                 .from('project_changes')
                 .insert({
                     project_id: projectId,
@@ -72,10 +106,30 @@ export const useRealtimeProject = (
                     change_type: changeType,
                     change_data: changeData
                 })
-
-            if (error) console.error('Error broadcasting change:', error)
         } catch (err) {
-            console.error('Error in broadcastChange:', err)
+            console.error('Error broadcasting change:', err)
+        }
+    }
+
+    const sendChatMessage = async (content, attachments = null) => {
+        if (!projectId || !supabaseClient) return
+
+        try {
+            await supabaseClient
+                .from('shared_chat_messages')
+                .insert({
+                    project_id: projectId,
+                    user_id: currentUserId,
+                    username,
+                    first_name: firstName,
+                    last_name: lastName,
+                    avatar,
+                    role: 'user',
+                    content,
+                    attachments
+                })
+        } catch (err) {
+            console.error('Error sending chat message:', err)
         }
     }
 
@@ -92,16 +146,11 @@ export const useRealtimeProject = (
                 try {
                     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
 
-                    const { data, error } = await client
+                    const { data } = await client
                         .from('user_presence')
                         .select('*')
                         .eq('project_id', projectId)
                         .gte('last_seen', fiveMinutesAgo)
-
-                    if (error) {
-                        console.error('Error fetching active users:', error)
-                        return
-                    }
 
                     if (data) {
                         setActiveUsers(data.filter((u) => u.user_id !== currentUserId))
@@ -111,7 +160,44 @@ export const useRealtimeProject = (
                 }
             }
 
+            const fetchChatMessages = async () => {
+                try {
+                    const { data } = await client
+                        .from('shared_chat_messages')
+                        .select('*')
+                        .eq('project_id', projectId)
+                        .order('created_at', { ascending: true })
+                        .limit(100)
+
+                    if (data) {
+                        setChatMessages(data)
+                    }
+                } catch (err) {
+                    console.error('Error fetching chat messages:', err)
+                }
+            }
+
+            const fetchCursors = async () => {
+                try {
+                    const fiveSecondsAgo = new Date(Date.now() - 5000).toISOString()
+
+                    const { data } = await client
+                        .from('user_cursors')
+                        .select('*')
+                        .eq('project_id', projectId)
+                        .gte('last_seen', fiveSecondsAgo)
+
+                    if (data) {
+                        setCursors(data.filter((c) => c.user_id !== currentUserId))
+                    }
+                } catch (err) {
+                    console.error('Error fetching cursors:', err)
+                }
+            }
+
             await fetchActiveUsers()
+            await fetchChatMessages()
+            await fetchCursors()
 
             const channel = client
                 .channel(`project:${projectId}`)
@@ -125,9 +211,7 @@ export const useRealtimeProject = (
                     },
                     (payload) => {
                         const change = payload.new
-
                         if (change.user_id === currentUserId) return
-
                         setLastChange(change)
                     }
                 )
@@ -143,6 +227,30 @@ export const useRealtimeProject = (
                         fetchActiveUsers()
                     }
                 )
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'shared_chat_messages',
+                        filter: `project_id=eq.${projectId}`
+                    },
+                    (payload) => {
+                        setChatMessages(prev => [...prev, payload.new])
+                    }
+                )
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'user_cursors',
+                        filter: `project_id=eq.${projectId}`
+                    },
+                    () => {
+                        fetchCursors()
+                    }
+                )
                 .subscribe((status) => {
                     if (status === 'SUBSCRIBED') {
                         setIsConnected(true)
@@ -155,6 +263,10 @@ export const useRealtimeProject = (
             presenceIntervalRef.current = setInterval(() => {
                 updatePresence()
             }, 30000)
+
+            cursorIntervalRef.current = setInterval(() => {
+                fetchCursors()
+            }, 2000)
         }
 
         setupRealtime()
@@ -164,6 +276,10 @@ export const useRealtimeProject = (
 
             if (presenceIntervalRef.current) {
                 clearInterval(presenceIntervalRef.current)
+            }
+
+            if (cursorIntervalRef.current) {
+                clearInterval(cursorIntervalRef.current)
             }
 
             if (channelRef.current) {
@@ -178,7 +294,15 @@ export const useRealtimeProject = (
                     .eq('project_id', projectId)
                     .eq('user_id', currentUserId)
                     .then(() => { })
-                    .catch((err) => console.error('Error removing presence:', err))
+                    .catch(() => { })
+
+                supabaseClient
+                    .from('user_cursors')
+                    .delete()
+                    .eq('project_id', projectId)
+                    .eq('user_id', currentUserId)
+                    .then(() => { })
+                    .catch(() => { })
             }
         }
     }, [projectId, currentUserId])
@@ -186,9 +310,13 @@ export const useRealtimeProject = (
     return {
         activeUsers,
         lastChange,
+        chatMessages,
+        cursors,
         isConnected,
         broadcastChange,
         updatePresence,
+        updateCursor,
+        sendChatMessage,
         clearLastChange: () => setLastChange(null)
     }
 }
