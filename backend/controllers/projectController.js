@@ -144,21 +144,18 @@ export const saveSlides = async (req, res) => {
 		const projectId = req.params.id
 		let { slides } = req.body ?? {}
 
-		// fallback: if slides missing, try to extract from a full document string
 		if ((!slides || !Array.isArray(slides) || slides.length === 0) && typeof req.body.document === "string") {
 			const sections = req.body.document.match(/<section[\s\S]*?<\/section>/gi) || []
 			slides = sections.map((html, i) => ({ html, position: i }))
 		}
 
-		// additional fallback: req.body.html (single html string)
 		if ((!slides || !Array.isArray(slides) || slides.length === 0) && typeof req.body.html === "string") {
 			const sections = req.body.html.match(/<section[\s\S]*?<\/section>/gi) || []
 			slides = sections.map((html, i) => ({ html, position: i }))
 		}
 
-		// If still empty, respond with helpful debug info
 		if (!slides || !Array.isArray(slides) || slides.length === 0) {
-			console.warn(`saveSlides: no slides provided for project ${projectId}`, { bodySample: Object.keys(req.body).slice(0,10) })
+			console.warn(`saveSlides: no slides provided for project ${projectId}`, { bodySample: Object.keys(req.body).slice(0, 10) })
 			return res.status(400).json({ message: "Missing slides array or document to extract slides from" })
 		}
 
@@ -212,7 +209,7 @@ export const postChat = async (req, res) => {
 	if (!pool) return res.status(500).json({ message: "Database not configured" })
 	try {
 		const projectId = req.params.id
-		const { role, content, attachments } = req.body ?? {}
+		const { role, content, attachments, previewSlides } = req.body ?? {}
 
 		const { hasAccess, isViewer, exists } = await checkProjectAccess(projectId, req.user.sub, true)
 
@@ -231,6 +228,7 @@ export const postChat = async (req, res) => {
 			role,
 			content,
 			attachments: attachments || null,
+			previewSlides: previewSlides || null,
 			created_at: new Date().toISOString()
 		}
 
@@ -310,16 +308,40 @@ export const uploadProjectFile = async (req, res) => {
 export const uploadChatFile = async (req, res) => {
 	try {
 		if (!req.file) return res.status(400).json({ message: "No file provided" })
-		const fileName = `${req.user.sub}/${Date.now()}-${req.file.originalname}`
-		const { error: uploadError } = await supabase.storage.from("chat-files").upload(fileName, req.file.buffer, { contentType: req.file.mimetype })
-		if (uploadError) return res.status(500).json({ message: "Error uploading file", detail: uploadError.message })
+		const projectId = req.params.id
 
-		const { data: signedUrlData, error: signedError } = await supabase.storage.from("chat-files").createSignedUrl(fileName, 3600)
-		if (signedError) return res.status(500).json({ message: "Error creating file URL" })
+		const { hasAccess, isViewer, exists } = await checkProjectAccess(projectId, req.user.sub, true)
 
-		res.json({ ok: true, url: signedUrlData.signedUrl, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype })
+		if (!exists) {
+			return res.status(404).json({ message: "Project not found" })
+		}
+
+		if (!hasAccess || isViewer) {
+			return res.status(403).json({ message: "You don't have permission to upload files" })
+		}
+
+		const fileName = `${projectId}/${Date.now()}-${req.file.originalname}`
+		const { error: uploadError } = await supabase.storage
+			.from("chat-files")
+			.upload(fileName, req.file.buffer, { contentType: req.file.mimetype })
+
+		if (uploadError) {
+			return res.status(500).json({ message: "Error uploading file", detail: uploadError.message })
+		}
+
+		const { data: { publicUrl } } = supabase.storage
+			.from("chat-files")
+			.getPublicUrl(fileName)
+
+		res.json({
+			ok: true,
+			url: publicUrl,
+			filename: req.file.originalname,
+			size: req.file.size,
+			mimetype: req.file.mimetype
+		})
 	} catch (error) {
-		console.error("Error:", error)
+		console.error("Error uploading chat file:", error)
 		res.status(500).json({ message: "Internal error" })
 	}
 }

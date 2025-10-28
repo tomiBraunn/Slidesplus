@@ -1,7 +1,6 @@
 import "dotenv/config"
 import express from "express"
 import cors from "cors"
-
 import authRoutes from "./routes/authRoutes.js"
 import userRoutes from "./routes/userRoutes.js"
 import projectRoutes from "./routes/projectRoutes.js"
@@ -9,6 +8,8 @@ import geminiRoutes from "./routes/geminiRoutes.js"
 import unsplashRoutes from "./routes/unsplashRoutes.js"
 import realtimeRoutes from "./routes/realtimeRoutes.js"
 import collaborationRoutes from "./routes/collaborationRoutes.js"
+import versionRoutes from "./routes/versionRoutes.js"
+
 
 const app = express()
 app.use(express.json())
@@ -57,6 +58,7 @@ app.use("/", geminiRoutes)
 app.use("/", unsplashRoutes)
 app.use("/", realtimeRoutes)
 app.use("/", collaborationRoutes)
+app.use("/", versionRoutes)
 
 const PORT = process.env.PORT || 8000
 app.listen(PORT, () => {
