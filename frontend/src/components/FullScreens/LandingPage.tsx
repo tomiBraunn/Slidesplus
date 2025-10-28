@@ -16,10 +16,12 @@ import {
   SiGoogle,
 } from "react-icons/si";
 
+import React, { useEffect, useState } from "react";
+
 const menuItems = [
   { label: "Home", ariaLabel: "Go to home section", link: "#hero" },
   { label: "Features", ariaLabel: "Go to features section", link: "#features" },
-  { label: "Collaborative", ariaLabel: "Go to AI section", link: "#ai" },
+  { label: "Collab", ariaLabel: "Go to AI section", link: "#ai" },
   { label: "UI Preview", ariaLabel: "Go to design section", link: "#design" },
   { label: "Get Started", ariaLabel: "Go to CTA section", link: "#start" },
 ];
@@ -34,26 +36,57 @@ const techLogos = [
   { node: <SiGoogle />, title: "Gemini (by Google)", href: "https://gemini.google.com" },
 ];
 
+// Componente GradualBlur que aumenta con scroll
+const GradualBlur: React.FC<{
+  position?: "top" | "bottom";
+  maxBlur?: number;
+  className?: string;
+  style?: React.CSSProperties;
+}> = ({ position = "bottom", maxBlur = 16, className = "", style = {} }) => {
+  const [blur, setBlur] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.body.scrollHeight - window.innerHeight;
+      const scrollFraction = Math.min(scrollTop / (docHeight * 0.5), 1); // Empieza a mitad de scroll
+      setBlur(scrollFraction * maxBlur);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [maxBlur]);
+
+  return (
+    <div
+      className={className}
+      style={{
+        position: "fixed",
+        [position]: 0,
+        left: 0,
+        width: "100%",
+        height: "8rem",
+        pointerEvents: "none",
+        backdropFilter: `blur(${blur}px)`,
+        transition: "backdrop-filter 0.1s ease-out",
+        zIndex: 50,
+        ...style,
+      }}
+    />
+  );
+};
+
 export default function LandingPage() {
   const navigate = useNavigate();
 
   const sectionReveal = {
     hidden: { opacity: 0, y: 80 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 1, ease: "easeOut" },
-    },
-  };
-
-  const scrollToSection = (hash: string) => {
-    const section = document.querySelector(hash);
-    if (section) section.scrollIntoView({ behavior: "smooth" });
+    visible: { opacity: 1, y: 0, transition: { duration: 1, ease: "easeOut" } },
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#121212] text-white overflow-x-hidden cursor-text relative">
-      { }
+    <div className="min-h-screen w-full bg-[#121212] text-white overflow-x-hidden cursor-default relative">
+      {/* Header */}
       <header className="sticky top-0 w-full p-2 flex justify-between items-center z-50 bg-[#121212]/70 backdrop-blur-md">
         <h1 className="text-2xl font-bold tracking-wide text-[#7182FF]">Slides+</h1>
         <div className="flex gap-4 mr-4">
@@ -72,26 +105,24 @@ export default function LandingPage() {
         </div>
       </header>
 
-      { }
-      <div>
+      {/* Menu lateral */}
+      <div className="h-screen fixed left-0 z-50">
         <StaggeredMenu
-          position="right"
-          items={menuItems.map((item) => ({
-            ...item,
-            onClick: () => scrollToSection(item.link),
-          }))}
-          displaySocials={false}
-          menuButtonColor="#ffffff"
+          position="left"
+          items={menuItems}
+          displaySocials={true}
+          displayItemNumbering={true}
+          menuButtonColor="#fff"
           openMenuButtonColor="#000"
           changeMenuColorOnOpen={true}
+          colors={['#B19EEF', '#5227FF']}
           accentColor="#ff6b6b"
-          closeButtonColor="#ffffff"
-          fullScreenOnOpen={true}
-          logoUrl="-"
+          onMenuOpen={() => console.log('Menu opened')}
+          onMenuClose={() => console.log('Menu closed')}
         />
       </div>
 
-      { }
+      {/* Hero Section */}
       <section
         id="hero"
         className="h-screen flex flex-col justify-center items-center text-center relative overflow-hidden"
@@ -169,7 +200,7 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
-      {/* FEATURES */}
+      {/* Features */}
       <motion.section
         id="features"
         className="py-40 px-8 md:px-20 grid grid-cols-1 md:grid-cols-3 gap-10"
@@ -192,7 +223,7 @@ export default function LandingPage() {
         ))}
       </motion.section>
 
-      {/* AI SECTION */}
+      {/* AI Section */}
       <motion.section
         id="ai"
         className="py-52 flex flex-col items-center justify-center text-center relative"
@@ -210,7 +241,7 @@ export default function LandingPage() {
         </motion.p>
       </motion.section>
 
-      {/* UI SECTION */}
+      {/* Design Section */}
       <motion.section
         id="design"
         className="py-40 px-10 flex flex-col md:flex-row items-center justify-center gap-12 relative overflow-hidden"
@@ -250,7 +281,7 @@ export default function LandingPage() {
         </motion.div>
       </motion.section>
 
-      {/* CTA */}
+      {/* Get Started Section */}
       <motion.section
         id="start"
         className="py-40 text-center bg-gradient-to-r from-[#249931]/20 via-[#7182FF]/20 to-[#121212] relative"
@@ -285,6 +316,13 @@ export default function LandingPage() {
           />
         </div>
       </motion.section>
+
+      {/* Blur gradual dinámico */}
+      <GradualBlur
+        position="bottom"
+        maxBlur={20}
+        className="w-full pointer-events-none"
+      />
     </div>
   );
 }
