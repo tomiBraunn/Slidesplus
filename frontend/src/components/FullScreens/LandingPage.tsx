@@ -4,6 +4,8 @@ import TextType from "../ThirdPartyComponents/TextType/TextType";
 import RotatingText from "../ThirdPartyComponents/TextType/RotatingText";
 import LogoLoop from "../ThirdPartyComponents/TextType/LogoLoop";
 import homePageImage from "../../assets/homePage.png";
+import GradualBlur from "../ThirdPartyComponents/GradualBlur/GradualBlur";
+import StaggeredMenu from "../ThirdPartyComponents/StaggredMenu/StaggredMenu";
 
 import {
   SiReact,
@@ -14,6 +16,30 @@ import {
   SiGithub,
   SiGoogle,
 } from "react-icons/si";
+
+const menuItems = [
+  { label: "Home", ariaLabel: "Go to home section", link: "#hero" },
+  { label: "Features", ariaLabel: "Go to features section", link: "#features" },
+  { label: "Collaborative", ariaLabel: "Go to AI section", link: "#ai" },
+  { label: "UI Preview", ariaLabel: "Go to design section", link: "#design" },
+  { label: "Get Started", ariaLabel: "Go to CTA section", link: "#start" },
+];
+
+const socialItems = [
+  { label: "Twitter", link: "https://twitter.com" },
+  { label: "GitHub", link: "https://github.com" },
+  { label: "LinkedIn", link: "https://linkedin.com" },
+];
+
+const techLogos = [
+  { node: <SiReact />, title: "React", href: "https://react.dev" },
+  { node: <SiTypescript />, title: "TypeScript", href: "https://www.typescriptlang.org" },
+  { node: <SiTailwindcss />, title: "Tailwind", href: "https://tailwindcss.com" },
+  { node: <SiVercel />, title: "Vercel", href: "https://vercel.com" },
+  { node: <SiSupabase />, title: "Supabase", href: "https://supabase.com" },
+  { node: <SiGithub />, title: "GitHub", href: "https://github.com" },
+  { node: <SiGoogle />, title: "Gemini (by Google)", href: "https://gemini.google.com" },
+];
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -27,19 +53,17 @@ export default function LandingPage() {
     },
   };
 
-  const techLogos = [
-    { node: <SiReact />, title: "React", href: "https://react.dev" },
-    { node: <SiTypescript />, title: "TypeScript", href: "https://www.typescriptlang.org" },
-    { node: <SiTailwindcss />, title: "Tailwind", href: "https://tailwindcss.com" },
-    { node: <SiVercel />, title: "Vercel", href: "https://vercel.com" },
-    { node: <SiSupabase />, title: "Supabase", href: "https://supabase.com" },
-    { node: <SiGithub />, title: "GitHub", href: "https://github.com" },
-    { node: <SiGoogle />, title: "Gemini (by Google)", href: "https://gemini.google.com"},
-  ];
+  // Función para scroll suave a secciones
+  const scrollToSection = (hash: string) => {
+    const section = document.querySelector(hash);
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   return (
-    <div className="min-h-screen w-full bg-[#121212] text-white overflow-x-hidden cursor-text">
-      {}
+    <div className="min-h-screen w-full bg-[#121212] text-white overflow-x-hidden cursor-text relative">
+      {/* HEADER */}
       <header className="sticky top-0 w-full p-2 flex justify-between items-center z-50 bg-[#121212]/70 backdrop-blur-md">
         <h1 className="text-2xl font-bold tracking-wide text-[#7182FF]">Slides+</h1>
         <div className="flex gap-4 mr-4">
@@ -58,8 +82,31 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {}
-      <section className="h-screen flex flex-col justify-center items-center text-center relative overflow-hidden">
+      {/* STAGGERED MENU FLOTANTE */}
+      <StaggeredMenu
+        position="right"
+        items={menuItems.map((item) => ({
+          ...item,
+          onClick: () => scrollToSection(item.link),
+        }))}
+        socialItems={socialItems}
+        displaySocials={true}
+        displayItemNumbering={true}
+        menuButtonColor="#fff"
+        openMenuButtonColor="#fff"
+        changeMenuColorOnOpen={true}
+        colors={["#B19EEF", "#5227FF"]}
+        logoUrl="/path-to-your-logo.svg"
+        accentColor="#ff6b6b"
+        onMenuOpen={() => console.log("Menu opened")}
+        onMenuClose={() => console.log("Menu closed")}
+      />
+
+      {/* HERO */}
+      <section
+        id="hero"
+        className="h-screen flex flex-col justify-center items-center text-center relative overflow-hidden"
+      >
         <motion.h1
           className="text-5xl md:text-7xl font-extrabold mb-4 z-10 leading-tight"
           initial={{ opacity: 0, y: 30 }}
@@ -76,7 +123,6 @@ export default function LandingPage() {
           />
         </motion.h1>
 
-        {}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -134,8 +180,9 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
-      {}
+      {/* FEATURES */}
       <motion.section
+        id="features"
         className="py-40 px-8 md:px-20 grid grid-cols-1 md:grid-cols-3 gap-10"
         variants={sectionReveal}
         initial="hidden"
@@ -158,8 +205,9 @@ export default function LandingPage() {
         ))}
       </motion.section>
 
-      {}
+      {/* AI SECTION */}
       <motion.section
+        id="ai"
         className="py-52 flex flex-col items-center justify-center text-center relative"
         variants={sectionReveal}
         initial="hidden"
@@ -168,15 +216,16 @@ export default function LandingPage() {
       >
         <div className="absolute inset-0 bg-gradient-to-br from-[#249931]/15 to-[#7182FF]/15 blur-3xl"></div>
         <motion.h2 className="text-4xl font-bold mb-6 z-10 text-[#7182FF]">
-          Present smarter. Do it faster.
+          Collaborative Projects.
         </motion.h2>
         <motion.p className="text-white/70 max-w-2xl z-10">
-          Our platform adapts to you. <br />Integrate AI into your workflow and present like a pro.
+          Share it with your partners. You can make projects with many users.
         </motion.p>
       </motion.section>
 
-      {}
+      {/* UI SECTION */}
       <motion.section
+        id="design"
         className="py-40 px-10 flex flex-col md:flex-row items-center justify-center gap-12 relative overflow-hidden"
         variants={sectionReveal}
         initial="hidden"
@@ -213,8 +262,9 @@ export default function LandingPage() {
         </motion.div>
       </motion.section>
 
-      {}
+      {/* CTA */}
       <motion.section
+        id="start"
         className="py-40 text-center bg-gradient-to-r from-[#249931]/20 via-[#7182FF]/20 to-[#121212] relative"
         variants={sectionReveal}
         initial="hidden"
