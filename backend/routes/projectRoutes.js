@@ -8,6 +8,7 @@ const router = express.Router()
 router.get("/projects", auth, ctrl.listProjects)
 router.post("/projects", auth, ctrl.createProject)
 router.get("/projects/:id", auth, ctrl.getProject)
+router.get("/projects/:id/access", auth, ctrl.checkAccess) // ← NUEVA RUTA
 router.patch("/projects/:id", auth, ctrl.updateProject)
 router.delete("/projects/:id", auth, ctrl.deleteProject)
 

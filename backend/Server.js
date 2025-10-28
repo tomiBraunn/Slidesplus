@@ -7,7 +7,8 @@ import userRoutes from "./routes/userRoutes.js"
 import projectRoutes from "./routes/projectRoutes.js"
 import geminiRoutes from "./routes/geminiRoutes.js"
 import unsplashRoutes from "./routes/unsplashRoutes.js"
-import realtimeRoutes from "./routes/realtimeRoutes.js"  
+import realtimeRoutes from "./routes/realtimeRoutes.js"
+import collaborationRoutes from "./routes/collaborationRoutes.js"
 
 const app = express()
 app.use(express.json())
@@ -28,8 +29,8 @@ app.get("/health", (_req, res) => {
 			hasJWT: !!process.env.JWT_SECRET,
 			hasGeminiKey: !!process.env.GEMINI_API_KEY,
 			hasSupabase: !!process.env.SUPABASE_URL && !!process.env.SUPABASE_SERVICE_KEY,
-			hasSupabaseAnon: !!process.env.SUPABASE_ANON_KEY, 
 			hasUnsplash: !!process.env.UNSPLASH_ACCESS_KEY,
+			hasSupabaseAnon: !!process.env.SUPABASE_ANON_KEY,
 			node: process.version,
 		},
 	})
@@ -55,9 +56,12 @@ app.use("/", projectRoutes)
 app.use("/", geminiRoutes)
 app.use("/", unsplashRoutes)
 app.use("/", realtimeRoutes)
+app.use("/", collaborationRoutes)
 
 const PORT = process.env.PORT || 8000
 app.listen(PORT, () => {
 	console.log(`Server running on http://localhost:${PORT}`)
 	console.log(`Health check: http://localhost:${PORT}/health`)
+	console.log(`Gemini test: http://localhost:${PORT}/gemini/test`)
+	console.log(`Unsplash test: http://localhost:${PORT}/unsplash/test`)
 })

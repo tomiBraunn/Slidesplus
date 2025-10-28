@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken"
 import { pool } from "../config/database.js"
 
-export default function auth(req, res, next) {
+export function auth(req, res, next) {
 	const h = req.headers.authorization || ""
 	const token = h.startsWith("Bearer ") ? h.slice(7) : null
 	if (!token) return res.status(401).json({ message: "Missing token" })
@@ -20,3 +20,5 @@ export default function auth(req, res, next) {
 		return res.status(401).json({ message: "Invalid token" })
 	}
 }
+
+export default auth

@@ -141,3 +141,50 @@ export const regenerateAvatar = async (req, res) => {
 		res.status(500).json({ message: "Internal error" })
 	}
 }
+
+export const searchUsers = async (req, res) => {
+	try {
+		const { q } = req.query
+		const currentUserId = req.user.sub
+
+		if (!q || q.length < 2) {
+			return res.json({ ok: true, users: [] })
+		}
+
+		const query = `
+			SELECT 
+				id,
+				username,
+				email,
+				first_name,
+				last_name,
+				avatar
+			FROM users
+			WHERE 
+				id != $1 AND
+				(
+					username ILIKE $2 OR
+					email ILIKE $2 OR
+					first_name ILIKE $2 OR
+					last_name ILIKE $2 OR
+					CONCAT(first_name, ' ', last_name) ILIKE $2
+				)
+			ORDER BY 
+				CASE
+					WHEN username ILIKE $2 THEN 1
+					WHEN email ILIKE $2 THEN 2
+					WHEN first_name ILIKE $2 THEN 3
+					WHEN last_name ILIKE $2 THEN 4
+					ELSE 5
+				END
+			LIMIT 10
+		`
+
+		const result = await pool.query(query, [currentUserId, `%${q}%`])
+
+		res.json({ ok: true, users: result.rows })
+	} catch (error) {
+		console.error("Error searching users:", error)
+		res.status(500).json({ ok: false, error: error.message })
+	}
+}
