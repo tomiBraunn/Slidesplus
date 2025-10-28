@@ -35,7 +35,7 @@ export const ActiveUsers: React.FC<ActiveUsersProps> = ({ users, currentUserId, 
     }
 
     return (
-        <div className="fixed top-20 right-4 bg-[#1a1a1a] rounded-lg shadow-lg border border-[#2B2B2B] p-3 z-50 min-w-[200px]">
+        <div className="hidden top-20 right-4 bg-[#1a1a1a] rounded-lg shadow-lg border border-[#2B2B2B] p-3 z-50 min-w-[200px]">
             <div className="flex items-center gap-2 mb-2 text-sm font-medium text-gray-300">
                 <div className="flex items-center gap-1.5">
                     <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-gray-500'}`} />

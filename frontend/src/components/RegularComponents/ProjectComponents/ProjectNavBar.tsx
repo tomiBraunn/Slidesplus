@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import AppIcon from "../MultiuseComponents/AppIcon";
 import UserPicture from "../MultiuseComponents/UserPicture";
 import { ActiveUsersAvatars } from "./ActiveUsers";
+import { VersionHistoryModal } from "./VersionHistoryModal";
 
 export type ProjectMode = "code" | "visual" | "ai";
 
@@ -50,6 +51,7 @@ function normalizeAvatar(avatar?: string): string | undefined {
 }
 
 export default function ProjectNavBar({
+  projectId,
   name,
   saveState,
   mode,
@@ -59,6 +61,7 @@ export default function ProjectNavBar({
   onShareClick
 }: Props) {
   const [user, setUser] = useState<User | null>(null);
+  const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -80,76 +83,92 @@ export default function ProjectNavBar({
   }, []);
 
   return (
-    <nav className="flex items-center justify-between p-3 h-18 w-screen border-b border-[#222831] bg-[#121212]">
-      <div className="flex items-center gap-3">
-        <AppIcon />
-        <span className="text-white text-sm">{name}</span>
-        <span className="text-xs px-2 py-0.5 rounded-full border border-[#2B2B2B] text-[#9aa0a6]">
-          {saveState === "saving"
-            ? "Saving…"
-            : saveState === "saved"
-              ? "Saved"
-              : saveState === "error"
-                ? "Error"
-                : "Idle"}
-        </span>
-      </div>
-
-      <div className="flex items-center gap-2.5">
-        {currentUserId && activeUsers.length > 0 && (
-          <ActiveUsersAvatars
-            users={activeUsers}
-            currentUserId={currentUserId}
-            isConnected={true}
-          />
-        )}
-
-        {onShareClick && (
-          <button
-            onClick={onShareClick}
-            className="flex items-center gap-2 px-3 py-1.5 bg-[#2B2B2B] hover:bg-[#3a3a3a] text-gray-200 rounded-lg transition-colors text-sm"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-            </svg>
-            Share
-          </button>
-        )}
-
-        <div className="flex items-center justify-between gap-1 w-auto defaultStyle rounded-[20px]">
-          <span
-            onClick={() => onChangeMode("code")}
-            className={`material-symbols-outlined cursor-pointer w-[1.5em] aspect-square flex items-center justify-center rounded-l-[20px] transition ${mode === "code"
-              ? "text-white bg-gradient-to-r from-[#7182FF] to-[#3CFF52]"
-              : "text-[#4B4B4B] hover:text-white"
-              }`}
-            title="Code"
-          >
-            code
-          </span>
-          <span
-            onClick={() => onChangeMode("visual")}
-            className={`material-symbols-outlined cursor-pointer w-[1.5em] aspect-square flex items-center justify-center transition ${mode === "visual"
-              ? "text-white bg-gradient-to-r from-[#7182FF] to-[#3CFF52]"
-              : "text-[#4B4B4B] hover:text-white"
-              }`}
-            title="Visual"
-          >
-            slide_library
-          </span>
-          <span
-            onClick={() => onChangeMode("ai")}
-            className={`material-symbols-outlined cursor-pointer w-[1.5em] aspect-square flex items-center justify-center rounded-r-[20px] transition ${mode === "ai"
-              ? "text-white bg-gradient-to-r from-[#7182FF] to-[#3CFF52]"
-              : "text-[#4B4B4B] hover:text-white"
-              }`}
-            title="AI"
-          >
-            wand_stars
+    <>
+      <nav className="flex items-center justify-between p-3 h-18 w-screen border-b border-[#222831] bg-[#121212]">
+        <div className="flex items-center gap-3">
+          <AppIcon />
+          <span className="text-white text-sm">{name}</span>
+          <span className="text-xs px-2 py-0.5 rounded-full border border-[#2B2B2B] text-[#9aa0a6]">
+            {saveState === "saving"
+              ? "Saving…"
+              : saveState === "saved"
+                ? "Saved"
+                : saveState === "error"
+                  ? "Error"
+                  : "Idle"}
           </span>
         </div>
-        <UserPicture avatar={user?.avatar} username={user?.username} size={38} />
-      </div>
-    </nav>
+
+        <div className="flex items-center gap-2.5">
+          {currentUserId && activeUsers.length > 0 && (
+            <ActiveUsersAvatars
+              users={activeUsers}
+              currentUserId={currentUserId}
+              isConnected={true}
+            />
+          )}
+
+          {/* {onShareClick && (
+            <button
+              onClick={onShareClick}
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#2B2B2B] hover:bg-[#3a3a3a] text-gray-200 rounded-lg transition-colors text-sm"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
+              Share
+            </button>
+          )}
+
+          <button
+            onClick={() => setVersionHistoryOpen(true)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-[#2B2B2B] hover:bg-[#3a3a3a] text-gray-200 rounded-lg transition-colors text-sm"
+          >
+            <span className="material-symbols-outlined text-base">history</span>
+            History
+          </button> */}
+
+          <div className="flex items-center justify-between gap-1 w-auto defaultStyle rounded-[20px]">
+            <span
+              onClick={() => onChangeMode("code")}
+              className={`material-symbols-outlined cursor-pointer w-[1.5em] aspect-square flex items-center justify-center rounded-l-[20px] transition ${mode === "code"
+                ? "text-white bg-gradient-to-r from-[#7182FF] to-[#3CFF52]"
+                : "text-[#4B4B4B] hover:text-white"
+                }`}
+              title="Code"
+            >
+              code
+            </span>
+            <span
+              onClick={() => onChangeMode("visual")}
+              className={`material-symbols-outlined cursor-pointer w-[1.5em] aspect-square flex items-center justify-center transition ${mode === "visual"
+                ? "text-white bg-gradient-to-r from-[#7182FF] to-[#3CFF52]"
+                : "text-[#4B4B4B] hover:text-white"
+                }`}
+              title="Visual"
+            >
+              slide_library
+            </span>
+            <span
+              onClick={() => onChangeMode("ai")}
+              className={`material-symbols-outlined cursor-pointer w-[1.5em] aspect-square flex items-center justify-center rounded-r-[20px] transition ${mode === "ai"
+                ? "text-white bg-gradient-to-r from-[#7182FF] to-[#3CFF52]"
+                : "text-[#4B4B4B] hover:text-white"
+                }`}
+              title="AI"
+            >
+              wand_stars
+            </span>
+          </div>
+          <UserPicture avatar={user?.avatar} username={user?.username} size={38} />
+        </div>
+      </nav>
+
+      <VersionHistoryModal
+        isOpen={versionHistoryOpen}
+        onClose={() => setVersionHistoryOpen(false)}
+        projectId={projectId || null}
+      />
+    </>
   );
 }

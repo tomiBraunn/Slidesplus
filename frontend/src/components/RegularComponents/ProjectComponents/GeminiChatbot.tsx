@@ -34,7 +34,12 @@ function classifyPrompt(msg: string): "slides" | "code" | "chat" {
   return "chat"
 }
 
-const SLIDES_SYSTEM_PROMPT = `You are an elite presentation designer specializing in modern, stunning visual designs. Create presentations that look professional and captivating. Use modern gradients, glassmorphism, system fonts, and high-quality Unsplash images. Return ONLY HTML <section> tags with inline styles. NEVER include <!doctype html>, <html>, <head>, or <body> tags. Return ONLY the <section> elements.`
+const SLIDES_SYSTEM_PROMPT = `You are an elite presentation designer specializing in modern, stunning visual designs. Create presentations that look professional and captivating. Use modern gradients, glassmorphism, system fonts, and high-quality Unsplash images. 
+
+CRITICAL: All slides MUST have a 16:9 aspect ratio. Add this inline style to EVERY <section> tag:
+style="width: 100%; aspect-ratio: 16/9; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden;"
+
+Return ONLY HTML <section> tags with inline styles. NEVER include <!doctype html>, <html>, <head>, or <body> tags. Return ONLY the <section> elements.`
 
 async function createSlidesBulk(apiBase: string, projectId: string, slides: { html: string }[]) {
   const token = localStorage.getItem("token")
@@ -53,9 +58,21 @@ async function createSlidesBulk(apiBase: string, projectId: string, slides: { ht
 }
 
 function extractSlides(html: string): string[] {
-  const sections = html.match(/<section[\s\S]*?<\/section>/gi)
-  if (sections && sections.length > 0) return sections
-  return [html]
+  // Limpiar el HTML completo primero de manera más agresiva
+  let cleanHtml = html
+    .replace(/<!doctype[^>]*>/gi, '')
+    .replace(/<\/?html[^>]*>/gi, '')
+    .replace(/<\/?head[^>]*>/gi, '')
+    .replace(/<\/?body[^>]*>/gi, '')
+    .replace(/<meta[^>]*>/gi, '')
+    .trim()
+  const sections = cleanHtml.match(/<section[\s\S]*?<\/section>/gi)
+  if (sections && sections.length > 0) {
+    return sections
+      .map(section => section.trim())
+      .filter(section => section.startsWith('<section'))
+  }
+  return []
 }
 
 function formatFileSize(bytes: number): string {
@@ -83,6 +100,16 @@ async function uploadFileToStorage(file: File, projectId: string): Promise<strin
 
   const data = await res.json()
   return data.url
+}
+
+function cleanSlideHtml(html: string): string {
+  return html
+    .replace(/<!doctype[^>]*>/gi, '')
+    .replace(/<\/?html[^>]*>/gi, '')
+    .replace(/<\/?head[^>]*>/gi, '')
+    .replace(/<\/?body[^>]*>/gi, '')
+    .replace(/<meta[^>]*>/gi, '')
+    .trim()
 }
 
 export default function GeminiChatbot({
@@ -363,15 +390,21 @@ export default function GeminiChatbot({
 
   const replaceCurrentSlide = (newSlideHtml: string) => {
     if (!slides || currentSlideIndex === undefined) return
+
+    const cleanSlide = cleanSlideHtml(newSlideHtml)
+
     const updatedSlides = [...slides]
-    updatedSlides[currentSlideIndex] = newSlideHtml
+    updatedSlides[currentSlideIndex] = cleanSlide
+
     const newDoc = `<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>${updatedSlides.join("\n")}</body></html>`
     setCode(newDoc)
   }
 
   const insertSlidesAtPosition = (newSlides: string[]) => {
+    const cleanSlides = newSlides.map(slide => cleanSlideHtml(slide))
+
     if (!slides) {
-      const newDoc = `<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>${newSlides.join("\n")}</body></html>`
+      const newDoc = `<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>${cleanSlides.join("\n")}</body></html>`
       setCode(newDoc)
       return
     }
@@ -379,7 +412,7 @@ export default function GeminiChatbot({
     const insertPosition = currentSlideIndex !== undefined ? currentSlideIndex + 1 : slides.length
     const updatedSlides = [
       ...slides.slice(0, insertPosition),
-      ...newSlides,
+      ...cleanSlides,
       ...slides.slice(insertPosition)
     ]
     const newDoc = `<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>${updatedSlides.join("\n")}</body></html>`
@@ -410,11 +443,15 @@ export default function GeminiChatbot({
     try {
       setSaving(true)
       setSaveMsg(null)
+
       const slidesList = extractSlides(snippet)
-      const slidesToSave = slidesList.map((html) => ({ html }))
+      const slidesToSave = slidesList.map((html) => ({ html: html.trim() }))
+
       await createSlidesBulk(urlbackend, projectId, slidesToSave)
       setSaveMsg(`Saved ${slidesToSave.length} slide${slidesToSave.length > 1 ? 's' : ''}`)
-      replaceEditor(snippet)
+
+      const cleanDoc = `<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>${slidesList.join("\n")}</body></html>`
+      replaceEditor(cleanDoc)
     } catch (e: any) {
       setSaveMsg(e?.message || "Failed to save slides")
     } finally {
@@ -472,9 +509,9 @@ export default function GeminiChatbot({
                 </button>
               </div>
             </div>
-            <div className="w-full aspect-video bg-white rounded overflow-hidden">
+            <div className="w-full aspect-[16/9] bg-white rounded overflow-hidden">
               <iframe
-                srcDoc={`<!doctype html><html><head><meta charset='utf-8'><style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;}</style></head><body>${msg.previewSlides[previewSlideIndex]}</body></html>`}
+                srcDoc={`<!doctype html><html><head><meta charset='utf-8'><style>body{margin:0;display:flex;align-items:center;justify-center;width:100%;height:100%;overflow:hidden;}section{width:100%;height:100%;display:flex;align-items:center;justify-content:center;}</style></head><body>${msg.previewSlides[previewSlideIndex]}</body></html>`}
                 className="w-full h-full border-none"
                 title="Slide preview"
               />
@@ -531,7 +568,7 @@ export default function GeminiChatbot({
             Clear
           </button>
         )}
-      
+
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-6">

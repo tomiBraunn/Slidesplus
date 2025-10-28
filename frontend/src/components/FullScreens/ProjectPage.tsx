@@ -323,10 +323,10 @@ export default function ProjectPage() {
                           ? "border-blue-500 ring-2 ring-blue-500/30"
                           : "border-[#3a3a3a] hover:border-gray-500"
                           }`}
-                        style={{ width: "120px", height: "68px" }}
+                        style={{ width: "160px", aspectRatio: "16/9" }}
                       >
                         <iframe
-                          srcDoc={`<!doctype html><html><head><meta charset='utf-8'><style>body{margin:0;transform:scale(0.2);transform-origin:top left;width:500%;height:500%;overflow:hidden;}</style></head><body>${slide}</body></html>`}
+                          srcDoc={`<!DOCTYPE html><html><head><meta charset='utf-8'><style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:1920px;height:1080px;overflow:hidden;}body{transform:scale(0.083);transform-origin:top left;display:flex;align-items:center;justify-content:center;}section{width:1920px;height:1080px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem;text-align:center;}</style></head><body>${slide}</body></html>`}
                           className="w-full h-full border-none bg-white pointer-events-none"
                           title={`Slide ${index + 1}`}
                         />
@@ -388,20 +388,6 @@ export default function ProjectPage() {
       </defs>
       </svg>
     `)}")`,
-              backgroundRepeat: "no-repeat",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-
-              WebkitMaskImage: `
-      linear-gradient(to right, transparent 0%, black 15%) ,
-      linear-gradient(to bottom, transparent 0%, black 15%)
-    `,
-              WebkitMaskComposite: "destination-in",
-              maskImage: `
-      linear-gradient(to right, transparent 0%, black 15%) ,
-      linear-gradient(to bottom, transparent 0%, black 15%)
-    `,
-              maskComposite: "intersect",
             }}
           >
             {mode === "code" && <CodeEditorMode doc={doc} onChange={onChangeDoc} />}
