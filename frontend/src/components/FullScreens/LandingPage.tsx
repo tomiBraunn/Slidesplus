@@ -19,11 +19,11 @@ import {
 import React, { useEffect, useState } from "react";
 
 const menuItems = [
-  { label: "Home", ariaLabel: "Go to home section", link: "#hero" },
-  { label: "Features", ariaLabel: "Go to features section", link: "#features" },
-  { label: "Collab", ariaLabel: "Go to AI section", link: "#ai" },
-  { label: "UI Preview", ariaLabel: "Go to design section", link: "#design" },
-  { label: "Get Started", ariaLabel: "Go to CTA section", link: "#start" },
+  { label: "Home", ariaLabel: "Go to home section", link: "#hero" }, <br />,
+  { label: "Features", ariaLabel: "Go to features section", link: "#features" }, <br />,
+  { label: "Collab", ariaLabel: "Go to AI section", link: "#ai" }, <br />,
+  { label: "UI Preview", ariaLabel: "Go to design section", link: "#design" }, <br />,
+  { label: "Get Started", ariaLabel: "Go to CTA section", link: "#start" }, <br />,
 ];
 
 const techLogos = [
@@ -36,7 +36,6 @@ const techLogos = [
   { node: <SiGoogle />, title: "Gemini (by Google)", href: "https://gemini.google.com" },
 ];
 
-// Componente GradualBlur que aumenta con scroll
 const GradualBlur: React.FC<{
   position?: "top" | "bottom";
   maxBlur?: number;
@@ -49,7 +48,7 @@ const GradualBlur: React.FC<{
     const handleScroll = () => {
       const scrollTop = window.scrollY;
       const docHeight = document.body.scrollHeight - window.innerHeight;
-      const scrollFraction = Math.min(scrollTop / (docHeight * 0.5), 1); // Empieza a mitad de scroll
+      const scrollFraction = Math.min(scrollTop / (docHeight * 0.5), 1);
       setBlur(scrollFraction * maxBlur);
     };
 
@@ -86,43 +85,39 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen w-full bg-[#121212] text-white overflow-x-hidden cursor-default relative">
-      {/* Header */}
       <header className="sticky top-0 w-full p-2 flex justify-between items-center z-50 bg-[#121212]/70 backdrop-blur-md">
         <h1 className="text-2xl font-bold tracking-wide text-[#7182FF]">Slides+</h1>
         <div className="flex gap-4 mr-4">
           <button
             onClick={() => navigate("/login")}
-            className="p-1 px-3 rounded-md text-sm border border-[#7182FF]/60 hover:bg-[#7182FF]/10 transition"
+            className="p-1 px-3 rounded-md text-sm border border-[#7182FF]/60 hover:bg-[#7182FF]/10 transition cursor-pointer"
           >
             Login
           </button>
           <button
             onClick={() => navigate("/signup")}
-            className="p-1 px-3 rounded-md text-sm bg-gradient-to-r from-[#249931] to-[#7182FF] font-semibold hover:opacity-90 transition"
+            className="p-1 px-3 rounded-md text-sm bg-gradient-to-r from-[#249931] to-[#7182FF] font-semibold hover:opacity-90 transition cursor-pointer"
           >
             Sign Up
           </button>
         </div>
       </header>
-
-      {/* Menu lateral */}
       <div className="h-screen fixed left-0 z-50">
-        <StaggeredMenu
-          position="left"
-          items={menuItems}
-          displaySocials={true}
-          displayItemNumbering={true}
-          menuButtonColor="#fff"
-          openMenuButtonColor="#000"
-          changeMenuColorOnOpen={true}
-          colors={['#B19EEF', '#5227FF']}
-          accentColor="#ff6b6b"
-          onMenuOpen={() => console.log('Menu opened')}
-          onMenuClose={() => console.log('Menu closed')}
-        />
-      </div>
+  <StaggeredMenu
+    position="left"
+    items={menuItems}
+    displaySocials={true}
+    displayItemNumbering={false}
+    menuButtonColor="#fff"
+    openMenuButtonColor="#000"
+    changeMenuColorOnOpen={true}
+    colors={['#B19EEF', '#5227FF']}
+    accentColor="#249931"
+    onMenuOpen={() => console.log('Menu opened')}
+    onMenuClose={() => console.log('Menu closed')}
+  />
+</div>
 
-      {/* Hero Section */}
       <section
         id="hero"
         className="h-screen flex flex-col justify-center items-center text-center relative overflow-hidden"
@@ -174,8 +169,8 @@ export default function LandingPage() {
         </motion.p>
 
         <motion.button
-          onClick={() => navigate("/login")}
-          className="mt-10 px-10 py-3 rounded-full bg-gradient-to-r from-[#249931] to-[#7182FF] font-semibold hover:opacity-90 transition z-10 shadow-lg shadow-[#7182FF]/30"
+          onClick={() => navigate("/home")}
+          className="mt-10 px-10 py-3 rounded-full bg-gradient-to-r from-[#249931] to-[#7182FF] font-semibold hover:opacity-90 transition z-10 shadow-lg shadow-[#7182FF]/30 cursor-pointer"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.8 }}
@@ -199,8 +194,6 @@ export default function LandingPage() {
           <span className="text-xs text-white/50 mt-1">Scroll Down</span>
         </motion.div>
       </section>
-
-      {/* Features */}
       <motion.section
         id="features"
         className="py-40 px-8 md:px-20 grid grid-cols-1 md:grid-cols-3 gap-10"
@@ -222,8 +215,6 @@ export default function LandingPage() {
           </motion.div>
         ))}
       </motion.section>
-
-      {/* AI Section */}
       <motion.section
         id="ai"
         className="py-52 flex flex-col items-center justify-center text-center relative"
@@ -240,8 +231,6 @@ export default function LandingPage() {
           Share it with your partners. You can make projects with many users.
         </motion.p>
       </motion.section>
-
-      {/* Design Section */}
       <motion.section
         id="design"
         className="py-40 px-10 flex flex-col md:flex-row items-center justify-center gap-12 relative overflow-hidden"
@@ -261,8 +250,8 @@ export default function LandingPage() {
             Easy to navigate for any user.
           </p>
           <button
-            onClick={() => navigate("/login")}
-            className="px-8 py-3 rounded-full bg-gradient-to-r from-[#249931] to-[#7182FF] hover:opacity-90 transition shadow-md shadow-[#249931]/40"
+            onClick={() => navigate("/home")}
+            className="px-8 py-3 rounded-full bg-gradient-to-r from-[#249931] to-[#7182FF] hover:opacity-90 transition shadow-md shadow-[#249931]/40 cursor-pointer"
           >
             Try Now
           </button>
@@ -280,8 +269,6 @@ export default function LandingPage() {
           />
         </motion.div>
       </motion.section>
-
-      {/* Get Started Section */}
       <motion.section
         id="start"
         className="py-40 text-center bg-gradient-to-r from-[#249931]/20 via-[#7182FF]/20 to-[#121212] relative"
@@ -295,8 +282,8 @@ export default function LandingPage() {
         </h2>
         <p className="text-white/70 mb-10">Craft ideas, not just slides.</p>
         <button
-          onClick={() => navigate("/login")}
-          className="px-10 py-3 rounded-full bg-gradient-to-r from-[#249931] to-[#7182FF] font-semibold hover:opacity-90 transition"
+          onClick={() => navigate("/home")}
+          className="px-10 py-3 rounded-full bg-gradient-to-r from-[#249931] to-[#7182FF] font-semibold hover:opacity-90 transition cursor-pointer"
         >
           Start For Free
         </button>
@@ -304,7 +291,7 @@ export default function LandingPage() {
         <div className="mt-20 flex justify-center">
           <LogoLoop
             logos={techLogos}
-            speed={100}
+            speed={110}
             direction="left"
             logoHeight={44}
             gap={50}
@@ -316,13 +303,6 @@ export default function LandingPage() {
           />
         </div>
       </motion.section>
-
-      {/* Blur gradual dinámico */}
-      <GradualBlur
-        position="bottom"
-        maxBlur={20}
-        className="w-full pointer-events-none"
-      />
     </div>
   );
 }
