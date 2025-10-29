@@ -58,7 +58,6 @@ async function createSlidesBulk(apiBase: string, projectId: string, slides: { ht
 }
 
 function extractSlides(html: string): string[] {
-  // Limpiar el HTML completo primero de manera más agresiva
   let cleanHtml = html
     .replace(/<!doctype[^>]*>/gi, '')
     .replace(/<\/?html[^>]*>/gi, '')
@@ -557,213 +556,254 @@ export default function GeminiChatbot({
   }
 
   return (
-    <div className="flex flex-col bg-[#0f0f0f] glassPanelOpaque rounded-xl h-full w-full p-5 overflow-hidden">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-[#2B2B2B]">
-        <h2 className="text-sm font-semibold text-gray-200">AI Assistant</h2>
-        {messages.length > 0 && (
-          <button
-            onClick={clearChat}
-            className="px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-gray-200 transition-colors"
-          >
-            Clear
-          </button>
-        )}
-
-      </div>
-
-      <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-6">
-        {loadingHistory ? (
-          <div className="flex items-center justify-center gap-2 text-gray-500 text-sm mt-12">
-            <div className="flex gap-1">
-              <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse"></div>
-              <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-              <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-            </div>
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="text-center text-gray-500 mt-12 space-y-3">
-            <p className="text-sm">How can I help you today?</p>
-            <p className="text-xs text-gray-600">Ask me to create slides, write code, or chat</p>
-          </div>
-        ) : null}
-
-        {messages.map((msg, i) => {
-          const isAssistant = msg.role === "assistant"
-          const looksLikeCode = msg.content.includes("```") || looksLikeHTML(msg.content)
-          return (
-            <div
-              key={i}
-              className="space-y-2 animate-fadeIn"
-              style={{
-                animation: 'fadeIn 0.3s ease-in',
-                opacity: 0,
-                animationFillMode: 'forwards',
-                animationDelay: `${i * 0.05}s`
-              }}
+    <div
+      className="flex flex-col h-full w-full overflow-hidden p-3"
+      style={{
+        width: "100%",
+        height: "100%",
+        backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(`
+          <svg width='832' height='982' viewBox='0 0 832 982' fill='none' xmlns='http://www.w3.org/2000/svg'>
+          <g clip-path='url(#clip0_3086_852)'>
+          <rect x='0.5' y='0.5' width='838' height='994' fill='#121212' stroke='#181818'/>
+          <g opacity='0.4'>
+          <g filter='url(#filter0_f_3086_852)'>
+          <path d='M202.748 343L0 -206H828L580.129 343H202.748Z' fill='#7182FF'/>
+          </g>
+          <g filter='url(#filter1_f_3086_852)'>
+          <path d='M254.125 319L28 35.8061L788 0L583.661 319H254.125Z' fill='#249931'/>
+          <path d='M254.125 319L28 35.8061L788 0L583.661 319H254.125Z' stroke='black'/>
+          </g>
+          </g>
+          </g>
+          <defs>
+          <filter id='filter0_f_3086_852' x='-400' y='-606' width='1628' height='1349' filterUnits='userSpaceOnUse' color-interpolation-filters='sRGB'>
+          <feFlood flood-opacity='0' result='BackgroundImageFix'/>
+          <feBlend mode='normal' in='SourceGraphic' in2='BackgroundImageFix' result='shape'/>
+          <feGaussianBlur stdDeviation='200' result='effect1_foregroundBlur_3086_852'/>
+          </filter>
+          <filter id='filter1_f_3086_852' x='-173.002' y='-200.545' width='1161.95' height='720.045' filterUnits='userSpaceOnUse' color-interpolation-filters='sRGB'>
+          <feFlood flood-opacity='0' result='BackgroundImageFix'/>
+          <feBlend mode='normal' in='SourceGraphic' in2='BackgroundImageFix' result='shape'/>
+          <feGaussianBlur stdDeviation='100' result='effect1_foregroundBlur_3086_852'/>
+          </filter>
+          <clipPath id='clip0_3086_852'>
+          <rect width='839' height='995' fill='white'/>
+          </clipPath>
+          </defs>
+          </svg>
+        `)}")`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat"
+      }}
+    >
+      <div className="flex flex-col backdrop-blur-xl glassPanelOpaque rounded-xl h-full w-full p-5 overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#2B2B2B]">
+          <h2 className="text-sm font-semibold text-gray-200">AI Assistant</h2>
+          {messages.length > 0 && (
+            <button
+              onClick={clearChat}
+              className="px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-gray-200 transition-colors"
             >
-              <div className={`text-xs font-medium ${isAssistant ? "text-gray-400" : "text-gray-300"}`}>
-                {isAssistant ? "Assistant" : "You"}
-              </div>
-
-              {msg.attachments && msg.attachments.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {msg.attachments.map((file, idx) => (
-                    <a
-                      key={idx}
-                      href={file.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-3 py-1.5 bg-[#121212] border border-[#2B2B2B] rounded-lg text-xs hover:bg-[#1a1a1a] transition-colors"
-                    >
-                      {file.type.startsWith('image/') ? (
-                        <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      ) : (
-                        <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                      )}
-                      <span className="text-gray-300">{file.name}</span>
-                      <span className="text-gray-500">({formatFileSize(file.size)})</span>
-                    </a>
-                  ))}
-                </div>
-              )}
-
-              {looksLikeCode ? (
-                <pre className="glassPanel p-4 rounded-lg text-xs text-gray-300 overflow-x-auto border border whitespace-pre-wrap">
-                  {msg.content}
-                </pre>
-              ) : (
-                <div className="text-sm leading-relaxed text-gray-300 whitespace-pre-wrap">
-                  {msg.content}
-                </div>
-              )}
-              {isAssistant && renderActionsForAssistant(msg, i)}
-            </div>
-          )
-        })}
-
-        {loading && (
-          <div className="flex items-center gap-2 animate-fadeIn">
-            <div className="text-xs font-medium text-gray-400">Assistant</div>
-            <div className="flex gap-1 mt-1">
-              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-            </div>
-          </div>
-        )}
-
-        {uploadingFiles && (
-          <div className="text-blue-400 text-sm">Uploading files...</div>
-        )}
-
-        {errors.form && (
-          <div className="text-red-400 text-sm bg-red-900/20 border border-red-900/50 rounded-lg px-4 py-2">
-            {errors.form}
-          </div>
-        )}
-
-        {saveMsg && (
-          <div className="text-green-400 text-sm bg-green-900/20 border border-green-900/50 rounded-lg px-4 py-2">
-            {saveMsg}
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-
-      <div className="px-6 py-4 border-t border-[#2B2B2B]">
-        {attachedFiles.length > 0 && (
-          <div className="mb-3 flex flex-wrap gap-2">
-            {attachedFiles.map((file, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-2 px-3 py-1.5 bg-[#121212] border border-[#2B2B2B] rounded-lg text-xs"
-              >
-                {file.type.startsWith('image/') ? (
-                  <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                ) : (
-                  <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                )}
-                <span className="text-gray-300">{file.name}</span>
-                <span className="text-gray-500">({formatFileSize(file.size)})</span>
-                <button
-                  onClick={() => removeFile(index)}
-                  className="ml-1 text-gray-400 hover:text-gray-200 transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="flex gap-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            onChange={handleFileSelect}
-            className="hidden"
-            accept="*/*"
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploadingFiles || loading}
-            className="bg-[#121212] hover:bg-[#2B2B2B] border border-[#2B2B2B] text-gray-300 rounded-lg px-3 py-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Attach files"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            disabled={uploadingFiles || loading}
-            className="flex-1 bg-[#121212] text-gray-100 rounded-lg border border-[#2B2B2B] px-4 py-3 text-sm focus:outline-none focus:border-[#3a3a3a] transition-colors disabled:opacity-50"
-            placeholder="Message AI Assistant..."
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !loading && !uploadingFiles) {
-                e.preventDefault()
-                sendMessage()
-              }
-            }}
-          />
-          <button
-            onClick={sendMessage}
-            disabled={loading || uploadingFiles || (!input.trim() && attachedFiles.length === 0)}
-            className="bg-[#d0d0d0] hover:bg-[#bcbcbc] disabled:bg-[#2B2B2B] disabled:opacity-50 text-black disabled:text-gray-600 rounded-lg px-6 py-3 font-medium text-sm transition-all disabled:cursor-not-allowed"
-          >
-            {uploadingFiles ? "Uploading..." : loading ? "..." : "Send"}
-          </button>
+              Clear
+            </button>
+          )}
         </div>
-      </div>
 
-      <style>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-6">
+          {loadingHistory ? (
+            <div className="flex items-center justify-center gap-2 text-gray-500 text-sm mt-12">
+              <div className="flex gap-1">
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+              </div>
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="text-center text-gray-500 mt-12 space-y-3">
+              <p className="text-sm">How can I help you today?</p>
+              <p className="text-xs text-gray-600">Ask me to create slides, write code, or chat</p>
+            </div>
+          ) : null}
+
+          {messages.map((msg, i) => {
+            const isAssistant = msg.role === "assistant"
+            const looksLikeCode = msg.content.includes("```") || looksLikeHTML(msg.content)
+            return (
+              <div
+                key={i}
+                className="space-y-2 animate-fadeIn"
+                style={{
+                  animation: 'fadeIn 0.3s ease-in',
+                  opacity: 0,
+                  animationFillMode: 'forwards',
+                  animationDelay: `${i * 0.05}s`
+                }}
+              >
+                <div className={`text-xs font-medium ${isAssistant ? "text-gray-400" : "text-gray-300"}`}>
+                  {isAssistant ? "Assistant" : "You"}
+                </div>
+
+                {msg.attachments && msg.attachments.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {msg.attachments.map((file, idx) => (
+                      <a
+                        key={idx}
+                        href={file.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-[#121212] border border-[#2B2B2B] rounded-lg text-xs hover:bg-[#1a1a1a] transition-colors"
+                      >
+                        {file.type.startsWith('image/') ? (
+                          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        ) : (
+                          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        )}
+                        <span className="text-gray-300">{file.name}</span>
+                        <span className="text-gray-500">({formatFileSize(file.size)})</span>
+                      </a>
+                    ))}
+                  </div>
+                )}
+
+                {looksLikeCode ? (
+                  <pre className="glassPanel p-4 rounded-lg text-xs text-gray-300 overflow-x-auto border border whitespace-pre-wrap">
+                    {msg.content}
+                  </pre>
+                ) : (
+                  <div className="text-sm leading-relaxed text-gray-300 whitespace-pre-wrap">
+                    {msg.content}
+                  </div>
+                )}
+                {isAssistant && renderActionsForAssistant(msg, i)}
+              </div>
+            )
+          })}
+
+          {loading && (
+            <div className="flex items-center gap-2 animate-fadeIn">
+              <div className="text-xs font-medium text-gray-400">Assistant</div>
+              <div className="flex gap-1 mt-1">
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              </div>
+            </div>
+          )}
+
+          {uploadingFiles && (
+            <div className="text-blue-400 text-sm">Uploading files...</div>
+          )}
+
+          {errors.form && (
+            <div className="text-red-400 text-sm bg-red-900/20 border border-red-900/50 rounded-lg px-4 py-2">
+              {errors.form}
+            </div>
+          )}
+
+          {saveMsg && (
+            <div className="text-green-400 text-sm bg-green-900/20 border border-green-900/50 rounded-lg px-4 py-2">
+              {saveMsg}
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        <div className="px-6 py-4 border-t border-[#2B2B2B]">
+          {attachedFiles.length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-2">
+              {attachedFiles.map((file, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-[#121212] border border-[#2B2B2B] rounded-lg text-xs"
+                >
+                  {file.type.startsWith('image/') ? (
+                    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  )}
+                  <span className="text-gray-300">{file.name}</span>
+                  <span className="text-gray-500">({formatFileSize(file.size)})</span>
+                  <button
+                    onClick={() => removeFile(index)}
+                    className="ml-1 text-gray-400 hover:text-gray-200 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              onChange={handleFileSelect}
+              className="hidden"
+              accept="*/*"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingFiles || loading}
+              className="bg-[#121212] hover:bg-[#2B2B2B] border border-[#2B2B2B] text-gray-300 rounded-lg px-3 py-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Attach files"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              disabled={uploadingFiles || loading}
+              className="flex-1 bg-[#121212] text-gray-100 rounded-lg border border-[#2B2B2B] px-4 py-3 text-sm focus:outline-none focus:border-[#3a3a3a] transition-colors disabled:opacity-50"
+              placeholder="Message AI Assistant..."
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !loading && !uploadingFiles) {
+                  e.preventDefault()
+                  sendMessage()
+                }
+              }}
+            />
+            <button
+              onClick={sendMessage}
+              disabled={loading || uploadingFiles || (!input.trim() && attachedFiles.length === 0)}
+              className="bg-[#d0d0d0] hover:bg-[#bcbcbc] disabled:bg-[#2B2B2B] disabled:opacity-50 text-black disabled:text-gray-600 rounded-lg px-6 py-3 font-medium text-sm transition-all disabled:cursor-not-allowed"
+            >
+              {uploadingFiles ? "Uploading..." : loading ? "..." : "Send"}
+            </button>
+          </div>
+        </div>
+
+        <style>{`
+          @keyframes fadeIn {
+            from {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
           }
-          to {
-            opacity: 1;
-            transform: translateY(0);
+          .animate-fadeIn {
+            animation: fadeIn 0.3s ease-in forwards;
           }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-in forwards;
-        }
-      `}</style>
+        `}</style>
+      </div>
     </div>
   )
 }
