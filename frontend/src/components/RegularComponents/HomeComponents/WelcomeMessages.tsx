@@ -90,7 +90,7 @@ function WelcomeMessages() {
     return (
         <div
             className="w-full flex justify-center mt-2 mb-4"
-            style={{ fontFamily: 'NType82, -apple-system, BlinkMacSystemFont, sans-serif' }}
+            style={{ fontFamily: 'Playfair Display, NType82, -apple-system, BlinkMacSystemFont, sans-serif' }}
         >
             <TextType
                 text={currentMessage}
