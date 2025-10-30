@@ -41,6 +41,7 @@ function ProjectPreview({
   const [busy, setBusy] = useState(false)
   const [slides, setSlides] = useState<any[]>([])
   const [selectedSlide, setSelectedSlide] = useState<number>(0)
+  const [mainScale, setMainScale] = useState(1)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const mainPreviewRef = useRef<HTMLDivElement>(null)
   const [previewsHeight, setPreviewsHeight] = useState<number>(0)
@@ -104,17 +105,55 @@ function ProjectPreview({
   }, [open, projectId])
 
   useEffect(() => {
+    function updateScale() {
+      if (!mainPreviewRef.current) return
+      const rect = mainPreviewRef.current.getBoundingClientRect()
+      const containerWidth = rect.width
+      const containerHeight = rect.height
+      const baseWidth = 1920
+      const baseHeight = 1080
+      const scaleX = containerWidth / baseWidth
+      const scaleY = containerHeight / baseHeight
+      const newScale = Math.min(scaleX, scaleY)
+      setMainScale(newScale)
+    }
+    updateScale()
+    window.addEventListener("resize", updateScale)
+    return () => window.removeEventListener("resize", updateScale)
+  }, [slides])
+
+  useEffect(() => {
     const current = slides.find((s) => s.position === selectedSlide)
     if (!current) return
     const target = iframeRef.current?.contentDocument || iframeRef.current?.contentWindow?.document
     if (!target) return
     target.open()
     target.write(`
+      <!DOCTYPE html>
       <html>
         <head>
+          <meta charset="utf-8">
           <style>
-            html, body { margin:0; padding:0; height:100%; overflow:hidden; background:#ffffff }
-            body > * { width:100%; height:100%; box-sizing:border-box }
+            * { margin:0; padding:0; box-sizing:border-box; }
+            html, body { width:1920px; height:1080px; overflow:hidden; background:white; }
+            body { 
+              transform: scale(${mainScale}); 
+              transform-origin: top left; 
+              display:flex; 
+              align-items:center; 
+              justify-content:center; 
+            }
+            section { 
+              width:1920px; 
+              height:1080px; 
+              display:flex; 
+              flex-direction:column; 
+              align-items:center; 
+              justify-content:center; 
+              padding:4rem; 
+              text-align:center; 
+              background:white; 
+            }
           </style>
         </head>
         <body>
@@ -123,7 +162,7 @@ function ProjectPreview({
       </html>
     `)
     target.close()
-  }, [slides, selectedSlide])
+  }, [slides, selectedSlide, mainScale])
 
   useEffect(() => {
     function updateHeight() {
@@ -263,30 +302,34 @@ function ProjectPreview({
         </div>
 
         <div className="flex items-start justify-start gap-2 w-full h-full px-4 pb-2">
-          <div ref={mainPreviewRef} className="text-white rounded-xl border border-[#2B2B2B] bg-[#0f0f0f] w-full aspect-video p-0 overflow-hidden border-solid relative">
-            <iframe ref={iframeRef} title="Project Preview" className="w-full h-full border-0" />
+          <div ref={mainPreviewRef} className="text-white rounded-xl border border-[#2B2B2B] bg-white w-full aspect-video p-0 overflow-hidden border-solid relative">
+            <iframe ref={iframeRef} title="Project Preview" className="w-full h-full border-0 bg-white" style={{ background: 'white' }} />
           </div>
           <div
-            className="rounded-xl w-1/5 p-2 bg-[#0f0f0f] flex flex-col gap-2 overflow-y-auto"
+            className="rounded-xl w-1/5 p-2 bg-[#0f0f0f] flex flex-col gap-2 overflow-y-auto scrollbar-custom"
             style={{ height: previewsHeight }}
           >
-            {slides.map((s) => (
-              <div
-                key={s.id}
-                onClick={() => setSelectedSlide(s.position)}
-                className={`cursor-pointer border rounded-md overflow-hidden ${selectedSlide === s.position ? "border-blue-500" : "border-[#2B2B2B]"}`}
-                style={{ flex: "0 0 auto" }}
-              >
-                <div className="w-full" style={{ paddingTop: `${(9 / 16) * 100}%`, position: "relative" }}>
+            {slides.map((s) => {
+              const thumbWidth = mainPreviewRef.current ? mainPreviewRef.current.offsetWidth * 0.2 - 16 : 100
+              const thumbScale = thumbWidth / 1920
+
+              return (
+                <div
+                  key={s.id}
+                  onClick={() => setSelectedSlide(s.position)}
+                  className={`cursor-pointer border rounded-md overflow-hidden bg-white ${selectedSlide === s.position ? "border-blue-500" : "border-[#2B2B2B]"}`}
+                  style={{ flex: "0 0 auto", aspectRatio: "16/9" }}
+                >
                   <iframe
                     title={`slide-${s.position}`}
-                    srcDoc={`<html><head><style>html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#ffffff}body>*{width:100%;height:100%;box-sizing:border-box}</style></head><body>${s.html}</body></html>`}
-                    className="absolute top-0 left-0 w-full h-full border-0 pointer-events-none"
+                    srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:1920px;height:1080px;overflow:hidden;background:white;}body{transform:scale(${thumbScale});transform-origin:top left;width:1920px;height:1080px;}section{width:1920px;height:1080px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem;text-align:center;background:white;}</style></head><body>${s.html}</body></html>`}
+                    className="w-full h-full border-0 pointer-events-none bg-white"
                     sandbox=""
+                    style={{ background: 'white' }}
                   />
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
 

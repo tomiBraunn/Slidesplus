@@ -5,6 +5,7 @@ type Props = {
   currentSlide: number
   totalSlides: number
   onSlideChange: (index: number) => void
+  visualMode?: boolean
 }
 
 export default function LivePreview({
@@ -12,6 +13,7 @@ export default function LivePreview({
   currentSlide,
   totalSlides,
   onSlideChange,
+  visualMode = false,
 }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -152,10 +154,10 @@ export default function LivePreview({
 
   return (
     <div className="flex flex-col items-center justify-center gap-1 w-full h-full">
-      <div className="w-full h-full flex items-center justify-center rounded-4xl">
+      <div className={`w-full h-full flex items-center justify-center ${visualMode ? '' : 'rounded-4xl'}`}>
         <div
           ref={containerRef}
-          className="w-full aspect-[16/9] defaultStyle rounded-4xl overflow-hidden max-h-full bg-white relative"
+          className={`w-full aspect-[16/9] overflow-hidden max-h-full bg-white relative ${visualMode ? '' : 'rounded-4xl border border-[#52585A]'}`}
         >
           <iframe
             ref={iframeRef}
@@ -170,8 +172,8 @@ export default function LivePreview({
           />
         </div>
       </div>
-      <div className="w-full flex justify-center presentationComponentsStyle rounded-none rounded-b-3xl">
-        <div className="flex items-center justify-between gap-2 rounded-none rounded-b-3xl w-auto">
+      <div className={`w-full flex justify-center presentationComponentsStyle ${visualMode ? 'rounded-none' : 'rounded-none rounded-b-3xl'}`}>
+        <div className={`flex items-center justify-between gap-2 w-auto ${visualMode ? 'rounded-none' : 'rounded-none rounded-b-3xl'}`}>
           <span
             className="material-symbols-outlined cursor-pointer w-[1.5em] aspect-square text-[#4B4B4B] hover:text-white transition-colors"
             onClick={handleFullscreen}

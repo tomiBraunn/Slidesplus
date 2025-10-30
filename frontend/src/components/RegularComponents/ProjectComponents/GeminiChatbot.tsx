@@ -482,7 +482,7 @@ export default function GeminiChatbot({
     if (msg.previewSlides && msg.previewSlides.length > 0) {
       return (
         <div className="mt-3 space-y-3">
-          <div className="bg-[#121212] border border-[#2B2B2B] rounded-lg p-4">
+          <div className="bg-[#121212] border border-[#52585A] rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs text-gray-400">
                 Preview ({previewSlideIndex + 1} / {msg.previewSlides.length})
@@ -557,48 +557,52 @@ export default function GeminiChatbot({
 
   return (
     <div
-      className="flex flex-col h-full w-full overflow-hidden p-3"
-      style={{
-        width: "100%",
-        height: "100%",
-        backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(`
-          <svg width='832' height='982' viewBox='0 0 832 982' fill='none' xmlns='http://www.w3.org/2000/svg'>
-          <g clip-path='url(#clip0_3086_852)'>
-          <rect x='0.5' y='0.5' width='838' height='994' fill='#121212' stroke='#181818'/>
-          <g opacity='0.4'>
-          <g filter='url(#filter0_f_3086_852)'>
-          <path d='M202.748 343L0 -206H828L580.129 343H202.748Z' fill='#7182FF'/>
-          </g>
-          <g filter='url(#filter1_f_3086_852)'>
-          <path d='M254.125 319L28 35.8061L788 0L583.661 319H254.125Z' fill='#249931'/>
-          <path d='M254.125 319L28 35.8061L788 0L583.661 319H254.125Z' stroke='black'/>
-          </g>
-          </g>
-          </g>
-          <defs>
-          <filter id='filter0_f_3086_852' x='-400' y='-606' width='1628' height='1349' filterUnits='userSpaceOnUse' color-interpolation-filters='sRGB'>
-          <feFlood flood-opacity='0' result='BackgroundImageFix'/>
-          <feBlend mode='normal' in='SourceGraphic' in2='BackgroundImageFix' result='shape'/>
-          <feGaussianBlur stdDeviation='200' result='effect1_foregroundBlur_3086_852'/>
-          </filter>
-          <filter id='filter1_f_3086_852' x='-173.002' y='-200.545' width='1161.95' height='720.045' filterUnits='userSpaceOnUse' color-interpolation-filters='sRGB'>
-          <feFlood flood-opacity='0' result='BackgroundImageFix'/>
-          <feBlend mode='normal' in='SourceGraphic' in2='BackgroundImageFix' result='shape'/>
-          <feGaussianBlur stdDeviation='100' result='effect1_foregroundBlur_3086_852'/>
-          </filter>
-          <clipPath id='clip0_3086_852'>
-          <rect width='839' height='995' fill='white'/>
-          </clipPath>
-          </defs>
-          </svg>
-        `)}")`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat"
-      }}
+      className="flex flex-col h-full w-full overflow-hidden p-3 relative"
     >
-      <div className="flex flex-col backdrop-blur-xl glassPanelOpaque rounded-xl h-full w-full p-5 overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#2B2B2B]">
+      <div
+        className="absolute inset-0 bg-[#161616]"
+        // style={{
+        //   backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(`
+        //     <svg width='832' height='982' viewBox='0 0 832 982' fill='none' xmlns='http://www.w3.org/2000/svg'>
+        //     <g clip-path='url(#clip0_3086_852)'>
+        //     <rect x='0.5' y='0.5' width='838' height='994' fill='#121212' stroke='#181818'/>
+        //     <g opacity='0.4'>
+        //     <g filter='url(#filter0_f_3086_852)'>
+        //     <path d='M202.748 343L0 -206H828L580.129 343H202.748Z' fill='#7182FF'/>
+        //     </g>
+        //     <g filter='url(#filter1_f_3086_852)'>
+        //     <path d='M254.125 319L28 35.8061L788 0L583.661 319H254.125Z' fill='#249931'/>
+        //     <path d='M254.125 319L28 35.8061L788 0L583.661 319H254.125Z' stroke='black'/>
+        //     </g>
+        //     </g>
+        //     </g>
+        //     <defs>
+        //     <filter id='filter0_f_3086_852' x='-400' y='-606' width='1628' height='1349' filterUnits='userSpaceOnUse' color-interpolation-filters='sRGB'>
+        //     <feFlood flood-opacity='0' result='BackgroundImageFix'/>
+        //     <feBlend mode='normal' in='SourceGraphic' in2='BackgroundImageFix' result='shape'/>
+        //     <feGaussianBlur stdDeviation='200' result='effect1_foregroundBlur_3086_852'/>
+        //     </filter>
+        //     <filter id='filter1_f_3086_852' x='-173.002' y='-200.545' width='1161.95' height='720.045' filterUnits='userSpaceOnUse' color-interpolation-filters='sRGB'>
+        //     <feFlood flood-opacity='0' result='BackgroundImageFix'/>
+        //     <feBlend mode='normal' in='SourceGraphic' in2='BackgroundImageFix' result='shape'/>
+        //     <feGaussianBlur stdDeviation='100' result='effect1_foregroundBlur_3086_852'/>
+        //     </filter>
+        //     <clipPath id='clip0_3086_852'>
+        //     <rect width='839' height='995' fill='white'/>
+        //     </clipPath>
+        //     </defs>
+        //     </svg>
+        //   `)}")`,
+        //   backgroundSize: "cover",
+        //   backgroundPosition: "center",
+        //   backgroundRepeat: "no-repeat",
+        //   transform: "rotate(180deg)",
+        //   zIndex: 0
+        // }}
+      />
+
+      <div className="flex flex-col bg-[#121212] border border-[#52585A] rounded-xl h-full w-full p-5 overflow-hidden relative z-10">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#52585A]">
           <h2 className="text-sm font-semibold text-gray-200">AI Assistant</h2>
           {messages.length > 0 && (
             <button
@@ -652,7 +656,7 @@ export default function GeminiChatbot({
                         href={file.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-3 py-1.5 bg-[#121212] border border-[#2B2B2B] rounded-lg text-xs hover:bg-[#1a1a1a] transition-colors"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-[#121212] border border-[#52585A] rounded-lg text-xs hover:bg-[#1a1a1a] transition-colors"
                       >
                         {file.type.startsWith('image/') ? (
                           <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -713,13 +717,13 @@ export default function GeminiChatbot({
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="px-6 py-4 border-t border-[#2B2B2B]">
+        <div className="px-6 py-4 border-t border-[#52585A]">
           {attachedFiles.length > 0 && (
             <div className="mb-3 flex flex-wrap gap-2">
               {attachedFiles.map((file, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-[#121212] border border-[#2B2B2B] rounded-lg text-xs"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-[#121212] border border-[#52585A] rounded-lg text-xs"
                 >
                   {file.type.startsWith('image/') ? (
                     <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -757,7 +761,7 @@ export default function GeminiChatbot({
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadingFiles || loading}
-              className="bg-[#121212] hover:bg-[#2B2B2B] border border-[#2B2B2B] text-gray-300 rounded-lg px-3 py-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-[#121212] hover:bg-[#52585A] border border-[#52585A] text-gray-300 rounded-lg px-3 py-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               title="Attach files"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -769,7 +773,7 @@ export default function GeminiChatbot({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={uploadingFiles || loading}
-              className="flex-1 bg-[#121212] text-gray-100 rounded-lg border border-[#2B2B2B] px-4 py-3 text-sm focus:outline-none focus:border-[#3a3a3a] transition-colors disabled:opacity-50"
+              className="flex-1 bg-[#121212] text-gray-100 rounded-lg border border-[#52585A] px-4 py-3 text-sm focus:outline-none focus:border-[#3a3a3a] transition-colors disabled:opacity-50"
               placeholder="Message AI Assistant..."
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !loading && !uploadingFiles) {
@@ -781,7 +785,7 @@ export default function GeminiChatbot({
             <button
               onClick={sendMessage}
               disabled={loading || uploadingFiles || (!input.trim() && attachedFiles.length === 0)}
-              className="bg-[#d0d0d0] hover:bg-[#bcbcbc] disabled:bg-[#2B2B2B] disabled:opacity-50 text-black disabled:text-gray-600 rounded-lg px-6 py-3 font-medium text-sm transition-all disabled:cursor-not-allowed"
+              className="bg-[#d0d0d0] hover:bg-[#bcbcbc] disabled:bg-[#52585A] disabled:opacity-50 text-black disabled:text-gray-600 rounded-lg px-6 py-3 font-medium text-sm transition-all disabled:cursor-not-allowed"
             >
               {uploadingFiles ? "Uploading..." : loading ? "..." : "Send"}
             </button>
