@@ -297,7 +297,7 @@ export default function ProjectPage() {
           >
             <div className="flex-1 min-h-0 p-4 flex flex-col">
               <div className="flex-1 flex items-center justify-center">
-                <div className="w-full max-w-4xl h-full">
+                <div className="w-full h-full">
                   <LivePreview
                     document={getCurrentSlideDoc()}
                     currentSlide={currentSlide}
@@ -308,13 +308,13 @@ export default function ProjectPage() {
               </div>
 
               {slides.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-[#2a2a2a]">
+                <div className="mt-4 pt-4 border border-[#666666] py-8 px-4 rounded-4xl">
                   <div className="flex items-center gap-2 mb-2 px-1">
                     <span className="text-xs text-gray-500">
                       {currentSlide + 1} / {slides.length}
                     </span>
                   </div>
-                  <div className="flex gap-2 overflow-x-auto pb-2 px-1 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+                  <div className="flex gap-2 overflow-x-auto pb-2 px-1 scrollbar-custom">
                     {slides.map((slide, index) => (
                       <div
                         key={index}
@@ -323,12 +323,13 @@ export default function ProjectPage() {
                           ? "border-blue-500 ring-2 ring-blue-500/30"
                           : "border-[#3a3a3a] hover:border-gray-500"
                           }`}
-                        style={{ width: "160px", aspectRatio: "16/9" }}
+                        style={{ width: "100px", aspectRatio: "16/9" }}
                       >
                         <iframe
-                          srcDoc={`<!DOCTYPE html><html><head><meta charset='utf-8'><style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:1920px;height:1080px;overflow:hidden;}body{transform:scale(0.083);transform-origin:top left;display:flex;align-items:center;justify-content:center;}section{width:1920px;height:1080px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem;text-align:center;}</style></head><body>${slide}</body></html>`}
+                          srcDoc={`<!DOCTYPE html><html><head><meta charset='utf-8'><style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:1920px;height:1080px;overflow:hidden;background:white;}body{transform:scale(0.052083);transform-origin:top left;width:1920px;height:1080px;}section{width:1920px;height:1080px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem;text-align:center;background:white;}</style></head><body>${slide}</body></html>`}
                           className="w-full h-full border-none bg-white pointer-events-none"
                           title={`Slide ${index + 1}`}
+                          style={{ background: 'white' }}
                         />
                       </div>
                     ))}

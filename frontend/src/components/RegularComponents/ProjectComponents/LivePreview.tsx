@@ -76,6 +76,7 @@ export default function LivePreview({
                 width: 1920px;
                 height: 1080px;
                 overflow: hidden;
+                background: white;
               }
               body {
                 transform: scale(${scale});
@@ -93,6 +94,7 @@ export default function LivePreview({
                 justify-content: center;
                 padding: 4rem;
                 text-align: center;
+                background: white;
               }
             </style>
           </head>
@@ -150,19 +152,20 @@ export default function LivePreview({
 
   return (
     <div className="flex flex-col items-center justify-center gap-1 w-full h-full">
-      <div className="w-full h-full flex items-center justify-center">
+      <div className="w-full h-full flex items-center justify-center rounded-4xl">
         <div
           ref={containerRef}
-          className="w-full aspect-[16/9] defaultStyle rounded-xl overflow-hidden max-h-full bg-white relative"
+          className="w-full aspect-[16/9] defaultStyle rounded-4xl overflow-hidden max-h-full bg-white relative"
         >
           <iframe
             ref={iframeRef}
             title="Live Preview"
-            className="w-full h-full border-none absolute top-0 left-0"
+            className="w-full h-full border-none absolute top-0 left-0 bg-white"
             style={{
               border: 'none',
               outline: 'none',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              background: 'white'
             }}
           />
         </div>

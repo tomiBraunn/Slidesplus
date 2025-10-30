@@ -18,12 +18,12 @@ function AppIcon() {
                 <path d="M41.1238 39.7182V20.3774H46.0274V39.7182H41.1238ZM33.8779 32.4927V27.6029H53.2732V32.4927H33.8779Z" fill="url(#paint1_linear_2529_403)" />
                 <defs>
                     <linearGradient id="paint0_linear_2529_403" x1="-10.2046" y1="30.5177" x2="72.0811" y2="30.5177" gradientUnits="userSpaceOnUse">
-                        <stop stop-color="#7182FF" />
-                        <stop offset="0.9999" stop-color="#249931" />
+                        <stop stopColor="#7182FF" />
+                        <stop offset="0.9999" stopColor="#249931" />
                     </linearGradient>
                     <linearGradient id="paint1_linear_2529_403" x1="-10.2046" y1="30.5177" x2="72.0811" y2="30.5177" gradientUnits="userSpaceOnUse">
-                        <stop stop-color="#7182FF" />
-                        <stop offset="0.9999" stop-color="#249931" />
+                        <stop stopColor="#7182FF" />
+                        <stop offset="0.9999" stopColor="#249931" />
                     </linearGradient>
                 </defs>
             </svg>

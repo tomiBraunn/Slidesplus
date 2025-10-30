@@ -88,7 +88,7 @@ export default function ProjectNavBar({
         <div className="flex items-center gap-3">
           <AppIcon />
           <span className="text-white text-sm">{name}</span>
-          <span className="text-xs px-2 py-0.5 rounded-full border border-[#2B2B2B] text-[#9aa0a6]">
+          <span className="text-xs px-2 py-0.5 rounded-full border border-[#666666] text-white">
             {saveState === "saving"
               ? "Saving…"
               : saveState === "saved"
@@ -132,8 +132,8 @@ export default function ProjectNavBar({
             <span
               onClick={() => onChangeMode("code")}
               className={`material-symbols-outlined cursor-pointer w-[1.5em] aspect-square flex items-center justify-center rounded-l-[20px] transition ${mode === "code"
-                ? "text-white bg-gradient-to-r from-[#7182FF] to-[#3CFF52]"
-                : "text-[#4B4B4B] hover:text-white"
+                ? "text-black bg-white"
+                : "text-[#666666] hover:text-white"
                 }`}
               title="Code"
             >
@@ -142,8 +142,8 @@ export default function ProjectNavBar({
             <span
               onClick={() => onChangeMode("visual")}
               className={`material-symbols-outlined cursor-pointer w-[1.5em] aspect-square flex items-center justify-center transition ${mode === "visual"
-                ? "text-white bg-gradient-to-r from-[#7182FF] to-[#3CFF52]"
-                : "text-[#4B4B4B] hover:text-white"
+                ? "text-black bg-white"
+                : "text-[#666666] hover:text-white"
                 }`}
               title="Visual"
             >
@@ -152,8 +152,8 @@ export default function ProjectNavBar({
             <span
               onClick={() => onChangeMode("ai")}
               className={`material-symbols-outlined cursor-pointer w-[1.5em] aspect-square flex items-center justify-center rounded-r-[20px] transition ${mode === "ai"
-                ? "text-white bg-gradient-to-r from-[#7182FF] to-[#3CFF52]"
-                : "text-[#4B4B4B] hover:text-white"
+                ? "text-black bg-white"
+                : "text-[#666666] hover:text-white"
                 }`}
               title="AI"
             >
