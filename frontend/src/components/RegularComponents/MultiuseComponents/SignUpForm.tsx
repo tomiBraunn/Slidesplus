@@ -57,6 +57,7 @@ function SignUpForm() {
 
           <div className="px-6 pb-6 pt-4">
             <form onSubmit={handleSubmit} className="grid gap-6">
+
               <div className="grid gap-3">
                 <label className="text-sm font-medium">Name</label>
                 <div className="flex gap-3 w-full">
@@ -122,12 +123,12 @@ function SignUpForm() {
                     required
                     className={`bg-[#121212] px-3 py-2 w-full text-sm rounded-lg border ${
                       errors.password ? "border-red-500" : "border-[#2B2B2B]"
-                    } pr-10`}
+                    } pr-12`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center text-gray-400 hover:text-gray-200 w-8 h-8"
+                    className="absolute inset-y-0 right-3 my-auto flex items-center justify-center text-gray-400 hover:text-gray-200"
                   >
                     <span className="material-symbols-outlined">
                       {showPassword ? "visibility_off" : "visibility"}
@@ -147,12 +148,12 @@ function SignUpForm() {
                     required
                     className={`bg-[#121212] px-3 py-2 w-full text-sm rounded-lg border ${
                       errors.confirmPassword ? "border-red-500" : "border-[#2B2B2B]"
-                    } pr-10`}
+                    } pr-12`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center text-gray-400 hover:text-gray-200 w-8 h-8"
+                    className="absolute inset-y-0 right-3 my-auto flex items-center justify-center text-gray-400 hover:text-gray-200"
                   >
                     <span className="material-symbols-outlined">
                       {showConfirmPassword ? "visibility_off" : "visibility"}

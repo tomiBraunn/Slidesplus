@@ -45,7 +45,7 @@ function LogInForm() {
 
         <div className="px-6 pb-6 pt-4">
           <form onSubmit={handleSubmit} className="grid gap-6">
-            {}
+            
             <div className="flex flex-col gap-4">
               <button
                 type="button"
@@ -74,7 +74,6 @@ function LogInForm() {
               </button>
             </div>
 
-            {}
             <div className="relative text-center text-sm">
               <span className="bg-[#0f0f0f] relative z-10 px-2 text-gray-400">
                 Or continue with
@@ -82,7 +81,6 @@ function LogInForm() {
               <div className="absolute inset-0 top-1/2 -translate-y-1/2 border-t border-[#2B2B2B]" />
             </div>
 
-            {}
             <div className="grid gap-3">
               <label htmlFor="identifier" className="text-sm font-medium">
                 Username/Email
@@ -99,7 +97,6 @@ function LogInForm() {
               />
             </div>
 
-            {}
             <div className="grid gap-3 relative">
               <div className="flex items-center">
                 <label htmlFor="password" className="text-sm font-medium">
@@ -121,17 +118,14 @@ function LogInForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="bg-[#121212] px-3 py-2 w-full text-sm rounded-lg border border-[#2B2B2B]
-                  focus:outline-none pr-10"
+                  focus:outline-none pr-12"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center text-gray-400 hover:text-gray-200 w-8 h-8"
+                  className="absolute inset-y-0 right-3 my-auto flex items-center justify-center text-gray-400 hover:text-gray-200"
                 >
-                  <span
-                    className="material-symbols-outlined text-[22px]"
-                    style={{ fontSize: "22px" }}
-                  >
+                  <span className="material-symbols-outlined text-[22px]">
                     {showPassword ? "visibility_off" : "visibility"}
                   </span>
                 </button>
@@ -142,7 +136,6 @@ function LogInForm() {
               <p className="text-red-500 text-sm text-center">{error}</p>
             )}
 
-            {}
             <button
               type="submit"
               className="w-full rounded-xl px-4 py-3 font-medium text-black bg-[#d0d0d0] cursor-pointer hover:bg-[#bcbcbc] transition"
