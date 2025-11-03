@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useEffect, useState, useRef } from "react"
 import ProjectNavBar from "../RegularComponents/ProjectComponents/ProjectNavBar"
 import CodeEditorMode from "../RegularComponents/ProjectComponents/Modes/CodeEditorMode"

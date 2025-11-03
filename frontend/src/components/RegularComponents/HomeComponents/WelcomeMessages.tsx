@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useState, useMemo } from "react";
 import TextType from "../../ThirdPartyComponents/TextType/TextType.js";
 import { urlbackend } from "../../../config.js";

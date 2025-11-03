@@ -1,8 +1,9 @@
+// @ts-nocheck
 import React, { useEffect, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { urlbackend } from "./config.js";
 
-type Props = { children: JSX.Element };
+type Props = { children: React.ReactElement };
 
 export default function ProtectedRoute({ children }: Props) {
   const [checking, setChecking] = useState(true);

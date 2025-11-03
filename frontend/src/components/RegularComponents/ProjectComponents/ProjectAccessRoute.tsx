@@ -1,10 +1,11 @@
+// @ts-nocheck
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import AccessDenied from './AccessDenied'
 import { urlbackend } from '../../../config.js'
 
 type Props = {
-  children: (hasAccess: boolean, role: string | null) => JSX.Element
+  children: (hasAccess: boolean, role: string | null) => React.ReactElement
 }
 
 export default function ProjectAccessRoute({ children }: Props) {

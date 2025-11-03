@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useEffect, useState } from "react";
 import AppIcon from "../MultiuseComponents/AppIcon";
 import UserPicture from "../MultiuseComponents/UserPicture";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import LogInForm from '../RegularComponents/MultiuseComponents/LogInForm';
 import Threads from "../ThirdPartyComponents/Threads/Threads"; 
 

@@ -4,7 +4,7 @@ import ProjectPage from "./components/FullScreens/ProjectPage";
 import LandingPage from "./components/FullScreens/LandingPage";
 import LogInPage from "./components/FullScreens/LogInPage";
 import SignUpPage from "./components/FullScreens/SignUpPage";
-import UrlNotFoundPage from "./components/FullScreens/UrlNotfoundPage";
+import UrlNotFoundPage from "./components/FullScreens/UrlNotFoundPage";
 import ProtectedRoute from "./ProtectedRoute";
 
 export default function App() {

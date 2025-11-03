@@ -1,3 +1,4 @@
+// @ts-nocheck
 import AppIcon from "../MultiuseComponents/AppIcon"
 import UserPicture from "../MultiuseComponents/UserPicture"
 

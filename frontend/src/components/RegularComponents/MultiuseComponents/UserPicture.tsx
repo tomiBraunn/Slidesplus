@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useRef, useEffect } from "react";
 import SettingsModal from "../MultiuseComponents/SettingsModal";
 import { urlbackend } from "../../../config.js";

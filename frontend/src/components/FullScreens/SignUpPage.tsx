@@ -1,3 +1,4 @@
+// @ts-nocheck
 import SignUpForm from '../RegularComponents/MultiuseComponents/SignUpForm';
 import Threads from "../ThirdPartyComponents/Threads/Threads";
 

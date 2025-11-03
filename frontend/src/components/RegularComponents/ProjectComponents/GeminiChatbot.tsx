@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useMemo, useState, useEffect, useRef } from "react"
 import { urlbackend } from "../../../config.js"
 

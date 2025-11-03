@@ -3,7 +3,16 @@
     "allow": [
       "Bash(dir /s /b *.py 2)",
       "Bash(nul)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(dir /s /b srccomponentsFullScreensUrl*.tsx 2)",
+      "Bash(copy:*)",
+      "Bash(for file in \"src/components/RegularComponents/HomeComponents/Modals/ProjectPreview.tsx\" \"src/components/RegularComponents/HomeComponents/WelcomeMessages.tsx\" \"src/components/RegularComponents/MultiuseComponents/LogInForm.tsx\" \"src/components/RegularComponents/MultiuseComponents/Settings.tsx\" \"src/components/RegularComponents/MultiuseComponents/SettingsModal.tsx\" \"src/components/RegularComponents/MultiuseComponents/ShareModal.tsx\" \"src/components/RegularComponents/MultiuseComponents/SignUpForm.tsx\" \"src/components/RegularComponents/MultiuseComponents/UserPicture.tsx\" \"src/components/RegularComponents/ProjectComponents/GeminiChatbot.tsx\" \"src/components/RegularComponents/ProjectComponents/ProjectAccessRoute.tsx\" \"src/components/RegularComponents/ProjectComponents/VersionHistoryModal.tsx\" \"src/ProtectedRoute.tsx\")",
+      "Bash(do)",
+      "Bash(if [ -f \"$file\" ])",
+      "Bash(! grep -q \"@ts-nocheck\" \"$file\")",
+      "Bash(then)",
+      "Bash(fi)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

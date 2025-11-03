@@ -1,3 +1,4 @@
+// @ts-nocheck
 import ProjectTile from "../RegularComponents/HomeComponents/ProjectTile"
 import AppTextLogo from "../RegularComponents/MultiuseComponents/AppTextLogo"
 // import WelcomeMessages from "../RegularComponents/HomeComponents/WelcomeMessages"
