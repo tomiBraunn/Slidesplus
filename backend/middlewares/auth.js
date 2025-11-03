@@ -21,4 +21,36 @@ export function auth(req, res, next) {
 	}
 }
 
+export function optionalAuth(req, res, next) {
+	const h = req.headers.authorization || ""
+	const token = h.startsWith("Bearer ") ? h.slice(7) : null
+
+	if (!token) {
+		req.user = null
+		return next()
+	}
+
+	try {
+		const payload = jwt.verify(token, process.env.JWT_SECRET)
+		if (!pool) {
+			req.user = null
+			return next()
+		}
+
+		pool
+			.query("SELECT id FROM users WHERE id=$1", [payload.sub])
+			.then((r) => {
+				req.user = r.rowCount > 0 ? payload : null
+				next()
+			})
+			.catch(() => {
+				req.user = null
+				next()
+			})
+	} catch {
+		req.user = null
+		next()
+	}
+}
+
 export default auth

@@ -48,11 +48,41 @@ export const checkAccess = async (req, res) => {
 			})
 		}
 
+		const projectQuery = await pool.query(
+			`SELECT p.id, p.name, p.is_public, p.owner_id, u.email as owner_email,
+			       COALESCE(u.username, u.first_name, u.email) as owner_name
+			FROM projects p
+			LEFT JOIN users u ON u.id = p.owner_id
+			WHERE p.id = $1`,
+			[id]
+		)
+
+		const project = projectQuery.rows[0]
+
+		const collaboratorsQuery = await pool.query(
+			`SELECT u.id, u.email, COALESCE(u.username, u.first_name, u.email) as name, pc.role
+			FROM project_collaborators pc
+			JOIN users u ON u.id = pc.user_id
+			WHERE pc.project_id = $1`,
+			[id]
+		)
+
 		return res.json({
 			ok: true,
 			exists: true,
 			hasAccess,
-			role: hasAccess ? role : null
+			role: hasAccess ? role : null,
+			project: {
+				id: project.id,
+				name: project.name,
+				is_public: project.is_public,
+				owner: {
+					id: project.owner_id,
+					email: project.owner_email,
+					name: project.owner_name
+				}
+			},
+			collaborators: collaboratorsQuery.rows
 		})
 	} catch (err) {
 		console.error("Error checking project access:", err)
@@ -85,28 +115,129 @@ export const listProjects = async (req, res) => {
 export const getProject = async (req, res) => {
 	if (!pool) return res.status(500).json({ message: "Database not configured" })
 	try {
-		const { hasAccess, role, exists } = await checkProjectAccess(req.params.id, req.user.sub)
+		const { id } = req.params
+		const userId = req.user?.sub || null
 
-		if (!exists) {
+		const projectQuery = await pool.query(
+			`SELECT id, owner_id, name, document, chat_history, created_at, updated_at, visibility, is_public
+			FROM projects
+			WHERE id = $1`,
+			[id]
+		)
+
+		if (projectQuery.rowCount === 0) {
 			return res.status(404).json({ message: "Project not found" })
 		}
 
-		if (!hasAccess) {
-			return res.status(403).json({ message: "Access denied" })
+		const project = projectQuery.rows[0]
+
+		let hasAccess = project.is_public
+		let role = null
+
+		if (userId) {
+			const isOwner = project.owner_id === userId
+			if (isOwner) {
+				hasAccess = true
+				role = 'owner'
+			} else {
+				const collaboratorQuery = await pool.query(
+					`SELECT role FROM project_collaborators
+					WHERE project_id = $1 AND user_id = $2`,
+					[id, userId]
+				)
+				if (collaboratorQuery.rowCount > 0) {
+					hasAccess = true
+					role = collaboratorQuery.rows[0].role
+				} else if (project.visibility === 'public') {
+					hasAccess = true
+					role = 'viewer'
+				}
+			}
 		}
 
-		const q = await pool.query(
-			`SELECT id, owner_id, name, document, chat_history, created_at, updated_at, visibility
-			FROM projects
-			WHERE id=$1`,
-			[req.params.id]
+		if (!hasAccess) {
+			return res.status(403).json({
+				message: "This project is private"
+			})
+		}
+
+		const slidesQuery = await pool.query(
+			`SELECT id, html, position
+			FROM slides
+			WHERE project_id = $1
+			ORDER BY position ASC`,
+			[id]
 		)
 
-		if (q.rowCount === 0) return res.status(404).json({ message: "Project not found" })
-
-		res.json({ ...q.rows[0], user_role: role })
-	} catch {
+		res.json({
+			...project,
+			user_role: role,
+			slides: slidesQuery.rows || []
+		})
+	} catch (err) {
+		console.error("Error fetching project:", err)
 		res.status(500).json({ message: "Internal error" })
+	}
+}
+
+export const getPublicProject = async (req, res) => {
+	if (!pool) return res.status(500).json({ message: "Database not configured" })
+	try {
+		const { id } = req.params
+		const userId = req.user?.sub || null
+
+		const projectQuery = await pool.query(
+			`SELECT id, name, document, created_at, updated_at, is_public, owner_id
+			FROM projects
+			WHERE id = $1`,
+			[id]
+		)
+
+		if (projectQuery.rowCount === 0) {
+			return res.status(404).json({ ok: false, message: "Project not found" })
+		}
+
+		const project = projectQuery.rows[0]
+
+		let hasAccess = project.is_public
+
+		if (!hasAccess && userId) {
+			const isOwner = project.owner_id === userId
+			const collaboratorQuery = await pool.query(
+				`SELECT user_id FROM project_collaborators
+				WHERE project_id = $1 AND user_id = $2`,
+				[id, userId]
+			)
+			hasAccess = isOwner || collaboratorQuery.rowCount > 0
+		}
+
+		if (!hasAccess) {
+			return res.status(403).json({
+				ok: false,
+				message: "This project is private"
+			})
+		}
+
+		const slidesQuery = await pool.query(
+			`SELECT id, html, position
+			FROM slides
+			WHERE project_id = $1
+			ORDER BY position ASC`,
+			[id]
+		)
+
+		const { owner_id, ...projectData } = project
+
+		res.json({
+			ok: true,
+			project: {
+				...projectData,
+				slides: slidesQuery.rows || []
+			}
+		})
+	} catch (err) {
+		console.error("Error fetching public project:", err)
+		res.status(500).json({ ok: false, message: "Internal error" })
 	}
 }
 
@@ -453,5 +584,44 @@ export const deleteProject = async (req, res) => {
 		res.json({ ok: true, id })
 	} catch {
 		res.status(500).json({ message: "Internal error" })
+	}
+}
+
+export const updateProjectVisibility = async (req, res) => {
+	if (!pool) return res.status(500).json({ message: "Database not configured" })
+	try {
+		const { id } = req.params
+		const { is_public } = req.body
+
+		if (typeof is_public !== 'boolean') {
+			return res.status(400).json({ ok: false, message: "is_public must be a boolean" })
+		}
+
+		const { hasAccess, role, exists } = await checkProjectAccess(id, req.user.sub)
+
+		if (!exists) {
+			return res.status(404).json({ ok: false, message: "Project not found" })
+		}
+
+		if (!hasAccess || role !== 'owner') {
+			return res.status(403).json({ ok: false, message: "Only the owner can change visibility" })
+		}
+
+		const q = await pool.query(
+			`UPDATE projects
+			SET is_public = $1, updated_at = NOW()
+			WHERE id = $2
+			RETURNING id, name, is_public, created_at, updated_at`,
+			[is_public, id]
+		)
+
+		if (q.rowCount === 0) {
+			return res.status(404).json({ ok: false, message: "Project not found" })
+		}
+
+		res.json({ ok: true, project: q.rows[0] })
+	} catch (err) {
+		console.error("Error updating project visibility:", err)
+		res.status(500).json({ ok: false, message: "Internal error" })
 	}
 }

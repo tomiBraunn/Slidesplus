@@ -3,7 +3,7 @@ import { pool } from "../config/database.js"
 export const getProjectAccess = async (req, res) => {
     try {
         const { projectId } = req.params
-        const currentUserId = req.user.userId
+        const currentUserId = req.user.sub
 
         const projectQuery = `
       SELECT 
@@ -29,13 +29,14 @@ export const getProjectAccess = async (req, res) => {
         const isOwner = project.owner_id === currentUserId
 
         const collabQuery = `
-      SELECT 
-        pc.role,
-        u.id as user_id,
+      SELECT
+        pc.user_id,
         u.username,
         u.first_name,
         u.last_name,
-        u.avatar
+        u.email,
+        u.avatar,
+        pc.role
       FROM project_collaborators pc
       JOIN users u ON u.id = pc.user_id
       WHERE pc.project_id = $1
@@ -45,6 +46,16 @@ export const getProjectAccess = async (req, res) => {
 
         const userRole = collabResult.rows.find(c => c.user_id === currentUserId)?.role || null
         const hasAccess = isOwner || userRole || project.visibility === 'public'
+
+        const collaborators = collabResult.rows.map(row => ({
+            user_id: row.user_id,
+            username: row.username,
+            first_name: row.first_name,
+            last_name: row.last_name,
+            email: row.email,
+            avatar: row.avatar,
+            role: row.role
+        }))
 
         res.json({
             ok: true,
@@ -62,7 +73,7 @@ export const getProjectAccess = async (req, res) => {
             },
             userRole: isOwner ? 'owner' : userRole,
             hasAccess,
-            collaborators: collabResult.rows
+            collaborators: collaborators
         })
     } catch (error) {
         console.error("Error getting project access:", error)
@@ -74,7 +85,7 @@ export const updateProjectVisibility = async (req, res) => {
     try {
         const { projectId } = req.params
         const { visibility, allowComments } = req.body
-        const currentUserId = req.user.userId
+        const currentUserId = req.user.sub
 
         const ownerCheck = await pool.query(
             'SELECT owner_id FROM projects WHERE id = $1',
@@ -108,7 +119,7 @@ export const addCollaborator = async (req, res) => {
     try {
         const { projectId } = req.params
         const { username, role } = req.body
-        const currentUserId = req.user.userId
+        const currentUserId = req.user.sub
 
         const ownerCheck = await pool.query(
             'SELECT owner_id FROM projects WHERE id = $1',
@@ -145,13 +156,14 @@ export const addCollaborator = async (req, res) => {
         await pool.query(insertQuery, [projectId, userId, currentUserId, role])
 
         const collabQuery = `
-      SELECT 
-        pc.role,
-        u.id as user_id,
+      SELECT
+        pc.user_id,
         u.username,
         u.first_name,
         u.last_name,
-        u.avatar
+        u.email,
+        u.avatar,
+        pc.role
       FROM project_collaborators pc
       JOIN users u ON u.id = pc.user_id
       WHERE pc.project_id = $1
@@ -159,7 +171,17 @@ export const addCollaborator = async (req, res) => {
     `
         const collabResult = await pool.query(collabQuery, [projectId])
 
-        res.json({ ok: true, collaborators: collabResult.rows })
+        const collaborators = collabResult.rows.map(row => ({
+            user_id: row.user_id,
+            username: row.username,
+            first_name: row.first_name,
+            last_name: row.last_name,
+            email: row.email,
+            avatar: row.avatar,
+            role: row.role
+        }))
+
+        res.json({ ok: true, collaborators: collaborators })
     } catch (error) {
         console.error("Error adding collaborator:", error)
         res.status(500).json({ ok: false, error: error.message })
@@ -169,7 +191,7 @@ export const addCollaborator = async (req, res) => {
 export const removeCollaborator = async (req, res) => {
     try {
         const { projectId, userId } = req.params
-        const currentUserId = req.user.userId
+        const currentUserId = req.user.sub
 
         const ownerCheck = await pool.query(
             'SELECT owner_id FROM projects WHERE id = $1',
@@ -190,13 +212,14 @@ export const removeCollaborator = async (req, res) => {
         )
 
         const collabQuery = `
-      SELECT 
-        pc.role,
-        u.id as user_id,
+      SELECT
+        pc.user_id,
         u.username,
         u.first_name,
         u.last_name,
-        u.avatar
+        u.email,
+        u.avatar,
+        pc.role
       FROM project_collaborators pc
       JOIN users u ON u.id = pc.user_id
       WHERE pc.project_id = $1
@@ -204,7 +227,17 @@ export const removeCollaborator = async (req, res) => {
     `
         const collabResult = await pool.query(collabQuery, [projectId])
 
-        res.json({ ok: true, collaborators: collabResult.rows })
+        const collaborators = collabResult.rows.map(row => ({
+            user_id: row.user_id,
+            username: row.username,
+            first_name: row.first_name,
+            last_name: row.last_name,
+            email: row.email,
+            avatar: row.avatar,
+            role: row.role
+        }))
+
+        res.json({ ok: true, collaborators: collaborators })
     } catch (error) {
         console.error("Error removing collaborator:", error)
         res.status(500).json({ ok: false, error: error.message })
