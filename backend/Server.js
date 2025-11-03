@@ -1,6 +1,9 @@
 import "dotenv/config"
 import express from "express"
 import cors from "cors"
+import session from "express-session"
+import passport from "./config/passport.js"
+import jwt from "jsonwebtoken"
 import authRoutes from "./routes/authRoutes.js"
 import userRoutes from "./routes/userRoutes.js"
 import projectRoutes from "./routes/projectRoutes.js"
@@ -20,6 +23,21 @@ app.use(cors({
 }))
 
 app.use(express.json())
+
+app.use(
+	session({
+		secret: process.env.SESSION_SECRET || "slides-plus-oauth-secret",
+		resave: false,
+		saveUninitialized: false,
+		cookie: {
+			secure: process.env.NODE_ENV === "production",
+			maxAge: 24 * 60 * 60 * 1000,
+		},
+	})
+)
+
+app.use(passport.initialize())
+app.use(passport.session())
 
 app.get("/health", (_req, res) => {
 	res.json({
@@ -58,6 +76,36 @@ app.use("/", unsplashRoutes)
 app.use("/", realtimeRoutes)
 app.use("/", collaborationRoutes)
 app.use("/", versionRoutes)
+
+app.get("/auth/github", passport.authenticate("github", { scope: ["user:email"] }))
+
+app.get(
+	"/auth/github/callback",
+	passport.authenticate("github", {
+		failureRedirect: `${process.env.FRONTEND_URL || "http://localhost:5173"}/login?error=github`,
+	}),
+	(req, res) => {
+		const token = jwt.sign({ sub: req.user.id, email: req.user.email }, process.env.JWT_SECRET, {
+			expiresIn: "7d",
+		})
+		res.redirect(`${process.env.FRONTEND_URL || "http://localhost:5173"}/auth/callback?token=${token}`)
+	}
+)
+
+app.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }))
+
+app.get(
+	"/auth/google/callback",
+	passport.authenticate("google", {
+		failureRedirect: `${process.env.FRONTEND_URL || "http://localhost:5173"}/login?error=google`,
+	}),
+	(req, res) => {
+		const token = jwt.sign({ sub: req.user.id, email: req.user.email }, process.env.JWT_SECRET, {
+			expiresIn: "7d",
+		})
+		res.redirect(`${process.env.FRONTEND_URL || "http://localhost:5173"}/auth/callback?token=${token}`)
+	}
+)
 
 const PORT = process.env.PORT || 8000
 app.listen(PORT, () => {
