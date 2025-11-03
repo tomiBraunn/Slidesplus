@@ -1,383 +1,451 @@
-import React, { useState, useRef, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 
-interface Element {
-  id: string
-  type: 'text' | 'image' | 'shape'
-  x: number
-  y: number
-  width: number
-  height: number
+interface SlideElement {
+  element: HTMLElement
+  type: 'text' | 'image' | 'shape' | 'section'
+  tagName: string
   content?: string
   fontSize?: number
+  fontWeight?: string
   fontFamily?: string
   color?: string
   backgroundColor?: string
-  borderRadius?: number
-  rotation?: number
+  width?: number
+  height?: number
+  x?: number
+  y?: number
 }
 
-export default function VisualEditorMode({ doc, onChange }: { doc: string; onChange: (d: string) => void }) {
-  const [elements, setElements] = useState<Element[]>([])
-  const [selectedElement, setSelectedElement] = useState<string | null>(null)
-  const [tool, setTool] = useState<'select' | 'text' | 'rectangle' | 'circle'>('select')
-  const [isDragging, setIsDragging] = useState(false)
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
-  const [zoom, setZoom] = useState(100)
-  const canvasRef = useRef<HTMLDivElement>(null)
-
-  const handleCanvasClick = (e: React.MouseEvent) => {
-    if (tool === 'select') return
-
-    const rect = canvasRef.current?.getBoundingClientRect()
-    if (!rect) return
-
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-
-    const newElement: Element = {
-      id: `element-${Date.now()}`,
-      type: tool === 'text' ? 'text' : 'shape',
-      x,
-      y,
-      width: tool === 'text' ? 200 : 150,
-      height: tool === 'text' ? 50 : 150,
-      content: tool === 'text' ? 'Double click to edit' : '',
-      fontSize: 24,
-      fontFamily: 'Inter, sans-serif',
-      color: '#000000',
-      backgroundColor: tool === 'rectangle' ? '#E0E0E0' : tool === 'circle' ? '#90CAF9' : 'transparent',
-      borderRadius: tool === 'circle' ? 999 : 0,
-      rotation: 0
-    }
-
-    setElements([...elements, newElement])
-    setSelectedElement(newElement.id)
-    setTool('select')
-  }
-
-  const handleElementMouseDown = (e: React.MouseEvent, elementId: string) => {
-    e.stopPropagation()
-    setSelectedElement(elementId)
-    setIsDragging(true)
-    setDragStart({ x: e.clientX, y: e.clientY })
-  }
+export default function VisualEditorMode({
+  doc,
+  onChange
+}: {
+  doc: string
+  onChange: (d: string) => void
+}) {
+  const [selectedElement, setSelectedElement] = useState<SlideElement | null>(null)
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const [slides, setSlides] = useState<string[]>([])
+  const iframeRef = useRef<HTMLIFrameElement | null>(null)
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging || !selectedElement) return
+    const extractedSlides = doc
+      .split(/<section/i)
+      .slice(1)
+      .map((s) => "<section" + s.split("</section>")[0] + "</section>")
+      .filter((s) => s.trim().length > 20)
+    setSlides(extractedSlides)
+    if (currentSlide >= extractedSlides.length) {
+      setCurrentSlide(Math.max(0, extractedSlides.length - 1))
+    }
+  }, [doc, currentSlide])
 
-      const dx = e.clientX - dragStart.x
-      const dy = e.clientY - dragStart.y
+  useEffect(() => {
+    const setupIframeInteraction = () => {
+      const iframes = document.querySelectorAll('iframe[title="Live Preview"]')
 
-      setElements(elements.map(el =>
-        el.id === selectedElement
-          ? { ...el, x: el.x + dx, y: el.y + dy }
-          : el
-      ))
+      if (iframes.length === 0) {
+        return
+      }
 
-      setDragStart({ x: e.clientX, y: e.clientY })
+      iframes.forEach(iframe => {
+        const iframeDoc = (iframe as HTMLIFrameElement).contentDocument
+        if (!iframeDoc || !iframeDoc.body) {
+          return
+        }
+
+        iframeRef.current = iframe as HTMLIFrameElement
+
+        let hoveredElement: HTMLElement | null = null
+        let lastHoveredElement: HTMLElement | null = null
+
+        const clearHover = () => {
+          if (hoveredElement) {
+            hoveredElement.style.outline = ''
+            hoveredElement.style.outlineOffset = ''
+            hoveredElement.style.cursor = ''
+            hoveredElement = null
+          }
+        }
+
+        const handleMouseMove = (e: MouseEvent) => {
+          e.stopPropagation()
+          const target = e.target as HTMLElement
+
+          if (target === iframeDoc.body || target === iframeDoc.documentElement) {
+            clearHover()
+            return
+          }
+
+          if (target === lastHoveredElement) {
+            return
+          }
+
+          clearHover()
+
+          lastHoveredElement = target
+          hoveredElement = target
+          target.style.outline = '2px solid rgba(13, 125, 255, 0.5)'
+          target.style.outlineOffset = '2px'
+          target.style.cursor = 'pointer'
+        }
+
+        const handleMouseLeave = () => {
+          clearHover()
+          lastHoveredElement = null
+        }
+
+        const handleIframeClick = (e: MouseEvent) => {
+          e.preventDefault()
+          e.stopPropagation()
+
+          const target = e.target as HTMLElement
+
+          if (!target || target === iframeDoc.body || target === iframeDoc.documentElement) {
+            const section = iframeDoc.querySelector('section')
+            if (section) {
+              selectElement(section as HTMLElement, true)
+            }
+            return
+          }
+
+          selectElement(target, false)
+        }
+
+        const selectElement = (target: HTMLElement, isSection: boolean) => {
+          const computedStyle = window.getComputedStyle(target)
+          const rect = target.getBoundingClientRect()
+
+          const getTextContent = (el: HTMLElement): string => {
+            if (el.childNodes.length === 0) return el.textContent || ''
+
+            let text = ''
+            el.childNodes.forEach(node => {
+              if (node.nodeType === Node.TEXT_NODE) {
+                text += node.textContent || ''
+              }
+            })
+            return text
+          }
+
+          const element: SlideElement = {
+            element: target,
+            type: isSection ? 'section' :
+                  target.tagName === 'IMG' ? 'image' :
+                  ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'SPAN', 'DIV', 'A', 'BUTTON'].includes(target.tagName) ? 'text' : 'shape',
+            tagName: target.tagName,
+            content: getTextContent(target),
+            fontSize: parseInt(computedStyle.fontSize),
+            fontWeight: computedStyle.fontWeight,
+            fontFamily: computedStyle.fontFamily,
+            color: computedStyle.color,
+            backgroundColor: computedStyle.backgroundColor,
+            width: rect.width,
+            height: rect.height,
+            x: rect.left,
+            y: rect.top
+          }
+
+          const allElements = Array.from(iframeDoc.body.querySelectorAll('*'))
+          allElements.forEach(el => {
+            const htmlEl = el as HTMLElement
+            htmlEl.style.outline = ''
+            htmlEl.style.outlineOffset = ''
+          })
+
+          target.style.outline = '2px solid #0d7dff'
+          target.style.outlineOffset = '2px'
+
+          setSelectedElement(element)
+        }
+
+        iframeDoc.removeEventListener('mousemove', handleMouseMove)
+        iframeDoc.removeEventListener('mouseleave', handleMouseLeave)
+        iframeDoc.removeEventListener('click', handleIframeClick)
+
+        iframeDoc.addEventListener('mousemove', handleMouseMove, true)
+        iframeDoc.addEventListener('mouseleave', handleMouseLeave)
+        iframeDoc.addEventListener('click', handleIframeClick, true)
+      })
     }
 
-    const handleMouseUp = () => {
-      setIsDragging(false)
-    }
-
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove)
-      document.addEventListener('mouseup', handleMouseUp)
-    }
+    const timeoutId = setTimeout(setupIframeInteraction, 500)
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
+      clearTimeout(timeoutId)
     }
-  }, [isDragging, selectedElement, dragStart, elements])
+  }, [doc, currentSlide, slides])
 
-  const handleDelete = () => {
-    if (!selectedElement) return
-    setElements(elements.filter(el => el.id !== selectedElement))
-    setSelectedElement(null)
+  const saveChanges = () => {
+    if (!iframeRef.current?.contentDocument) return
+
+    const section = iframeRef.current.contentDocument.querySelector('section')
+    if (!section) return
+
+    const updatedSlideHTML = section.outerHTML
+    const newSlides = [...slides]
+    newSlides[currentSlide] = updatedSlideHTML
+
+    const newDoc = "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>" +
+      newSlides.join("\n") +
+      "</body></html>"
+
+    onChange(newDoc)
   }
 
-  const updateElement = (id: string, updates: Partial<Element>) => {
-    setElements(elements.map(el =>
-      el.id === id ? { ...el, ...updates } : el
-    ))
-  }
+  const updateElement = (updates: Partial<SlideElement>) => {
+    if (!selectedElement?.element) return
 
-  const selectedEl = elements.find(el => el.id === selectedElement)
+    const target = selectedElement.element
+
+    if (updates.fontSize !== undefined) {
+      target.style.fontSize = `${updates.fontSize}px`
+    }
+    if (updates.fontWeight !== undefined) {
+      target.style.fontWeight = updates.fontWeight
+    }
+    if (updates.color !== undefined) {
+      target.style.color = updates.color
+    }
+    if (updates.backgroundColor !== undefined) {
+      target.style.backgroundColor = updates.backgroundColor
+    }
+    if (updates.content !== undefined) {
+      const hasOnlyTextChildren = Array.from(target.childNodes).every(
+        node => node.nodeType === Node.TEXT_NODE
+      )
+
+      if (hasOnlyTextChildren || target.childNodes.length === 0) {
+        target.textContent = updates.content
+      } else {
+        let updated = false
+        target.childNodes.forEach(node => {
+          if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
+            node.textContent = updates.content!
+            updated = true
+          }
+        })
+        if (!updated && target.childNodes.length > 0) {
+          target.insertBefore(document.createTextNode(updates.content), target.firstChild)
+        }
+      }
+    }
+    if (updates.width !== undefined) {
+      target.style.width = `${updates.width}px`
+    }
+    if (updates.height !== undefined) {
+      target.style.height = `${updates.height}px`
+    }
+    if (updates.x !== undefined || updates.y !== undefined) {
+      if (target.style.position !== 'absolute' && target.style.position !== 'fixed') {
+        target.style.position = 'relative'
+      }
+      if (updates.x !== undefined) {
+        const currentLeft = parseInt(target.style.left || '0')
+        target.style.left = `${currentLeft + (updates.x - (selectedElement.x || 0))}px`
+      }
+      if (updates.y !== undefined) {
+        const currentTop = parseInt(target.style.top || '0')
+        target.style.top = `${currentTop + (updates.y - (selectedElement.y || 0))}px`
+      }
+    }
+
+    const rect = target.getBoundingClientRect()
+    const computedStyle = window.getComputedStyle(target)
+
+    setSelectedElement({
+      ...selectedElement,
+      ...updates,
+      width: rect.width,
+      height: rect.height,
+      x: rect.left,
+      y: rect.top,
+      fontSize: updates.fontSize !== undefined ? updates.fontSize : parseInt(computedStyle.fontSize),
+      color: updates.color || computedStyle.color,
+      backgroundColor: updates.backgroundColor || computedStyle.backgroundColor
+    })
+
+    saveChanges()
+  }
 
   return (
-    <div className="w-full h-full flex flex-col bg-[#1e1e1e]">
-      {/* Top Toolbar */}
-      <div className="h-14 bg-[#2a2a2a] border-b border-[#3a3a3a] flex items-center justify-between px-4">
-        <div className="flex items-center gap-2">
-          {/* Tools */}
-          <button
-            onClick={() => setTool('select')}
-            className={`p-2 rounded transition-colors ${tool === 'select' ? 'bg-[#0d7dff] text-white' : 'text-gray-400 hover:bg-[#3a3a3a]'
-              }`}
-            title="Select (V)"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
-            </svg>
-          </button>
-          <button
-            onClick={() => setTool('text')}
-            className={`p-2 rounded transition-colors ${tool === 'text' ? 'bg-[#0d7dff] text-white' : 'text-gray-400 hover:bg-[#3a3a3a]'
-              }`}
-            title="Text (T)"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          </button>
-          <button
-            onClick={() => setTool('rectangle')}
-            className={`p-2 rounded transition-colors ${tool === 'rectangle' ? 'bg-[#0d7dff] text-white' : 'text-gray-400 hover:bg-[#3a3a3a]'
-              }`}
-            title="Rectangle (R)"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <rect x="4" y="6" width="16" height="12" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          <button
-            onClick={() => setTool('circle')}
-            className={`p-2 rounded transition-colors ${tool === 'circle' ? 'bg-[#0d7dff] text-white' : 'text-gray-400 hover:bg-[#3a3a3a]'
-              }`}
-            title="Circle (O)"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <circle cx="12" cy="12" r="8" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
+    <div className="w-full h-full bg-[#1e1e1e] flex items-center justify-center">
+      {selectedElement ? (
+        <div className="w-full h-full bg-[#2a2a2a] p-6 overflow-y-auto">
+          <h3 className="text-lg font-semibold text-gray-100 mb-6">
+            {selectedElement.type === 'section' ? 'Slide Properties' : 'Element Properties'}
+          </h3>
 
-          <div className="w-px h-6 bg-[#3a3a3a] mx-2" />
-
-          {selectedElement && (
-            <button
-              onClick={handleDelete}
-              className="p-2 rounded text-red-400 hover:bg-red-500/10 transition-colors"
-              title="Delete (Del)"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
-          )}
-        </div>
-
-        {/* Zoom Controls */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setZoom(Math.max(10, zoom - 10))}
-            className="p-1 text-gray-400 hover:text-white transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-            </svg>
-          </button>
-          <span className="text-xs text-gray-400 w-12 text-center">{zoom}%</span>
-          <button
-            onClick={() => setZoom(Math.min(200, zoom + 10))}
-            className="p-1 text-gray-400 hover:text-white transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <div className="flex-1 flex overflow-hidden">
-        {/* Canvas */}
-        <div className="flex-1 overflow-auto bg-[#282828] p-8">
-          <div className="w-full h-full flex items-center justify-center">
-            <div
-              ref={canvasRef}
-              onClick={handleCanvasClick}
-              className="relative bg-white shadow-2xl"
-              style={{
-                width: `${1920 * (zoom / 100)}px`,
-                height: `${1080 * (zoom / 100)}px`,
-                transformOrigin: 'center',
-              }}
-            >
-              {/* Grid */}
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  backgroundImage: `
-                    linear-gradient(to right, #e0e0e0 1px, transparent 1px),
-                    linear-gradient(to bottom, #e0e0e0 1px, transparent 1px)
-                  `,
-                  backgroundSize: `${20 * (zoom / 100)}px ${20 * (zoom / 100)}px`
-                }}
-              />
-
-              {/* Elements */}
-              {elements.map(element => (
-                <div
-                  key={element.id}
-                  onMouseDown={(e) => handleElementMouseDown(e, element.id)}
-                  className={`absolute cursor-move ${selectedElement === element.id ? 'ring-2 ring-blue-500' : ''
-                    }`}
-                  style={{
-                    left: `${element.x * (zoom / 100)}px`,
-                    top: `${element.y * (zoom / 100)}px`,
-                    width: `${element.width * (zoom / 100)}px`,
-                    height: `${element.height * (zoom / 100)}px`,
-                    backgroundColor: element.backgroundColor,
-                    borderRadius: `${(element.borderRadius || 0) * (zoom / 100)}px`,
-                    transform: `rotate(${element.rotation || 0}deg)`,
-                  }}
-                >
-                  {element.type === 'text' && (
-                    <div
-                      contentEditable
-                      suppressContentEditableWarning
-                      className="w-full h-full outline-none p-2"
-                      style={{
-                        fontSize: `${(element.fontSize || 24) * (zoom / 100)}px`,
-                        fontFamily: element.fontFamily,
-                        color: element.color,
-                      }}
-                    >
-                      {element.content}
-                    </div>
-                  )}
-                </div>
-              ))}
+          <div className="space-y-6">
+            <div>
+              <label className="text-sm text-gray-400 mb-2 block">Element Type</label>
+              <div className="text-sm text-gray-200 bg-[#1e1e1e] px-4 py-3 rounded-lg font-mono">
+                {selectedElement.tagName}
+              </div>
             </div>
-          </div>
-        </div>
 
-        {/* Right Sidebar - Properties */}
-        {selectedEl && (
-          <div className="w-64 bg-[#2a2a2a] border-l border-[#3a3a3a] p-4 overflow-y-auto">
-            <h3 className="text-sm font-semibold text-gray-300 mb-4">Properties</h3>
-
-            <div className="space-y-4">
-              {/* Position */}
-              <div>
-                <label className="text-xs text-gray-500 mb-2 block">Position</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-xs text-gray-600">X</label>
-                    <input
-                      type="number"
-                      value={Math.round(selectedEl.x)}
-                      onChange={(e) => updateElement(selectedEl.id, { x: Number(e.target.value) })}
-                      className="w-full bg-[#1e1e1e] text-white text-xs px-2 py-1 rounded border border-[#3a3a3a]"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-600">Y</label>
-                    <input
-                      type="number"
-                      value={Math.round(selectedEl.y)}
-                      onChange={(e) => updateElement(selectedEl.id, { y: Number(e.target.value) })}
-                      className="w-full bg-[#1e1e1e] text-white text-xs px-2 py-1 rounded border border-[#3a3a3a]"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Size */}
-              <div>
-                <label className="text-xs text-gray-500 mb-2 block">Size</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-xs text-gray-600">W</label>
-                    <input
-                      type="number"
-                      value={Math.round(selectedEl.width)}
-                      onChange={(e) => updateElement(selectedEl.id, { width: Number(e.target.value) })}
-                      className="w-full bg-[#1e1e1e] text-white text-xs px-2 py-1 rounded border border-[#3a3a3a]"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-600">H</label>
-                    <input
-                      type="number"
-                      value={Math.round(selectedEl.height)}
-                      onChange={(e) => updateElement(selectedEl.id, { height: Number(e.target.value) })}
-                      className="w-full bg-[#1e1e1e] text-white text-xs px-2 py-1 rounded border border-[#3a3a3a]"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Colors */}
-              {selectedEl.type === 'text' && (
+            {selectedElement.type === 'text' && (
+              <>
                 <div>
-                  <label className="text-xs text-gray-500 mb-2 block">Text Color</label>
-                  <input
-                    type="color"
-                    value={selectedEl.color}
-                    onChange={(e) => updateElement(selectedEl.id, { color: e.target.value })}
-                    className="w-full h-8 rounded border border-[#3a3a3a]"
+                  <label className="text-sm text-gray-400 mb-2 block">Content</label>
+                  <textarea
+                    value={selectedElement.content}
+                    onChange={(e) => updateElement({ content: e.target.value })}
+                    className="w-full bg-[#1e1e1e] text-white text-sm px-4 py-3 rounded-lg border border-[#3a3a3a] focus:border-blue-500 focus:outline-none resize-none"
+                    rows={4}
                   />
                 </div>
-              )}
 
-              <div>
-                <label className="text-xs text-gray-500 mb-2 block">Background</label>
+                <div>
+                  <label className="text-sm text-gray-400 mb-2 block">Font Size</label>
+                  <div className="flex gap-3 items-center">
+                    <input
+                      type="range"
+                      min="8"
+                      max="200"
+                      value={selectedElement.fontSize}
+                      onChange={(e) => updateElement({ fontSize: Number(e.target.value) })}
+                      className="flex-1"
+                    />
+                    <input
+                      type="number"
+                      value={selectedElement.fontSize}
+                      onChange={(e) => updateElement({ fontSize: Number(e.target.value) })}
+                      className="w-20 bg-[#1e1e1e] text-white text-sm px-3 py-2 rounded-lg border border-[#3a3a3a] focus:border-blue-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm text-gray-400 mb-2 block">Font Weight</label>
+                  <select
+                    value={selectedElement.fontWeight}
+                    onChange={(e) => updateElement({ fontWeight: e.target.value })}
+                    className="w-full bg-[#1e1e1e] text-white text-sm px-4 py-3 rounded-lg border border-[#3a3a3a] focus:border-blue-500 focus:outline-none"
+                  >
+                    <option value="300">Light (300)</option>
+                    <option value="400">Regular (400)</option>
+                    <option value="500">Medium (500)</option>
+                    <option value="600">Semibold (600)</option>
+                    <option value="700">Bold (700)</option>
+                    <option value="800">Extra Bold (800)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm text-gray-400 mb-2 block">Text Color</label>
+                  <div className="flex gap-3 items-center">
+                    <input
+                      type="color"
+                      value={rgbToHex(selectedElement.color || '#000000')}
+                      onChange={(e) => updateElement({ color: e.target.value })}
+                      className="w-16 h-12 rounded-lg border-2 border-[#3a3a3a] cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={selectedElement.color}
+                      onChange={(e) => updateElement({ color: e.target.value })}
+                      className="flex-1 bg-[#1e1e1e] text-white text-sm px-4 py-3 rounded-lg border border-[#3a3a3a] focus:border-blue-500 focus:outline-none font-mono"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div>
+              <label className="text-sm text-gray-400 mb-2 block">Background Color</label>
+              <div className="flex gap-3 items-center">
                 <input
                   type="color"
-                  value={selectedEl.backgroundColor}
-                  onChange={(e) => updateElement(selectedEl.id, { backgroundColor: e.target.value })}
-                  className="w-full h-8 rounded border border-[#3a3a3a]"
+                  value={rgbToHex(selectedElement.backgroundColor || '#ffffff')}
+                  onChange={(e) => updateElement({ backgroundColor: e.target.value })}
+                  className="w-16 h-12 rounded-lg border-2 border-[#3a3a3a] cursor-pointer"
+                />
+                <input
+                  type="text"
+                  value={selectedElement.backgroundColor}
+                  onChange={(e) => updateElement({ backgroundColor: e.target.value })}
+                  className="flex-1 bg-[#1e1e1e] text-white text-sm px-4 py-3 rounded-lg border border-[#3a3a3a] focus:border-blue-500 focus:outline-none font-mono"
                 />
               </div>
+            </div>
 
-              {/* Border Radius */}
-              {selectedEl.type === 'shape' && (
+            <div>
+              <label className="text-sm text-gray-400 mb-2 block">Dimensions</label>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-gray-500 mb-2 block">Border Radius</label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="999"
-                    value={selectedEl.borderRadius}
-                    onChange={(e) => updateElement(selectedEl.id, { borderRadius: Number(e.target.value) })}
-                    className="w-full"
-                  />
-                </div>
-              )}
-
-              {/* Font Size */}
-              {selectedEl.type === 'text' && (
-                <div>
-                  <label className="text-xs text-gray-500 mb-2 block">Font Size</label>
+                  <label className="text-xs text-gray-500 mb-1 block">Width (px)</label>
                   <input
                     type="number"
-                    value={selectedEl.fontSize}
-                    onChange={(e) => updateElement(selectedEl.id, { fontSize: Number(e.target.value) })}
-                    className="w-full bg-[#1e1e1e] text-white text-xs px-2 py-1 rounded border border-[#3a3a3a]"
+                    value={Math.round(selectedElement.width || 0)}
+                    onChange={(e) => updateElement({ width: Number(e.target.value) })}
+                    className="w-full bg-[#1e1e1e] text-white text-sm px-3 py-2 rounded-lg border border-[#3a3a3a] focus:border-blue-500 focus:outline-none"
                   />
                 </div>
-              )}
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Height (px)</label>
+                  <input
+                    type="number"
+                    value={Math.round(selectedElement.height || 0)}
+                    onChange={(e) => updateElement({ height: Number(e.target.value) })}
+                    className="w-full bg-[#1e1e1e] text-white text-sm px-3 py-2 rounded-lg border border-[#3a3a3a] focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
 
-              {/* Rotation */}
-              <div>
-                <label className="text-xs text-gray-500 mb-2 block">Rotation</label>
-                <input
-                  type="range"
-                  min="-180"
-                  max="180"
-                  value={selectedEl.rotation}
-                  onChange={(e) => updateElement(selectedEl.id, { rotation: Number(e.target.value) })}
-                  className="w-full"
-                />
-                <span className="text-xs text-gray-600">{selectedEl.rotation}°</span>
+            <div>
+              <label className="text-sm text-gray-400 mb-2 block">Position</label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">X (px)</label>
+                  <input
+                    type="number"
+                    value={Math.round(selectedElement.x || 0)}
+                    onChange={(e) => updateElement({ x: Number(e.target.value) })}
+                    className="w-full bg-[#1e1e1e] text-white text-sm px-3 py-2 rounded-lg border border-[#3a3a3a] focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Y (px)</label>
+                  <input
+                    type="number"
+                    value={Math.round(selectedElement.y || 0)}
+                    onChange={(e) => updateElement({ y: Number(e.target.value) })}
+                    className="w-full bg-[#1e1e1e] text-white text-sm px-3 py-2 rounded-lg border border-[#3a3a3a] focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center text-gray-500 gap-4">
+          <svg className="w-24 h-24 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+          </svg>
+          <div className="text-center">
+            <p className="text-lg font-medium text-gray-400 mb-1">No element selected</p>
+            <p className="text-sm text-gray-600">Click on an element in the preview to edit its properties</p>
+          </div>
+        </div>
+      )}
     </div>
   )
+}
+
+function rgbToHex(rgb: string): string {
+  if (rgb.startsWith('#')) return rgb
+
+  const match = rgb.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/)
+  if (!match) return '#000000'
+
+  const r = parseInt(match[1])
+  const g = parseInt(match[2])
+  const b = parseInt(match[3])
+
+  return '#' + [r, g, b].map(x => {
+    const hex = x.toString(16)
+    return hex.length === 1 ? '0' + hex : hex
+  }).join('')
 }

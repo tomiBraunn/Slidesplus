@@ -117,12 +117,16 @@ export default function GeminiChatbot({
   projectId,
   currentSlideIndex,
   slides,
+  onDeleteSlide,
+  onDeleteAllSlides,
 }: {
   setCode: (val: string | ((v: string) => string)) => void
   code?: string
   projectId?: string
   currentSlideIndex?: number
   slides?: string[]
+  onDeleteSlide?: (index: number) => void
+  onDeleteAllSlides?: () => void
 }) {
   const [messages, setMessages] = useState<ChatMsg[]>([])
   const [input, setInput] = useState("")
@@ -277,6 +281,40 @@ export default function GeminiChatbot({
     setAttachedFiles([])
 
     try {
+      const deleteKeywords = ['delete', 'remove', 'erase', 'elimina', 'borra', 'quita']
+      const allKeywords = ['all', 'todas', 'todos', 'everything', 'todo']
+      const currentSlideKeywords = ['this slide', 'current slide', 'esta slide', 'esta diapositiva', 'current', 'actual']
+      const userMsgLower = userMsg.toLowerCase()
+
+      const hasDeleteKeyword = deleteKeywords.some(k => userMsgLower.includes(k))
+      const hasAllKeyword = allKeywords.some(k => userMsgLower.includes(k))
+      const hasCurrentSlideKeyword = currentSlideKeywords.some(k => userMsgLower.includes(k))
+      const hasSlideWord = userMsgLower.includes('slide') || userMsgLower.includes('diapositiva')
+
+      if (hasDeleteKeyword && hasAllKeyword && hasSlideWord && onDeleteAllSlides) {
+        onDeleteAllSlides()
+        const confirmMsg: ChatMsg = {
+          role: "assistant" as const,
+          content: `Deleted all slides`
+        }
+        setMessages((prev) => [...prev, confirmMsg])
+        await saveMessage("assistant", confirmMsg.content)
+        setLoading(false)
+        return
+      }
+
+      if (hasDeleteKeyword && hasSlideWord && hasCurrentSlideKeyword && onDeleteSlide && currentSlideIndex !== undefined) {
+        deleteCurrentSlide()
+        const confirmMsg: ChatMsg = {
+          role: "assistant" as const,
+          content: `Deleted current slide (slide ${currentSlideIndex + 1})`
+        }
+        setMessages((prev) => [...prev, confirmMsg])
+        await saveMessage("assistant", confirmMsg.content)
+        setLoading(false)
+        return
+      }
+
       const decision = classifyPrompt(userMsg)
       let message: string
       let systemPrompt = baseSystemInstruction
@@ -397,6 +435,11 @@ export default function GeminiChatbot({
 
     const newDoc = `<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>${updatedSlides.join("\n")}</body></html>`
     setCode(newDoc)
+  }
+
+  const deleteCurrentSlide = () => {
+    if (!onDeleteSlide || currentSlideIndex === undefined) return
+    onDeleteSlide(currentSlideIndex)
   }
 
   const insertSlidesAtPosition = (newSlides: string[]) => {

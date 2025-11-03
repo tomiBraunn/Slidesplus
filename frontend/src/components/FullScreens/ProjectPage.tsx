@@ -7,6 +7,7 @@ import GeminiChatbot from "../RegularComponents/ProjectComponents/GeminiChatbot"
 import { ActiveUsers } from "../RegularComponents/ProjectComponents/ActiveUsers"
 import { LiveCursors } from "../RegularComponents/ProjectComponents/LiveCursors"
 import { ShareModal } from "../RegularComponents/MultiuseComponents/ShareModal"
+import ProjectAccessRoute from "../RegularComponents/ProjectComponents/ProjectAccessRoute"
 import { useRealtimeCollaboration } from "../../useRealtimeProject"
 import { urlbackend } from "../../config.js"
 
@@ -51,19 +52,19 @@ function getUserFromStorage(): User | null {
   return null
 }
 
-export default function ProjectPage() {
+function ProjectPageContent() {
   const [mode, setMode] = useState<ProjectMode>("code")
   const [projectId, setProjectId] = useState<string | null>(null)
   const [name, setName] = useState<string>("Untitled")
   const [saveState, setSaveState] = useState<SaveState>("idle")
   const [doc, setDoc] = useState<string>("")
   const [previewWidth, setPreviewWidth] = useState(55)
-  const [drawerWidth, setDrawerWidth] = useState(160)
   const [currentSlide, setCurrentSlide] = useState(0)
   const [slides, setSlides] = useState<string[]>([])
   const [shareModalOpen, setShareModalOpen] = useState(false)
+  const [draggedSlide, setDraggedSlide] = useState<number | null>(null)
+  const [hoveredSlide, setHoveredSlide] = useState<number | null>(null)
   const isDragging = useRef(false)
-  const isDrawerDragging = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const editorRef = useRef<HTMLDivElement>(null)
   const isApplyingRemoteChange = useRef(false)
@@ -99,23 +100,23 @@ export default function ProjectPage() {
     const token = localStorage.getItem("token")
     if (!token) return
 
-    fetch(`${urlbackend}/projects/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        if (data?.name) setName(data.name)
-      })
+    const loadProject = async () => {
+      try {
+        const projectRes = await fetch(`${urlbackend}/projects/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const projectData = await projectRes.json()
+        if (projectData?.name) setName(projectData.name)
 
-    fetch(`${urlbackend}/projects/${id}/slides`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.ok && data.slides.length > 0) {
+        const slidesRes = await fetch(`${urlbackend}/projects/${id}/slides`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const slidesData = await slidesRes.json()
+
+        if (slidesData.ok && slidesData.slides.length > 0) {
           setDoc(
             "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>" +
-            data.slides.map((s: any) => s.html).join("\n") +
+            slidesData.slides.map((s: any) => s.html).join("\n") +
             "</body></html>"
           )
         } else {
@@ -123,7 +124,12 @@ export default function ProjectPage() {
             "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body><section class='slide'><h1>Slide 1</h1></section></body></html>"
           )
         }
-      })
+      } catch (error) {
+        console.error("Error loading project:", error)
+      }
+    }
+
+    loadProject()
   }, [])
 
   useEffect(() => {
@@ -145,9 +151,8 @@ export default function ProjectPage() {
       .split(/<section/i)
       .slice(1)
       .map((s) => "<section" + s.split("</section>")[0] + "</section>")
-      .filter((s) => s.trim().length > 20)
     setSlides(extractedSlides)
-    if (currentSlide >= extractedSlides.length) {
+    if (currentSlide >= extractedSlides.length && extractedSlides.length > 0) {
       setCurrentSlide(Math.max(0, extractedSlides.length - 1))
     }
   }, [doc, currentSlide])
@@ -175,20 +180,21 @@ export default function ProjectPage() {
     return () => window.removeEventListener('mousemove', handleMouseMove)
   }, [projectId, currentSlide, updateCursor])
 
-  const onRename = (next: string) => {
-    setName(next)
-  }
-
   const onChangeDoc = (next: string) => {
     if (isApplyingRemoteChange.current) {
       return
     }
 
-    setDoc(next)
+    const minimalDoc = "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body><section class=\"slide\"></section></body></html>"
+
+    const hasContent = next.replace(/<[^>]*>/g, '').trim().length > 0
+    const finalDoc = hasContent ? next : minimalDoc
+
+    setDoc(finalDoc)
     setSaveState("saving")
 
     if (isConnected && projectId) {
-      broadcastChange('doc_update', { doc: next })
+      broadcastChange('doc_update', { doc: finalDoc })
     }
 
     window.clearTimeout((onChangeDoc as any)._t)
@@ -197,11 +203,13 @@ export default function ProjectPage() {
           if (!projectId) return
           const token = localStorage.getItem("token")
           if (!token) return
-          const slides = next
-            .split("<section")
+          const slides = finalDoc
+            .split(/<section/i)
+            .slice(1)
+            .map((s) => "<section" + s.split("</section>")[0] + "</section>")
             .filter((s) => s.trim() !== "")
             .map((s, i) => ({
-              html: "<section" + s,
+              html: s,
               position: i,
             }))
           await fetch(`${urlbackend}/projects/${projectId}/slides`, {
@@ -238,39 +246,20 @@ export default function ProjectPage() {
     if (!isDragging.current || !containerRef.current) return
     const containerRect = containerRef.current.getBoundingClientRect()
     const newWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100
-    setPreviewWidth(Math.min(Math.max(newWidth, 30), 70))
+    setPreviewWidth(Math.min(Math.max(newWidth, 25), 58))
   }
 
   const handleMouseUp = () => {
     isDragging.current = false
-    isDrawerDragging.current = false
     document.body.style.cursor = ""
     document.body.style.userSelect = ""
   }
 
-  const handleDrawerMouseDown = () => {
-    isDrawerDragging.current = true
-    document.body.style.cursor = "col-resize"
-    document.body.style.userSelect = "none"
-  }
-
-  const handleDrawerMouseMove = (e: MouseEvent) => {
-    if (!isDrawerDragging.current || !containerRef.current) return
-    const containerRect = containerRef.current.getBoundingClientRect()
-    const newWidth = e.clientX - containerRect.left
-    setDrawerWidth(Math.min(Math.max(newWidth, 120), 300))
-  }
-
   useEffect(() => {
-    const handleMove = (e: MouseEvent) => {
-      handleMouseMove(e)
-      handleDrawerMouseMove(e)
-    }
-
-    document.addEventListener("mousemove", handleMove)
+    document.addEventListener("mousemove", handleMouseMove)
     document.addEventListener("mouseup", handleMouseUp)
     return () => {
-      document.removeEventListener("mousemove", handleMove)
+      document.removeEventListener("mousemove", handleMouseMove)
       document.removeEventListener("mouseup", handleMouseUp)
     }
   }, [])
@@ -280,14 +269,93 @@ export default function ProjectPage() {
     return `<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>${slides[currentSlide]}</body></html>`
   }
 
-  const isVisualMode = mode === "visual"
+  const addNewSlide = () => {
+    const newSlide = '<section class="slide"><h1>New Slide</h1></section>'
+    const newSlides = [...slides, newSlide]
+
+    const newDoc = "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>" +
+      newSlides.join("\n") +
+      "</body></html>"
+
+    onChangeDoc(newDoc)
+    setCurrentSlide(newSlides.length - 1)
+  }
+
+  const deleteSlide = (index: number) => {
+    const newSlides = slides.filter((_, i) => i !== index)
+
+    let newDoc: string
+    if (newSlides.length === 0) {
+      newDoc = "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body><section class=\"slide\"></section></body></html>"
+    } else {
+      newDoc = "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>" +
+        newSlides.join("\n") +
+        "</body></html>"
+    }
+
+    onChangeDoc(newDoc)
+
+    if (currentSlide >= newSlides.length && newSlides.length > 0) {
+      setCurrentSlide(Math.max(0, newSlides.length - 1))
+    } else if (currentSlide >= index && newSlides.length > 0) {
+      setCurrentSlide(Math.max(0, currentSlide - 1))
+    } else if (newSlides.length === 0) {
+      setCurrentSlide(0)
+    }
+  }
+
+  const deleteAllSlides = () => {
+    const newDoc = "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body><section class=\"slide\"></section></body></html>"
+    onChangeDoc(newDoc)
+    setCurrentSlide(0)
+  }
+
+  const handleDragStart = (index: number) => {
+    setDraggedSlide(index)
+  }
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    setHoveredSlide(index)
+  }
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault()
+
+    if (draggedSlide === null || draggedSlide === dropIndex) {
+      setDraggedSlide(null)
+      setHoveredSlide(null)
+      return
+    }
+
+    const newSlides = [...slides]
+    const [removed] = newSlides.splice(draggedSlide, 1)
+    newSlides.splice(dropIndex, 0, removed)
+
+    const newDoc = "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>" +
+      newSlides.join("\n") +
+      "</body></html>"
+
+    onChangeDoc(newDoc)
+
+    if (currentSlide === draggedSlide) {
+      setCurrentSlide(dropIndex)
+    } else if (currentSlide > draggedSlide && currentSlide <= dropIndex) {
+      setCurrentSlide(currentSlide - 1)
+    } else if (currentSlide < draggedSlide && currentSlide >= dropIndex) {
+      setCurrentSlide(currentSlide + 1)
+    }
+
+    setDraggedSlide(null)
+    setHoveredSlide(null)
+  }
 
   return (
     <div className="w-screen h-screen flex flex-col">
       <ProjectNavBar
+        projectId={projectId || undefined}
         name={name}
         saveState={saveState}
-        onRename={onRename}
         mode={mode}
         onChangeMode={setMode}
         activeUsers={activeUsers as any}
@@ -314,136 +382,11 @@ export default function ProjectPage() {
 
       <div className="flex-1 overflow-hidden">
         <div ref={containerRef} className="w-full h-full flex bg-[#121212]">
-          <style>{`
-            .scrollbar-thin::-webkit-scrollbar {
-              width: 6px;
-            }
-            .scrollbar-thin::-webkit-scrollbar-track {
-              background: #1e1e1e;
-            }
-            .scrollbar-thin::-webkit-scrollbar-thumb {
-              background: #3a3a3a;
-              border-radius: 3px;
-            }
-            .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-              background: #4a4a4a;
-            }
-          `}</style>
           <div
             style={{ width: `${previewWidth}%` }}
             className="h-full flex flex-col"
           >
-            <div className={`flex-1 min-h-0 flex ${isVisualMode ? 'flex-row p-0' : 'flex-col p-4'}`}>
-              {/* Vertical Slide Drawer - Left Side (Figma-like) */}
-              {slides.length > 0 && isVisualMode && (
-                <>
-                  <div
-                    className="bg-[#1e1e1e] border-r border-[#2a2a2a] py-3 flex flex-col overflow-hidden"
-                    style={{ width: `${drawerWidth}px` }}
-                  >
-                    {/* Header */}
-                    <div className="px-3 mb-3 flex items-center justify-between">
-                      <button className="flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors bg-[#2a2a2a] px-3 py-1.5 rounded-lg">
-                        <span>New slide</span>
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => {
-                          // TODO: Add new slide functionality
-                        }}
-                        className="p-1.5 text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded transition-colors"
-                      >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                      </button>
-                    </div>
-
-                    {/* Slides List */}
-                    <div className="flex-1 overflow-y-auto px-3 space-y-2 scrollbar-thin">
-                      {slides.map((slide, index) => (
-                        <div
-                          key={index}
-                          onClick={() => setCurrentSlide(index)}
-                          className={`relative group cursor-pointer transition-all ${currentSlide === index
-                              ? "bg-[#0d7dff]/10"
-                              : "hover:bg-[#2a2a2a]"
-                            } rounded-lg p-2`}
-                        >
-                          {/* Slide Number */}
-                          <div className="flex items-start gap-2">
-                            <span className={`text-xs font-medium mt-1 ${currentSlide === index ? "text-[#0d7dff]" : "text-gray-500"
-                              }`}>
-                              {index + 1}
-                            </span>
-
-                            {/* Slide Preview */}
-                            <div className={`flex-1 overflow-hidden border-2 transition-all ${currentSlide === index
-                                ? "border-[#0d7dff] shadow-lg shadow-[#0d7dff]/20"
-                                : "border-[#3a3a3a] group-hover:border-gray-500"
-                              } rounded-md`}
-                              style={{ aspectRatio: "16/9" }}
-                            >
-                              <iframe
-                                srcDoc={`<!DOCTYPE html><html><head><meta charset='utf-8'><style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:1920px;height:1080px;overflow:hidden;background:white;}body{transform:scale(0.052083);transform-origin:top left;width:1920px;height:1080px;}section{width:1920px;height:1080px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem;text-align:center;background:white;}</style></head><body>${slide}</body></html>`}
-                                className="w-full h-full border-none bg-white pointer-events-none"
-                                title={`Slide ${index + 1}`}
-                                style={{ background: 'white' }}
-                              />
-                            </div>
-                          </div>
-
-                          {/* Hover Actions */}
-                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                // TODO: Duplicate slide
-                              }}
-                              className="p-1 bg-[#1e1e1e] hover:bg-[#2a2a2a] rounded text-gray-400 hover:text-white transition-colors"
-                              title="Duplicate"
-                            >
-                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                // TODO: Delete slide
-                              }}
-                              className="p-1 bg-[#1e1e1e] hover:bg-red-500/20 rounded text-gray-400 hover:text-red-400 transition-colors"
-                              title="Delete"
-                            >
-                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Footer - Slide Count */}
-                    <div className="px-3 pt-3 mt-2 border-t border-[#2a2a2a]">
-                      <div className="text-xs text-gray-500 text-center">
-                        {slides.length} slide{slides.length !== 1 ? 's' : ''}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Resize Handle */}
-                  <div
-                    onMouseDown={handleDrawerMouseDown}
-                    className="w-1 bg-[#2a2a2a] hover:bg-[#0d7dff] cursor-col-resize transition-colors relative group"
-                  >
-                    <div className="absolute inset-y-0 -left-1 -right-1" />
-                  </div>
-                </>
-              )}
-
+            <div className="flex-1 min-h-0 p-4 flex flex-col">
               <div className="flex-1 flex items-center justify-center">
                 <div className="w-full h-full">
                   <LivePreview
@@ -451,41 +394,71 @@ export default function ProjectPage() {
                     currentSlide={currentSlide}
                     totalSlides={slides.length}
                     onSlideChange={setCurrentSlide}
-                    visualMode={isVisualMode}
                   />
                 </div>
               </div>
 
-              {/* Horizontal Slide Drawer - Bottom (non-visual mode) */}
-              {slides.length > 0 && !isVisualMode && (
-                <div className={`mt-4 pt-4 border border-[#666666] py-8 px-4 rounded-4xl`}>
-                  <div className="flex items-center gap-2 mb-2 px-1">
-                    <span className="text-xs text-gray-500">
-                      {currentSlide + 1} / {slides.length}
-                    </span>
-                  </div>
-                  <div className="flex gap-2 overflow-x-auto pb-2 px-1 scrollbar-custom">
-                    {slides.map((slide, index) => (
-                      <div
-                        key={index}
-                        onClick={() => setCurrentSlide(index)}
-                        className={`flex-shrink-0 cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${currentSlide === index
-                          ? "border-blue-500 ring-2 ring-blue-500/30"
-                          : "border-[#3a3a3a] hover:border-gray-500"
-                          }`}
-                        style={{ width: "100px", aspectRatio: "16/9" }}
-                      >
-                        <iframe
-                          srcDoc={`<!DOCTYPE html><html><head><meta charset='utf-8'><style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:1920px;height:1080px;overflow:hidden;background:white;}body{transform:scale(0.052083);transform-origin:top left;width:1920px;height:1080px;}section{width:1920px;height:1080px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem;text-align:center;background:white;}</style></head><body>${slide}</body></html>`}
-                          className="w-full h-full border-none bg-white pointer-events-none"
-                          title={`Slide ${index + 1}`}
-                          style={{ background: 'white' }}
-                        />
-                      </div>
-                    ))}
-                  </div>
+              <div className="mt-4 border border-[#666666] rounded-2xl overflow-hidden flex flex-col" style={{ maxHeight: '30vh' }}>
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-[#666666] bg-[#1a1a1a]">
+                  <span className="text-xs text-gray-500">
+                    {slides.length > 0 ? `${currentSlide + 1} / ${slides.length}` : 'No slides'}
+                  </span>
                 </div>
-              )}
+                <div className="flex gap-2 overflow-x-auto overflow-y-auto p-4 scrollbar-custom">
+                  <div
+                    onClick={addNewSlide}
+                    className="flex-shrink-0 cursor-pointer rounded-lg border-2 border-dashed border-[#3a3a3a] hover:border-blue-500 transition-all flex items-center justify-center bg-[#1a1a1a]"
+                    style={{ width: "100px", height: "56.25px" }}
+                  >
+                    <svg className="w-8 h-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </div>
+
+                  {slides.map((slide, index) => (
+                    <div
+                      key={index}
+                      draggable
+                      onDragStart={() => handleDragStart(index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDrop={(e) => handleDrop(e, index)}
+                      onDragLeave={() => setHoveredSlide(null)}
+                      onClick={() => setCurrentSlide(index)}
+                      onMouseEnter={() => setHoveredSlide(index)}
+                      onMouseLeave={() => setHoveredSlide(null)}
+                      className={`flex-shrink-0 cursor-move rounded-lg overflow-hidden border-2 transition-all relative group ${
+                        currentSlide === index
+                          ? "border-blue-500 ring-2 ring-blue-500/30"
+                          : draggedSlide === index
+                          ? "opacity-50 border-blue-400"
+                          : hoveredSlide === index && draggedSlide !== null
+                          ? "border-green-500"
+                          : "border-[#3a3a3a] hover:border-gray-500"
+                      }`}
+                      style={{ width: "100px", height: "56.25px" }}
+                    >
+                      <iframe
+                        srcDoc={`<!DOCTYPE html><html><head><meta charset='utf-8'><style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:1920px;height:1080px;overflow:hidden;background:white;}body{transform:scale(0.052083);transform-origin:top left;width:1920px;height:1080px;}section{width:1920px;height:1080px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem;text-align:center;background:white;}</style></head><body>${slide}</body></html>`}
+                        className="w-full h-full border-none bg-white pointer-events-none"
+                        title={`Slide ${index + 1}`}
+                        style={{ background: 'white' }}
+                      />
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          deleteSlide(index)
+                        }}
+                        className="absolute top-1 right-1 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      >
+                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -516,14 +489,24 @@ export default function ProjectPage() {
               <GeminiChatbot
                 setCode={applySetDoc}
                 code={doc}
-                projectId={projectId}
+                projectId={projectId || undefined}
                 currentSlideIndex={currentSlide}
                 slides={slides}
+                onDeleteSlide={deleteSlide}
+                onDeleteAllSlides={deleteAllSlides}
               />
             )}
           </div>
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ProjectPage() {
+  return (
+    <ProjectAccessRoute>
+      {() => <ProjectPageContent />}
+    </ProjectAccessRoute>
   )
 }

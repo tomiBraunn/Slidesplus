@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react"
+import React, { useEffect, useRef, useState, forwardRef } from "react"
 
 type Props = {
   document: string
@@ -8,14 +8,15 @@ type Props = {
   visualMode?: boolean
 }
 
-export default function LivePreview({
+const LivePreview = forwardRef<HTMLIFrameElement, Props>(({
   document,
   currentSlide,
   totalSlides,
   onSlideChange,
   visualMode = false,
-}: Props) {
-  const iframeRef = useRef<HTMLIFrameElement>(null)
+}, ref) => {
+  const internalRef = useRef<HTMLIFrameElement>(null)
+  const iframeRef = (ref as React.RefObject<HTMLIFrameElement>) || internalRef
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
 
@@ -207,4 +208,8 @@ export default function LivePreview({
       </div>
     </div>
   )
-}
+})
+
+LivePreview.displayName = 'LivePreview'
+
+export default LivePreview

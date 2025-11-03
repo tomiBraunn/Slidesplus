@@ -108,7 +108,7 @@ export default function ProjectNavBar({
             />
           )}
 
-          {/* {onShareClick && (
+          {onShareClick && (
             <button
               onClick={onShareClick}
               className="flex items-center gap-2 px-3 py-1.5 bg-[#2B2B2B] hover:bg-[#3a3a3a] text-gray-200 rounded-lg transition-colors text-sm"
@@ -126,7 +126,7 @@ export default function ProjectNavBar({
           >
             <span className="material-symbols-outlined text-base">history</span>
             History
-          </button> */}
+          </button>
 
           <div className="flex items-center justify-between gap-1 w-auto defaultStyle rounded-[20px]">
             <span
