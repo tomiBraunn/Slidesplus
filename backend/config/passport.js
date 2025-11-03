@@ -3,12 +3,14 @@ import { Strategy as GitHubStrategy } from "passport-github2"
 import { Strategy as GoogleStrategy } from "passport-google-oauth20"
 import { pool } from "./database.js"
 
+const isProduction = process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production" || process.env.VERCEL
+
 passport.use(
 	new GitHubStrategy(
 		{
 			clientID: process.env.GITHUB_CLIENT_ID || "Ov23li9E8M3ty2y1Ab6A",
 			clientSecret: process.env.GITHUB_CLIENT_SECRET || "***REMOVED_GITHUB_CLIENT_SECRET***",
-			callbackURL: process.env.GITHUB_CALLBACK_URL || (process.env.NODE_ENV === "production" ? "https://slides-plus-backend.vercel.app/auth/github/callback" : "http://localhost:8000/auth/github/callback"),
+			callbackURL: process.env.GITHUB_CALLBACK_URL || (isProduction ? "https://slides-plus-backend.vercel.app/auth/github/callback" : "http://localhost:8000/auth/github/callback"),
 		},
 		async (accessToken, refreshToken, profile, done) => {
 			try {
@@ -45,7 +47,7 @@ passport.use(
 		{
 			clientID: process.env.GOOGLE_CLIENT_ID || "393566142603-87vnrlpb45asglhngrh15ks5phpb9ssl.apps.googleusercontent.com",
 			clientSecret: process.env.GOOGLE_CLIENT_SECRET || "***REMOVED_GOOGLE_CLIENT_SECRET***",
-			callbackURL: process.env.GOOGLE_CALLBACK_URL || (process.env.NODE_ENV === "production" ? "https://slides-plus-backend.vercel.app/auth/google/callback" : "http://localhost:8000/auth/google/callback"),
+			callbackURL: process.env.GOOGLE_CALLBACK_URL || (isProduction ? "https://slides-plus-backend.vercel.app/auth/google/callback" : "http://localhost:8000/auth/google/callback"),
 		},
 		async (accessToken, refreshToken, profile, done) => {
 			try {
