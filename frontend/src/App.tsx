@@ -5,6 +5,7 @@ import ProjectViewPage from "./components/FullScreens/ProjectViewPage";
 import LandingPage from "./components/FullScreens/LandingPage";
 import LogInPage from "./components/FullScreens/LogInPage";
 import SignUpPage from "./components/FullScreens/SignUpPage";
+import AuthCallbackPage from "./components/FullScreens/AuthCallbackPage";
 import UrlNotFoundPage from "./components/FullScreens/UrlNotFoundPage";
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -15,6 +16,7 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LogInPage />} />
         <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
         <Route path="/p/:id" element={<ProtectedRoute><ProjectPage /></ProtectedRoute>} />
         <Route path="/v/:id" element={<ProjectViewPage />} />

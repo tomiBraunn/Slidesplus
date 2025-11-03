@@ -8,6 +8,14 @@ function LogInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
+  const handleGoogleLogin = () => {
+    window.location.href = `${urlbackend}/auth/google`;
+  };
+
+  const handleGitHubLogin = () => {
+    window.location.href = `${urlbackend}/auth/github`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -50,6 +58,7 @@ function LogInForm() {
             <div className="flex flex-col gap-4">
               <button
                 type="button"
+                onClick={handleGoogleLogin}
                 className="w-full flex items-center justify-center gap-3 rounded-xl border border-[#2B2B2B] px-4 py-2.5 text-sm font-medium hover:bg-[#161616] transition cursor-pointer"
               >
                 <img
@@ -63,6 +72,7 @@ function LogInForm() {
 
               <button
                 type="button"
+                onClick={handleGitHubLogin}
                 className="w-full flex items-center justify-center gap-3 rounded-xl border border-[#2B2B2B] px-4 py-2.5 text-sm font-medium hover:bg-[#161616] transition cursor-pointer mt-3"
               >
                 <img
