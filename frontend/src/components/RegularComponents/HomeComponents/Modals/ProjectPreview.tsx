@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import BasicModal from "../../MultiuseComponents/BasicModal"
+import { ShareModal } from "../../MultiuseComponents/ShareModal"
 import { urlbackend } from "../../../../config.js"
 
 type ActionItem = {
@@ -37,6 +38,7 @@ function ProjectPreview({
   const [show, setShow] = useState(false)
   const [showDelete, setShowDelete] = useState(false)
   const [showRename, setShowRename] = useState(false)
+  const [showShare, setShowShare] = useState(false)
   const [confirmText, setConfirmText] = useState("")
   const [renameText, setRenameText] = useState(name || "")
   const [busy, setBusy] = useState(false)
@@ -47,6 +49,16 @@ function ProjectPreview({
   const mainPreviewRef = useRef<HTMLDivElement>(null)
   const [previewsHeight, setPreviewsHeight] = useState<number>(0)
   const navigate = useNavigate()
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   useEffect(() => {
     if (open) {
@@ -259,7 +271,7 @@ function ProjectPreview({
   const defaultActions: ActionItem[] = [
     { icon: "delete", label: "Delete", onClick: () => setShowDelete(true) },
     { icon: "edit", label: "Rename", onClick: () => setShowRename(true) },
-    { icon: "share", label: "Share", onClick: goOpen },
+    { icon: "share", label: "Share", onClick: () => setShowShare(true) },
     { icon: "open_in_new", label: "Open", onClick: goOpen },
   ]
   const items = actions?.length ? actions : defaultActions
@@ -278,48 +290,54 @@ function ProjectPreview({
     >
       <div
         onMouseDown={(e) => e.stopPropagation()}
-        className={`text-white rounded-xl defaultStyle card-animate w-[70vw] max-w-[1100px] max-h-[85vh] overflow-hidden flex flex-col border border-white/10 bg-[#0b0b0bcc] transform transition-all duration-200 ease-out backdrop-bl-sm${show ? " opacity-100 scale-100" : " opacity-0 scale-95"}`}
+        className={`text-white rounded-xl defaultStyle card-animate w-[95vw] md:w-[70vw] max-w-[1100px] h-[90vh] md:max-h-[85vh] overflow-hidden flex flex-col border border-white/10 bg-[#0b0b0bcc] transform transition-all duration-200 ease-out backdrop-bl-sm${show ? " opacity-100 scale-100" : " opacity-0 scale-95"}`}
       >
-        <div className="flex items-center justify-between gap-2 w-full p-4">
-          <div className="flex items-start flex-col">
+        <div className="flex items-center justify-between gap-2 w-full p-2 md:p-4 flex-shrink-0">
+          <div className="flex items-start flex-col min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-white" style={{ fontSize: 35 }}>
+              <span className="material-symbols-outlined text-white" style={{ fontSize: isMobile ? 24 : 35 }}>
                 crop_landscape
               </span>
-              <p className="text-white font-medium text-lg">{name || "Untitled"}</p>
+              <p className="text-white font-medium text-sm md:text-lg truncate">{name || "Untitled"}</p>
             </div>
-            <p className="text-[#ffffff] text-sm">{description}</p>
+            {!isMobile && <p className="text-[#ffffff] text-xs md:text-sm">{description}</p>}
           </div>
           <button
             onClick={handleClose}
-            className="flex items-center justify-center rounded-full p-2 hover:bg-white/10 text-white"
+            className="flex items-center justify-center rounded-full p-1.5 md:p-2 hover:bg-white/10 text-white flex-shrink-0"
             aria-label="Close"
             title="Close"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 22 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
               close
             </span>
           </button>
         </div>
 
-        <div className="flex items-start justify-start gap-2 w-full h-full px-4 pb-2">
-          <div ref={mainPreviewRef} className="text-white rounded-xl border border-[#2B2B2B] bg-white w-full aspect-video p-0 overflow-hidden border-solid relative">
+        <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} items-start justify-start gap-2 w-full flex-1 min-h-0 px-2 md:px-4 pb-1 md:pb-2`}>
+          <div ref={mainPreviewRef} className={`text-white rounded-xl border border-[#2B2B2B] bg-white ${isMobile ? 'w-full flex-1 min-h-0' : 'w-full'} ${isMobile ? '' : 'aspect-video'} p-0 overflow-hidden border-solid relative`}>
             <iframe ref={iframeRef} title="Project Preview" className="w-full h-full border-0 bg-white" style={{ background: 'white' }} />
           </div>
           <div
-            className="rounded-xl w-1/5 p-2 bg-[#0f0f0f] flex flex-col gap-2 overflow-y-auto scrollbar-custom"
-            style={{ height: previewsHeight }}
+            className={`rounded-xl ${isMobile ? 'w-full h-16' : 'w-1/5'} p-1.5 md:p-2 bg-[#0f0f0f] flex ${isMobile ? 'flex-row overflow-x-auto' : 'flex-col overflow-y-auto'} gap-1.5 md:gap-2 scrollbar-custom flex-shrink-0`}
+            style={isMobile ? {} : { height: previewsHeight }}
           >
             {slides.map((s) => {
-              const thumbWidth = mainPreviewRef.current ? mainPreviewRef.current.offsetWidth * 0.2 - 16 : 100
+              const thumbWidth = isMobile
+                ? 90
+                : mainPreviewRef.current ? mainPreviewRef.current.offsetWidth * 0.2 - 16 : 100
               const thumbScale = thumbWidth / 1920
 
               return (
                 <div
                   key={s.id}
                   onClick={() => setSelectedSlide(s.position)}
-                  className={`cursor-pointer border rounded-md overflow-hidden bg-white ${selectedSlide === s.position ? "border-blue-500" : "border-[#2B2B2B]"}`}
-                  style={{ flex: "0 0 auto", aspectRatio: "16/9" }}
+                  className={`cursor-pointer border rounded-md overflow-hidden bg-white ${selectedSlide === s.position ? "border-blue-500 border-2" : "border-[#2B2B2B]"}`}
+                  style={{
+                    flex: "0 0 auto",
+                    aspectRatio: "16/9",
+                    ...(isMobile ? { width: '90px', height: '50px' } : {})
+                  }}
                 >
                   <iframe
                     title={`slide-${s.position}`}
@@ -334,21 +352,21 @@ function ProjectPreview({
           </div>
         </div>
 
-        <div className="flex items-center justify-end self-end w-full">
-          <div className="flex items-center justify-center gap-2 px-4 py-2.5">
+        <div className="flex items-center justify-end self-end w-full flex-shrink-0">
+          <div className={`flex items-center justify-center gap-1 md:gap-2 px-2 md:px-4 py-1.5 md:py-2.5 ${isMobile ? 'w-full' : ''}`}>
             {items.map((item) => (
               <button
                 key={item.label}
                 onClick={item.onClick}
-                className="flex-1 min-w-[100px] flex items-center justify-center defaultStyle defaultStyleHover rounded-3xl p-2.5 hover:bg-[#222]"
+                className={`${isMobile ? 'flex-1' : 'min-w-[100px]'} flex items-center justify-center defaultStyle defaultStyleHover rounded-3xl p-1.5 md:p-2.5 hover:bg-[#222]`}
                 title={item.label}
                 disabled={item.label === "Open" && !projectId}
               >
                 <div className="flex items-center justify-center gap-1">
-                  <span className="material-symbols-outlined" style={{ fontSize: 18, color: "#ffffff" }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: isMobile ? 18 : 18, color: "#ffffff" }}>
                     {item.icon}
                   </span>
-                  <span className="text-xs">{item.label}</span>
+                  <span className={`text-xs ${isMobile ? 'hidden' : ''}`}>{item.label}</span>
                 </div>
               </button>
             ))}
@@ -422,6 +440,12 @@ function ProjectPreview({
             onChange={(e) => setRenameText(e.target.value)}
           />
         </BasicModal>
+
+        <ShareModal
+          projectId={projectId || null}
+          isOpen={showShare}
+          onClose={() => setShowShare(false)}
+        />
       </div>
     </div>
   )

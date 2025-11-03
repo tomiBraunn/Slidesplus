@@ -127,35 +127,25 @@ const LivePreview = forwardRef<HTMLIFrameElement, Props>(({
     if (currentSlide > 0) onSlideChange(currentSlide - 1)
   }
 
-  const handleFullscreen = () => {
-    const iframe = iframeRef.current
-    if (!iframe) return
-
-    const doc = iframe.contentDocument || iframe.contentWindow?.document
-    if (doc) {
-      const style = doc.createElement('style')
-      style.textContent = `
-        body {
-          transform: scale(1) !important;
-        }
-      `
-      doc.head.appendChild(style)
+  // Add keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault()
+        handleNext()
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault()
+        handlePrev()
+      }
     }
 
-    if (iframe.requestFullscreen) {
-      iframe.requestFullscreen()
-    } else if ((iframe as any).webkitRequestFullscreen) {
-      (iframe as any).webkitRequestFullscreen()
-    } else if ((iframe as any).mozRequestFullScreen) {
-      (iframe as any).mozRequestFullScreen()
-    } else if ((iframe as any).msRequestFullscreen) {
-      (iframe as any).msRequestFullscreen()
-    }
-  }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [currentSlide, totalSlides])
 
   return (
     <div className="flex flex-col items-center justify-center gap-1 w-full h-full">
-      <div className={`w-full h-full flex items-center justify-center ${visualMode ? '' : 'rounded-4xl'}`}>
+      <div className={`w-full h-full flex items-center justify-center ${visualMode ? '' : 'rounded-3xl'}`}>
         <div
           ref={containerRef}
           className={`w-full aspect-[16/9] overflow-hidden max-h-full bg-white relative ${visualMode ? '' : 'rounded-4xl border border-[#52585A]'}`}
@@ -171,39 +161,6 @@ const LivePreview = forwardRef<HTMLIFrameElement, Props>(({
               background: 'white'
             }}
           />
-        </div>
-      </div>
-      <div className={`w-full flex justify-center presentationComponentsStyle ${visualMode ? 'rounded-none' : 'rounded-none rounded-b-3xl'}`}>
-        <div className={`flex items-center justify-between gap-2 w-auto ${visualMode ? 'rounded-none' : 'rounded-none rounded-b-3xl'}`}>
-          <span
-            className="material-symbols-outlined cursor-pointer w-[1.5em] aspect-square text-[#4B4B4B] hover:text-white transition-colors"
-            onClick={handleFullscreen}
-            title="Fullscreen"
-          >
-            fullscreen
-          </span>
-          <span
-            className={`material-symbols-outlined cursor-pointer w-[1.5em] aspect-square transition-colors ${currentSlide === 0 ? 'text-[#2a2a2a] cursor-not-allowed' : 'text-[#4B4B4B] hover:text-white'
-              }`}
-            onClick={handlePrev}
-            title="Previous slide"
-          >
-            chevron_left
-          </span>
-          <span
-            className={`material-symbols-outlined cursor-pointer w-[1.5em] aspect-square transition-colors ${currentSlide === totalSlides - 1 ? 'text-[#2a2a2a] cursor-not-allowed' : 'text-[#4B4B4B] hover:text-white'
-              }`}
-            onClick={handleNext}
-            title="Next slide"
-          >
-            chevron_right
-          </span>
-          <span
-            className="material-symbols-outlined cursor-pointer w-[1.5em] aspect-square text-[#4B4B4B] hover:text-white transition-colors"
-            title="View all slides"
-          >
-            filter_none
-          </span>
         </div>
       </div>
     </div>

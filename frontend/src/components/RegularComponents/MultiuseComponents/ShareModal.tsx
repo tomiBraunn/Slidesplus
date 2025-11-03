@@ -3,10 +3,13 @@ import React, { useState, useEffect, useRef } from 'react'
 import { urlbackend } from '../../../config.js'
 
 interface Collaborator {
-    user_id: string
-    username: string
+    id?: string  // Backend returns 'id'
+    user_id?: string  // Some endpoints might use 'user_id'
+    username?: string
+    name?: string  // Backend returns 'name'
     first_name?: string
     last_name?: string
+    email?: string
     avatar?: string
     role: string
 }
@@ -51,6 +54,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
     const [error, setError] = useState('')
     const [owner, setOwner] = useState<any>(null)
     const [projectName, setProjectName] = useState<string>('')
+    const [isPublic, setIsPublic] = useState(false)
+    const [linkCopied, setLinkCopied] = useState(false)
     const searchRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -91,6 +96,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                 setCollaborators(data.collaborators || [])
                 setOwner(data.project?.owner || null)
                 setProjectName(data.project?.name || '')
+                setIsPublic(data.project?.is_public || false)
             }
         } catch (err) {
             console.error('Error fetching access:', err)
@@ -134,23 +140,30 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                 })
             })
 
-            const data = await res.json()
+            const data = await res.json().catch(() => ({ ok: false, error: 'Server error' }))
 
-            if (data.ok) {
+            if (res.status === 403) {
+                setError('You do not have permission to add collaborators to this project')
+            } else if (data.ok) {
                 setCollaborators(data.collaborators)
                 setSearchQuery('')
                 setShowSearchResults(false)
             } else {
-                setError(data.error || 'Failed to add collaborator')
+                setError(data.error || `Failed to add collaborator (${res.status})`)
             }
         } catch (err) {
-            setError('Failed to add collaborator')
+            setError(`Network error: ${err instanceof Error ? err.message : 'Failed to add collaborator'}`)
         } finally {
             setLoading(false)
         }
     }
 
     const handleRemoveCollaborator = async (userId: string) => {
+        if (!userId) {
+            console.error('userId is undefined')
+            return
+        }
+
         try {
             const token = localStorage.getItem('token')
             const res = await fetch(`${urlbackend}/projects/${projectId}/collaborators/${userId}`, {
@@ -162,10 +175,44 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
 
             if (data.ok) {
                 setCollaborators(data.collaborators)
+            } else {
+                setError(data.error || 'Failed to remove collaborator')
             }
         } catch (err) {
             console.error('Error removing collaborator:', err)
+            setError('Failed to remove collaborator')
         }
+    }
+
+    const handleTogglePublic = async () => {
+        try {
+            const token = localStorage.getItem('token')
+            const res = await fetch(`${urlbackend}/projects/${projectId}/visibility`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ is_public: !isPublic })
+            })
+
+            const data = await res.json()
+
+            if (data.ok) {
+                setIsPublic(!isPublic)
+            } else {
+                setError(data.error || 'Failed to update visibility')
+            }
+        } catch (err) {
+            setError('Failed to update visibility')
+        }
+    }
+
+    const handleCopyLink = () => {
+        const viewLink = `${window.location.origin}/v/${projectId}`
+        navigator.clipboard.writeText(viewLink)
+        setLinkCopied(true)
+        setTimeout(() => setLinkCopied(false), 2000)
     }
 
     if (!isOpen) return null
@@ -188,6 +235,61 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                 </div>
 
                 <div className="flex-1 overflow-y-auto px-6 py-4">
+                    <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex-1">
+                                <div className="text-sm font-medium text-gray-900 mb-1">Public Link</div>
+                                <div className="text-xs text-gray-500">
+                                    {isPublic
+                                        ? "Anyone with the link can view this presentation"
+                                        : "Only you and collaborators can view this project"}
+                                </div>
+                            </div>
+                            <button
+                                onClick={handleTogglePublic}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                    isPublic ? 'bg-blue-600' : 'bg-gray-300'
+                                }`}
+                            >
+                                <span
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                        isPublic ? 'translate-x-6' : 'translate-x-1'
+                                    }`}
+                                />
+                            </button>
+                        </div>
+
+                        {isPublic && (
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="text"
+                                    value={`${window.location.origin}/v/${projectId}`}
+                                    readOnly
+                                    className="flex-1 px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg text-gray-700"
+                                />
+                                <button
+                                    onClick={handleCopyLink}
+                                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                                        linkCopied
+                                            ? 'bg-green-600 text-white'
+                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                    }`}
+                                >
+                                    {linkCopied ? (
+                                        <div className="flex items-center gap-1">
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            Copied
+                                        </div>
+                                    ) : (
+                                        'Copy'
+                                    )}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
                     <div className="mb-6" ref={searchRef}>
                         <div className="flex items-center gap-2 border border-gray-300 rounded-lg p-3 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
                             <input
@@ -203,10 +305,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                         {showSearchResults && searchResults.length > 0 && (
                             <div className="mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
                                 {searchResults.map((user) => (
-                                    <div
+                                    <button
                                         key={user.id}
                                         onClick={() => handleAddCollaborator(user)}
-                                        className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                                        className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer transition-colors w-full text-left"
                                     >
                                         {user.avatar ? (
                                             <img
@@ -227,7 +329,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                                             </div>
                                             <div className="text-xs text-gray-500 truncate">{user.email || user.username}</div>
                                         </div>
-                                    </div>
+                                    </button>
                                 ))}
                             </div>
                         )}
@@ -263,39 +365,41 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                             </div>
                         )}
 
-                        {collaborators && collaborators.map((collab) => (
-                            <div key={collab.user_id} className="flex items-center justify-between py-2 group">
-                                <div className="flex items-center gap-3">
-                                    {collab.avatar ? (
-                                        <img
-                                            src={normalizeAvatar(collab.avatar)}
-                                            alt={collab.username}
-                                            className="w-10 h-10 rounded-full"
-                                        />
-                                    ) : (
-                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center text-white font-medium">
-                                            {getInitials(collab.first_name, collab.last_name, collab.username)}
+                        {collaborators && collaborators.map((collab) => {
+                            const userId = collab.user_id || collab.id
+                            const displayName = collab.name || (collab.first_name && collab.last_name ? `${collab.first_name} ${collab.last_name}` : collab.username || collab.email)
+                            return (
+                                <div key={userId} className="flex items-center justify-between py-2 group">
+                                    <div className="flex items-center gap-3">
+                                        {collab.avatar ? (
+                                            <img
+                                                src={normalizeAvatar(collab.avatar)}
+                                                alt={collab.username}
+                                                className="w-10 h-10 rounded-full"
+                                            />
+                                        ) : (
+                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center text-white font-medium">
+                                                {getInitials(collab.first_name, collab.last_name, collab.username || collab.name)}
+                                            </div>
+                                        )}
+                                        <div>
+                                            <div className="text-sm font-medium text-gray-900">
+                                                {displayName}
+                                            </div>
+                                            <div className="text-xs text-gray-500">{collab.email || collab.username}</div>
                                         </div>
-                                    )}
-                                    <div>
-                                        <div className="text-sm font-medium text-gray-900">
-                                            {collab.first_name && collab.last_name
-                                                ? `${collab.first_name} ${collab.last_name}`
-                                                : collab.username}
-                                        </div>
-                                        <div className="text-xs text-gray-500">{collab.username}</div>
                                     </div>
+                                    <button
+                                        onClick={() => handleRemoveCollaborator(userId)}
+                                        className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 transition-all p-1"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
                                 </div>
-                                <button
-                                    onClick={() => handleRemoveCollaborator(collab.user_id)}
-                                    className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 transition-all p-1"
-                                >
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
-                        ))}
+                            )
+                        })}
                     </div>
 
                     {error && (

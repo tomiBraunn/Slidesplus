@@ -37,6 +37,16 @@ function HomePage() {
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState("")
   const [user, setUser] = useState<User | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   const fetchUser = async () => {
     try {
@@ -178,28 +188,29 @@ function HomePage() {
 
   return (
     <>
-      <div className="bg-[#121212] w-screen h-screen flex items-center justify-start flex-col gap-5 relative">
-        <div className="bg-[#121212] flex flex-col items-center justify-start z-10">
+      <div className="bg-[#121212] w-screen h-screen flex items-center justify-start flex-col gap-5 relative overflow-y-auto">
+        <div className="bg-[#121212] flex flex-col items-center justify-start z-10 w-full">
           <NavBar user={user} />
-          <div className="flex flex-col items-center justify-start text-white w-[70vw]">
+          <div className="flex flex-col items-center justify-start text-white w-[90vw] md:w-[70vw] px-4 md:px-0">
             <div className="searchbar flex flex-col items-center justify-start w-full">
               <AppTextLogo />
               {/* <WelcomeMessages username={user?.username}/> */}
               <ProjectSearchBar
                 onAddClick={() => setShowCreate(true)}
-                viewMode={viewMode}
+                viewMode={isMobile ? "list" : viewMode}
                 setViewMode={setViewMode}
                 setFiltrar={filterProjects}
                 selected={sortOption}
                 setSelected={setSortOption}
+                isMobile={isMobile}
               />
             </div>
           </div>
         </div>
 
-        <main className="flex justify-center w-full relative">
+        <main className="flex justify-center w-full relative px-4 md:px-0 pb-8">
           <div
-            className={`w-[70vw] gap-4 ${viewMode === "grid" ? "grid grid-cols-4" : "flex flex-col"
+            className={`w-[90vw] md:w-[70vw] gap-4 ${isMobile ? "flex flex-col" : viewMode === "grid" ? "grid grid-cols-4" : "flex flex-col"
               }`}
           >
             {(() => {
@@ -237,7 +248,7 @@ function HomePage() {
                 <div
                   key={p.id}
                   className={
-                    viewMode === "grid"
+                    isMobile ? "flex items-center gap-3" : viewMode === "grid"
                       ? "relative"
                       : "flex items-center gap-3"
                   }
@@ -246,7 +257,7 @@ function HomePage() {
                     name={p.name}
                     description={p.description ?? ""}
                     onClick={() => openPreview(p)}
-                    listMode={viewMode === "list"}
+                    listMode={isMobile || viewMode === "list"}
                   />
                 </div>
               ))

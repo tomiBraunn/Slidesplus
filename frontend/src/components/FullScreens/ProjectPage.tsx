@@ -399,7 +399,7 @@ function ProjectPageContent() {
                 </div>
               </div>
 
-              <div className="mt-4 border border-[#666666] rounded-2xl overflow-hidden flex flex-col" style={{ maxHeight: '30vh' }}>
+              <div className="border border-[#666666] rounded-3xl overflow-hidden flex flex-col" style={{ maxHeight: '30vh' }}>
                 <div className="flex items-center gap-2 px-4 py-3 border-b border-[#666666] bg-[#1a1a1a]">
                   <span className="text-xs text-gray-500">
                     {slides.length > 0 ? `${currentSlide + 1} / ${slides.length}` : 'No slides'}
@@ -427,15 +427,14 @@ function ProjectPageContent() {
                       onClick={() => setCurrentSlide(index)}
                       onMouseEnter={() => setHoveredSlide(index)}
                       onMouseLeave={() => setHoveredSlide(null)}
-                      className={`flex-shrink-0 cursor-move rounded-lg overflow-hidden border-2 transition-all relative group ${
-                        currentSlide === index
-                          ? "border-blue-500 ring-2 ring-blue-500/30"
-                          : draggedSlide === index
+                      className={`flex-shrink-0 cursor-move rounded-lg overflow-hidden border-2 transition-all relative group ${currentSlide === index
+                        ? "border-blue-500 ring-2 ring-blue-500/30"
+                        : draggedSlide === index
                           ? "opacity-50 border-blue-400"
                           : hoveredSlide === index && draggedSlide !== null
-                          ? "border-green-500"
-                          : "border-[#3a3a3a] hover:border-gray-500"
-                      }`}
+                            ? "border-green-500"
+                            : "border-[#3a3a3a] hover:border-gray-500"
+                        }`}
                       style={{ width: "100px", height: "56.25px" }}
                     >
                       <iframe
@@ -450,11 +449,11 @@ function ProjectPageContent() {
                           e.stopPropagation()
                           deleteSlide(index)
                         }}
-                        className="absolute top-1 right-1 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                        className="absolute top-0 right-0 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
                       >
-                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
+                        <span className="material-symbols-outlined text-white text-sm">
+                          delete
+                        </span>
                       </button>
                     </div>
                   ))}

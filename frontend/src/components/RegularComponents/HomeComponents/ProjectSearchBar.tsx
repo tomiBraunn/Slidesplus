@@ -9,6 +9,7 @@ type Props = {
   setFiltrar: (value: string) => void;
   selected: string;
   setSelected: (value: string) => void;
+  isMobile?: boolean;
 };
 
 export default function ProjectSearchBar({
@@ -18,11 +19,12 @@ export default function ProjectSearchBar({
   setFiltrar,
   selected,
   setSelected,
+  isMobile = false,
 }: Props) {
   return (
     <div className="flex items-center justify-center gap-2 pt-5 w-full">
       <SearchBar onAddClick={onAddClick} setFiltrar={setFiltrar} />
-      <ViewModeSwitch viewMode={viewMode} setViewMode={setViewMode} />
+      {!isMobile && <ViewModeSwitch viewMode={viewMode} setViewMode={setViewMode} />}
       <SortBy selected={selected} setSelected={setSelected} />
     </div>
   );

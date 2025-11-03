@@ -109,6 +109,14 @@ export default function ProjectNavBar({
             />
           )}
 
+          <button
+            onClick={() => window.open(`/v/${projectId}`, '_blank')}
+            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+          >
+            <span className="material-symbols-outlined text-base">play_arrow</span>
+            Present
+          </button>
+
           {onShareClick && (
             <button
               onClick={onShareClick}
