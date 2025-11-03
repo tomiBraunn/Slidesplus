@@ -22,11 +22,21 @@ passport.use(
 		},
 		async (accessToken, refreshToken, profile, done) => {
 			try {
+				console.log("[GitHub OAuth] Profile received:", { id: profile.id, username: profile.username, email: profile.emails?.[0]?.value })
+
 				const existingUser = await pool.query("SELECT * FROM users WHERE github_id = $1", [profile.id])
+				console.log("[GitHub OAuth] Existing user check:", existingUser.rows.length > 0 ? "Found" : "Not found")
 
 				if (existingUser.rows.length > 0) {
+					console.log("[GitHub OAuth] Returning existing user:", existingUser.rows[0].id)
 					return done(null, existingUser.rows[0])
 				}
+
+				console.log("[GitHub OAuth] Creating new user with data:", {
+					username: profile.username || profile.displayName,
+					email: profile.emails?.[0]?.value || null,
+					github_id: profile.id
+				})
 
 				const newUser = await pool.query(
 					`INSERT INTO users (username, email, first_name, last_name, avatar, github_id, created_at, updated_at)
@@ -42,8 +52,10 @@ passport.use(
 					]
 				)
 
+				console.log("[GitHub OAuth] New user created:", newUser.rows[0].id)
 				return done(null, newUser.rows[0])
 			} catch (err) {
+				console.error("[GitHub OAuth] Error:", err)
 				return done(err, null)
 			}
 		}

@@ -98,10 +98,24 @@ app.get(
 		failureRedirect: `${frontendURL}/login?error=github`,
 	}),
 	(req, res) => {
-		const token = jwt.sign({ sub: req.user.id, email: req.user.email }, process.env.JWT_SECRET, {
-			expiresIn: "7d",
-		})
-		res.redirect(`${frontendURL}/auth/callback?token=${token}`)
+		try {
+			console.log("[GitHub Callback] User authenticated:", { id: req.user?.id, email: req.user?.email })
+
+			if (!req.user) {
+				console.error("[GitHub Callback] No user in request")
+				return res.redirect(`${frontendURL}/login?error=no_user`)
+			}
+
+			const token = jwt.sign({ sub: req.user.id, email: req.user.email }, process.env.JWT_SECRET, {
+				expiresIn: "7d",
+			})
+
+			console.log("[GitHub Callback] JWT created, redirecting to frontend")
+			res.redirect(`${frontendURL}/auth/callback?token=${token}`)
+		} catch (err) {
+			console.error("[GitHub Callback] Error:", err)
+			res.redirect(`${frontendURL}/login?error=callback_error`)
+		}
 	}
 )
 
