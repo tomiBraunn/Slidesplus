@@ -10,17 +10,16 @@ import realtimeRoutes from "./routes/realtimeRoutes.js"
 import collaborationRoutes from "./routes/collaborationRoutes.js"
 import versionRoutes from "./routes/versionRoutes.js"
 
-
 const app = express()
-app.use(express.json())
+
 app.use(cors({
-	origin: (origin, cb) => {
-		const allowed = ["http://localhost:5173", "https://slides-plus-backend.vercel.app", "https://slides-plus.vercel.app/login"]
-		if (!origin || allowed.includes(origin)) return cb(null, true)
-		cb(new Error("Not allowed by CORS"))
-	},
-	credentials: true
+	origin: ["http://localhost:5173", "https://slides-plus.vercel.app"],
+	credentials: true,
+	methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+	allowedHeaders: ["Content-Type", "Authorization"]
 }))
+
+app.use(express.json())
 
 app.get("/health", (_req, res) => {
 	res.json({
