@@ -17,6 +17,10 @@ const app = express()
 
 const isProduction = process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production" || process.env.VERCEL
 
+const frontendURL = isProduction
+	? "https://slidesplus.vercel.app"
+	: (process.env.FRONTEND_URL || "http://localhost:5173")
+
 app.use(cors({
 	origin: ["http://localhost:5173", "https://slidesplus.vercel.app", "https://slides-plus.vercel.app"],
 	credentials: true,
@@ -56,8 +60,9 @@ app.get("/health", (_req, res) => {
 			vercelEnv: process.env.VERCEL_ENV,
 			vercel: !!process.env.VERCEL,
 			nodeEnv: process.env.NODE_ENV,
-			githubCallback: process.env.GITHUB_CALLBACK_URL || (isProduction ? "https://slides-plus-backend.vercel.app/auth/github/callback" : "http://localhost:8000/auth/github/callback"),
-			frontendUrl: process.env.FRONTEND_URL || (isProduction ? "https://slidesplus.vercel.app" : "http://localhost:5173"),
+			githubCallback: isProduction ? "https://slides-plus-backend.vercel.app/auth/github/callback" : (process.env.GITHUB_CALLBACK_URL || "http://localhost:8000/auth/github/callback"),
+			googleCallback: isProduction ? "https://slides-plus-backend.vercel.app/auth/google/callback" : (process.env.GOOGLE_CALLBACK_URL || "http://localhost:8000/auth/google/callback"),
+			frontendUrl: frontendURL,
 		},
 	})
 })
@@ -90,13 +95,13 @@ app.get("/auth/github", passport.authenticate("github", { scope: ["user:email"] 
 app.get(
 	"/auth/github/callback",
 	passport.authenticate("github", {
-		failureRedirect: `${process.env.FRONTEND_URL || (isProduction ? "https://slidesplus.vercel.app" : "http://localhost:5173")}/login?error=github`,
+		failureRedirect: `${frontendURL}/login?error=github`,
 	}),
 	(req, res) => {
 		const token = jwt.sign({ sub: req.user.id, email: req.user.email }, process.env.JWT_SECRET, {
 			expiresIn: "7d",
 		})
-		res.redirect(`${process.env.FRONTEND_URL || (isProduction ? "https://slidesplus.vercel.app" : "http://localhost:5173")}/auth/callback?token=${token}`)
+		res.redirect(`${frontendURL}/auth/callback?token=${token}`)
 	}
 )
 
@@ -105,13 +110,13 @@ app.get("/auth/google", passport.authenticate("google", { scope: ["profile", "em
 app.get(
 	"/auth/google/callback",
 	passport.authenticate("google", {
-		failureRedirect: `${process.env.FRONTEND_URL || (isProduction ? "https://slidesplus.vercel.app" : "http://localhost:5173")}/login?error=google`,
+		failureRedirect: `${frontendURL}/login?error=google`,
 	}),
 	(req, res) => {
 		const token = jwt.sign({ sub: req.user.id, email: req.user.email }, process.env.JWT_SECRET, {
 			expiresIn: "7d",
 		})
-		res.redirect(`${process.env.FRONTEND_URL || (isProduction ? "https://slidesplus.vercel.app" : "http://localhost:5173")}/auth/callback?token=${token}`)
+		res.redirect(`${frontendURL}/auth/callback?token=${token}`)
 	}
 )
 
