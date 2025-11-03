@@ -52,6 +52,12 @@ app.get("/health", (_req, res) => {
 			hasUnsplash: !!process.env.UNSPLASH_ACCESS_KEY,
 			hasSupabaseAnon: !!process.env.SUPABASE_ANON_KEY,
 			node: process.version,
+			isProduction: isProduction,
+			vercelEnv: process.env.VERCEL_ENV,
+			vercel: !!process.env.VERCEL,
+			nodeEnv: process.env.NODE_ENV,
+			githubCallback: process.env.GITHUB_CALLBACK_URL || (isProduction ? "https://slides-plus-backend.vercel.app/auth/github/callback" : "http://localhost:8000/auth/github/callback"),
+			frontendUrl: process.env.FRONTEND_URL || (isProduction ? "https://slidesplus.vercel.app" : "http://localhost:5173"),
 		},
 	})
 })
