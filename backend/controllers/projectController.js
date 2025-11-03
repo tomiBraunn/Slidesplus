@@ -280,9 +280,11 @@ export const clearChat = async (req, res) => {
 
 export const uploadProjectFile = async (req, res) => {
 	try {
-		if (!req.file) return res.status(400).json({ message: "No file provided" })
-		const projectId = req.params.id
+		if (!req.file) {
+			return res.status(400).json({ message: "No file provided" })
+		}
 
+		const projectId = req.params.id
 		const { hasAccess, isViewer, exists } = await checkProjectAccess(projectId, req.user.sub, true)
 
 		if (!exists) {
@@ -293,15 +295,46 @@ export const uploadProjectFile = async (req, res) => {
 			return res.status(403).json({ message: "You don't have permission to upload files" })
 		}
 
-		const fileName = `${projectId}/${Date.now()}-${req.file.originalname}`
-		const { error: uploadError } = await supabase.storage.from("slides-assets").upload(fileName, req.file.buffer, { contentType: req.file.mimetype })
-		if (uploadError) return res.status(500).json({ message: "Error uploading file", detail: uploadError.message })
+		const bucketName = "chat-files"
+		const sanitizedFileName = req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')
+		const fileName = `${projectId}/${Date.now()}-${sanitizedFileName}`
 
-		const { data: { publicUrl } } = supabase.storage.from("slides-assets").getPublicUrl(fileName)
-		res.json({ ok: true, url: publicUrl, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype })
+		console.log("Uploading file:", { bucketName, fileName, size: req.file.size })
+
+		const { error: uploadError } = await supabase.storage
+			.from(bucketName)
+			.upload(fileName, req.file.buffer, {
+				contentType: req.file.mimetype,
+				upsert: false
+			})
+
+		if (uploadError) {
+			console.error("Supabase upload error:", uploadError)
+			return res.status(500).json({
+				message: "Error uploading file to storage",
+				detail: uploadError.message
+			})
+		}
+
+		const { data: { publicUrl } } = supabase.storage
+			.from(bucketName)
+			.getPublicUrl(fileName)
+
+		console.log("Upload successful:", publicUrl)
+
+		res.json({
+			ok: true,
+			url: publicUrl,
+			filename: req.file.originalname,
+			size: req.file.size,
+			mimetype: req.file.mimetype
+		})
 	} catch (error) {
-		console.error("Error:", error)
-		res.status(500).json({ message: "Internal error" })
+		console.error("Error uploading file:", error)
+		res.status(500).json({
+			message: "Internal server error",
+			detail: error.message
+		})
 	}
 }
 

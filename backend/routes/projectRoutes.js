@@ -15,7 +15,7 @@ router.delete("/projects/:id", auth, ctrl.deleteProject)
 router.get("/projects/:id/slides", auth, ctrl.getSlides)
 router.post("/projects/:id/slides", auth, ctrl.saveSlides)
 
-router.post("/projects/:id/upload", auth, upload.single("file"), ctrl.uploadChatFile)
+router.post("/projects/:id/upload", auth, upload.single("file"), ctrl.uploadProjectFile)
 
 router.get("/projects/:id/chat", auth, ctrl.getChat)
 router.post("/projects/:id/chat", auth, ctrl.postChat)
