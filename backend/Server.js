@@ -15,7 +15,7 @@ const app = express()
 app.use(express.json())
 app.use(cors({
 	origin: (origin, cb) => {
-		const allowed = ["http://localhost:5173", "https://slides-plus-backend.vercel.app"]
+		const allowed = ["http://localhost:5173", "https://slides-plus-backend.vercel.app", "https://slides-plus.vercel.app/login"]
 		if (!origin || allowed.includes(origin)) return cb(null, true)
 		cb(new Error("Not allowed by CORS"))
 	},
