@@ -9,6 +9,24 @@ function getRandomColor() {
 	return color
 }
 
+export async function deleteOldAvatar(avatarUrl) {
+	if (!avatarUrl) return
+
+	try {
+		// Only delete if it's a Supabase Storage URL (not external URLs like GitHub/Google)
+		if (avatarUrl.includes("supabase.co/storage") && avatarUrl.includes("/avatars/")) {
+			const fileName = avatarUrl.split("/avatars/").pop()
+			if (fileName) {
+				await supabase.storage.from("avatars").remove([fileName])
+				console.log(`Deleted old avatar: ${fileName}`)
+			}
+		}
+	} catch (err) {
+		console.error("Error deleting old avatar:", err)
+		// Don't throw, just log the error - we don't want to fail the operation if delete fails
+	}
+}
+
 export async function generateAvatar(letter, userId) {
 	const l = (letter || "U").toUpperCase().slice(0, 1)
 	const color1 = getRandomColor()

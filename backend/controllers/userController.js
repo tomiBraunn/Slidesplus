@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt"
 import { pool } from "../config/database.js"
 import { supabase } from "../services/supabaseService.js"
-import { generateAvatar } from "../services/avatarService.js"
+import { generateAvatar, deleteOldAvatar } from "../services/avatarService.js"
 
 export const getMe = async (req, res) => {
 	try {
@@ -68,10 +68,17 @@ export const uploadAvatar = async (req, res) => {
 	try {
 		if (!req.file) return res.status(400).json({ message: "No file provided" })
 		const userId = req.user.sub
-		const fileExt = req.file.originalname.split(".").pop()
-		const fileName = `${userId}.${fileExt}`
 
-		const { error: uploadError } = await supabase.storage.from("avatars").upload(fileName, req.file.buffer, { contentType: req.file.mimetype, upsert: true })
+		// Get current avatar to delete it
+		const current = await pool.query(`SELECT avatar FROM users WHERE id=$1`, [userId])
+		if (current.rowCount > 0 && current.rows[0].avatar) {
+			await deleteOldAvatar(current.rows[0].avatar)
+		}
+
+		const fileExt = req.file.originalname.split(".").pop()
+		const fileName = `${userId}-${Date.now()}.${fileExt}`
+
+		const { error: uploadError } = await supabase.storage.from("avatars").upload(fileName, req.file.buffer, { contentType: req.file.mimetype, upsert: false })
 		if (uploadError) return res.status(500).json({ message: "Error uploading file", detail: uploadError.message })
 
 		const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(fileName)
@@ -95,11 +102,7 @@ export const deleteAvatar = async (req, res) => {
 		const current = await pool.query(`SELECT avatar FROM users WHERE id=$1`, [userId])
 
 		if (current.rowCount > 0 && current.rows[0].avatar) {
-			const avatarUrl = current.rows[0].avatar
-			if (avatarUrl.includes("supabase.co/storage")) {
-				const fileName = avatarUrl.split("/").pop()
-				await supabase.storage.from("avatars").remove([fileName])
-			}
+			await deleteOldAvatar(current.rows[0].avatar)
 		}
 
 		const user = await pool.query(`SELECT username FROM users WHERE id=$1`, [userId])
@@ -122,11 +125,7 @@ export const regenerateAvatar = async (req, res) => {
 		const userId = req.user.sub
 		const current = await pool.query(`SELECT avatar FROM users WHERE id=$1`, [userId])
 		if (current.rowCount > 0 && current.rows[0].avatar) {
-			const avatarUrl = current.rows[0].avatar
-			if (avatarUrl.includes("supabase.co/storage")) {
-				const fileName = avatarUrl.split("/").pop()
-				await supabase.storage.from("avatars").remove([fileName])
-			}
+			await deleteOldAvatar(current.rows[0].avatar)
 		}
 		const q0 = await pool.query(`SELECT username FROM users WHERE id=$1`, [userId])
 		if (q0.rowCount === 0) return res.status(404).json({ message: "User not found" })
