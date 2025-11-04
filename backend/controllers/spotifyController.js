@@ -173,6 +173,52 @@ export const pause = async (req, res) => {
 }
 
 /**
+ * POST /spotify/next
+ * Skip to next track
+ */
+export const next = async (req, res) => {
+	try {
+		const userId = req.user.sub
+
+		const response = await callSpotifyAPI(userId, "/me/player/next", {
+			method: "POST",
+		})
+
+		if (!response.ok && response.status !== 204) {
+			return res.status(500).json({ ok: false, error: "Failed to skip to next" })
+		}
+
+		res.json({ ok: true })
+	} catch (err) {
+		console.error("Error skipping to next track:", err)
+		res.status(500).json({ ok: false, error: "Server error" })
+	}
+}
+
+/**
+ * POST /spotify/previous
+ * Skip to previous track
+ */
+export const previous = async (req, res) => {
+	try {
+		const userId = req.user.sub
+
+		const response = await callSpotifyAPI(userId, "/me/player/previous", {
+			method: "POST",
+		})
+
+		if (!response.ok && response.status !== 204) {
+			return res.status(500).json({ ok: false, error: "Failed to skip to previous" })
+		}
+
+		res.json({ ok: true })
+	} catch (err) {
+		console.error("Error skipping to previous track:", err)
+		res.status(500).json({ ok: false, error: "Server error" })
+	}
+}
+
+/**
  * POST /spotify/shuffle
  * Toggle shuffle
  */

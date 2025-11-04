@@ -7,6 +7,8 @@ import {
 	getCurrentTrack,
 	play,
 	pause,
+	next,
+	previous,
 	toggleShuffle,
 	cycleRepeat,
 	disconnect,
@@ -29,6 +31,8 @@ router.get("/current-track", auth, getCurrentTrack)
 // Playback controls
 router.post("/play", auth, play)
 router.post("/pause", auth, pause)
+router.post("/next", auth, next)
+router.post("/previous", auth, previous)
 router.post("/shuffle", auth, toggleShuffle)
 router.post("/repeat", auth, cycleRepeat)
 
