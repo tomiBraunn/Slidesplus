@@ -12,6 +12,7 @@ import unsplashRoutes from "./routes/unsplashRoutes.js"
 import realtimeRoutes from "./routes/realtimeRoutes.js"
 import collaborationRoutes from "./routes/collaborationRoutes.js"
 import versionRoutes from "./routes/versionRoutes.js"
+import spotifyRoutes from "./routes/spotifyRoutes.js"
 
 const app = express()
 
@@ -89,6 +90,7 @@ app.use("/", unsplashRoutes)
 app.use("/", realtimeRoutes)
 app.use("/", collaborationRoutes)
 app.use("/", versionRoutes)
+app.use("/spotify", spotifyRoutes)
 
 app.get("/auth/github", passport.authenticate("github", { scope: ["user:email"] }))
 
