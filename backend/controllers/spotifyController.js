@@ -6,9 +6,16 @@ import {
 	deleteSpotifyConnection,
 } from "../services/spotifyService.js"
 
-const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID
-const SPOTIFY_REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173"
+const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || "14468f5ae0a94b568c669c6407347993"
+const isProduction = process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production" || process.env.VERCEL
+
+const SPOTIFY_REDIRECT_URI = isProduction
+	? "https://slides-plus-backend.vercel.app/spotify/callback"
+	: (process.env.SPOTIFY_REDIRECT_URI || "http://localhost:8000/spotify/callback")
+
+const FRONTEND_URL = isProduction
+	? "https://slidesplus.vercel.app"
+	: (process.env.FRONTEND_URL || "http://localhost:5173")
 
 /**
  * GET /spotify/status

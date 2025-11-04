@@ -1,8 +1,12 @@
 import { pool } from "../config/database.js"
 
-const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID
-const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET
-const SPOTIFY_REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI
+const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || "14468f5ae0a94b568c669c6407347993"
+const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || "***REMOVED_SPOTIFY_CLIENT_SECRET***"
+const isProduction = process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production" || process.env.VERCEL
+
+const SPOTIFY_REDIRECT_URI = isProduction
+	? "https://slides-plus-backend.vercel.app/spotify/callback"
+	: (process.env.SPOTIFY_REDIRECT_URI || "http://localhost:8000/spotify/callback")
 
 /**
  * Get a valid access token for a user (refreshes if expired)
