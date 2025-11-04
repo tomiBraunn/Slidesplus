@@ -17,7 +17,7 @@ export function generateAvatar(letter) {
 		`<stop offset="0" stop-color="${color1}"/><stop offset="1" stop-color="${color2}"/>` +
 		`</linearGradient></defs>` +
 		`<rect width="128" height="128" rx="64" fill="url(#g)"/>` +
-		`<text x="50%" y="50%" dy=".36em" text-anchor="middle" fill="white" font-family="Inter, Arial, sans-serif" font-size="64" font-weight="700">` +
+		`<text x="50%" y="50%" dy=".36em" text-anchor="middle" fill="white" font-family="Inter, Arial, sans-serif" font-size="64" font-weight="500">` +
 		l +
 		`</text></svg>`
 	const b64 = Buffer.from(svg, "utf8").toString("base64")
