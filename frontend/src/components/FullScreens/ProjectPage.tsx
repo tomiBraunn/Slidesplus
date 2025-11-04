@@ -23,6 +23,21 @@ interface User {
   lastName?: string
 }
 
+function getCookie(name: string): string | null {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  return null;
+}
+
+function getDefaultMode(): ProjectMode {
+  const savedMode = getCookie("defaultMode");
+  if (savedMode === "code") return "code";
+  if (savedMode === "visual") return "visual";
+  if (savedMode === "chat") return "ai";
+  return "ai"; // Default to AI chat
+}
+
 function getUserFromStorage(): User | null {
   try {
     const stored = localStorage.getItem("user")
@@ -54,7 +69,7 @@ function getUserFromStorage(): User | null {
 }
 
 function ProjectPageContent() {
-  const [mode, setMode] = useState<ProjectMode>("code")
+  const [mode, setMode] = useState<ProjectMode>(getDefaultMode())
   const [projectId, setProjectId] = useState<string | null>(null)
   const [name, setName] = useState<string>("Untitled")
   const [saveState, setSaveState] = useState<SaveState>("idle")
@@ -399,16 +414,16 @@ function ProjectPageContent() {
                 </div>
               </div>
 
-              <div className="border border-[#666666] rounded-3xl overflow-hidden flex flex-col" style={{ maxHeight: '30vh' }}>
+              <div className="border border-theme-tertiary rounded-3xl overflow-hidden flex flex-col" style={{ maxHeight: '30vh' }}>
                 <div className="flex items-center gap-2 px-4 py-3 border-b border-theme-tertiary">
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-theme-secondary">
                     {slides.length > 0 ? `${currentSlide + 1} / ${slides.length}` : 'No slides'}
                   </span>
                 </div>
                 <div className="flex gap-2 overflow-x-auto overflow-y-auto p-4 scrollbar-custom">
                   <div
                     onClick={addNewSlide}
-                    className="flex-shrink-0 cursor-pointer rounded-lg border-2 border-dashed border-[#3a3a3a] hover:border-blue-500 transition-all flex items-center justify-center bg-[#1a1a1a]"
+                    className="flex-shrink-0 cursor-pointer rounded-lg border-2 border-dashed border-theme-tertiary hover:border-blue-500 transition-all flex items-center justify-center bg-theme-quaternary"
                     style={{ width: "100px", height: "56.25px" }}
                   >
                     <svg className="w-8 h-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -433,7 +448,7 @@ function ProjectPageContent() {
                           ? "opacity-50 border-blue-400"
                           : hoveredSlide === index && draggedSlide !== null
                             ? "border-green-500"
-                            : "border-[#3a3a3a] hover:border-gray-500"
+                            : "border-theme-tertiary hover:border-gray-500"
                         }`}
                       style={{ width: "100px", height: "56.25px" }}
                     >
@@ -449,7 +464,7 @@ function ProjectPageContent() {
                           e.stopPropagation()
                           deleteSlide(index)
                         }}
-                        className="absolute top-0 right-0 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                        className="absolute top-1 right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
                       >
                         <span className="material-symbols-outlined text-white text-sm">
                           delete
@@ -464,7 +479,7 @@ function ProjectPageContent() {
 
           <div
             onMouseDown={handleMouseDown}
-            className="w-1 bg-[#2a2a2a] hover:bg-blue-500 cursor-col-resize transition-colors relative group"
+            className="w-1 bg-theme-quaternary hover:bg-blue-500 cursor-col-resize transition-colors relative group"
           >
             <div className="absolute inset-y-0 -left-1 -right-1" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">

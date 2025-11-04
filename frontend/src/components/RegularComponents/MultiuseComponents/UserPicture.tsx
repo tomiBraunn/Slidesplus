@@ -247,18 +247,8 @@ export default function UserPicture({ avatar, size = 38 }: Props) {
             </div>
           </div>
 
-          <div className="[&>button]:w-full [&>button]:flex [&>button]:items-center [&>button]:gap-3 [&>button]:px-6 [&>button]:py-3 [&>button]:text-gray-200 [&>button]:hover:bg-[#1a1a1a] [&>button]:transition-colors [&>button]:text-left">
-            <button onClick={toggleTheme} className="justify-between">
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-xl">{isDark ? "dark_mode" : "light_mode"}</span>
-                <span className="text-sm font-medium">{isDark ? "Dark Mode" : "Light Mode"}</span>
-              </div>
-              <div className={`w-11 h-6 rounded-full transition-colors flex items-center ${isDark ? "bg-gray-600" : "bg-[#d0d0d0]"}`}>
-                <div className={`w-5 h-5 rounded-full transition-transform ${isDark ? "bg-white translate-x-0.5" : "bg-black translate-x-5"}`} />
-              </div>
-            </button>
-
-            <button
+          <div className="bg-theme-primary text-theme-primary [&>button]:w-full [&>button]:flex [&>button]:items-center [&>button]:gap-3 [&>button]:px-6 [&>button]:py-3 [&>button]:transition-colors [&>button]:text-left">
+            <button className=""
               onClick={() => {
                 setIsOpen(false);
                 setShowSettings(true);
@@ -266,6 +256,16 @@ export default function UserPicture({ avatar, size = 38 }: Props) {
             >
               <span className="material-symbols-outlined text-xl">settings</span>
               <span className="text-sm font-medium">Settings</span>
+            </button>
+
+            <button onClick={toggleTheme} className="justify-between">
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-xl">{isDark ? "dark_mode" : "light_mode"}</span>
+                <span className="text-sm font-medium">{isDark ? "Dark" : "Light"}</span>
+              </div>
+              <div className={`w-11 h-6 rounded-full transition-colors flex items-center ${isDark ? "bg-gray-600" : "bg-[#d0d0d0]"}`}>
+                <div className={`w-5 h-5 rounded-full transition-transform ${isDark ? "bg-white translate-x-0.5" : "bg-black translate-x-2.5"}`} />
+              </div>
             </button>
 
             <button onClick={handleLogout} className="!text-red-400">

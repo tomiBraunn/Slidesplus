@@ -85,10 +85,10 @@ export default function ProjectNavBar({
 
   return (
     <>
-      <nav className="flex items-center justify-between p-3 h-18 w-screen border-b border-[#222831] bg-theme-primary">
+      <nav className="flex items-center justify-between p-3 h-18 w-screen border-b border-theme-tertiary bg-theme-primary">
         <div className="flex items-center gap-3">
           <AppIcon />
-          <span className="text-theme-primary text-md truncate w-50">{name}</span>
+          <span className="text-theme-primary text-md truncate w-max-50">{name}</span>
           <span className="text-xs px-2 py-0.5 rounded-full border border-theme-tertiary text-theme-primary">
             {saveState === "saving"
               ? "Saving…"
@@ -120,7 +120,7 @@ export default function ProjectNavBar({
           {onShareClick && (
             <button
               onClick={onShareClick}
-              className="flex items-center gap-2 px-3 py-1.5 bg-[#2B2B2B] hover:bg-[#3a3a3a] text-gray-200 rounded-lg transition-colors text-sm"
+              className="flex items-center gap-2 px-3 py-1.5 bg-theme-secondary hover:bg-theme-hover text-white rounded-lg transition-colors text-sm"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -131,18 +131,18 @@ export default function ProjectNavBar({
 
           <button
             onClick={() => setVersionHistoryOpen(true)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-[#2B2B2B] hover:bg-[#3a3a3a] text-gray-200 rounded-lg transition-colors text-sm"
+            className="flex items-center gap-2 px-3 py-1.5 bg-theme-secondary hover:bg-theme-hover text-white rounded-lg transition-colors text-sm"
           >
             <span className="material-symbols-outlined text-base">history</span>
             History
           </button>
 
-          <div className="flex items-center justify-between gap-1 w-auto bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300 rounded-[20px]">
+          <div className="flex items-center justify-between w-auto bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300 rounded-[20px]">
             <span
               onClick={() => onChangeMode("code")}
               className={`material-symbols-outlined cursor-pointer w-[1.5em] aspect-square flex items-center justify-center rounded-l-[20px] transition ${mode === "code"
-                ? "text-black bg-white"
-                : "text-[#666666] hover:text-white"
+                ? "text-theme-inverted bg-theme-inverted"
+                : "text-theme-tertiary hover:text-theme-primary"
                 }`}
               title="Code"
             >
@@ -151,8 +151,8 @@ export default function ProjectNavBar({
             <span
               onClick={() => onChangeMode("visual")}
               className={`material-symbols-outlined cursor-pointer w-[1.5em] aspect-square flex items-center justify-center transition ${mode === "visual"
-                ? "text-black bg-white"
-                : "text-[#666666] hover:text-white"
+                ? "text-theme-inverted bg-theme-inverted"
+                : "text-theme-tertiary hover:text-theme-primary"
                 }`}
               title="Visual"
             >
@@ -161,8 +161,8 @@ export default function ProjectNavBar({
             <span
               onClick={() => onChangeMode("ai")}
               className={`material-symbols-outlined cursor-pointer w-[1.5em] aspect-square flex items-center justify-center rounded-r-[20px] transition ${mode === "ai"
-                ? "text-black bg-white"
-                : "text-[#666666] hover:text-white"
+                ? "text-theme-inverted bg-theme-inverted"
+                : "text-theme-tertiary hover:text-theme-primary"
                 }`}
               title="AI"
             >

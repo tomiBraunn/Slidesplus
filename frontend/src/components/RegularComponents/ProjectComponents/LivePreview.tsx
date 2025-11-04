@@ -148,7 +148,7 @@ const LivePreview = forwardRef<HTMLIFrameElement, Props>(({
       <div className={`w-full h-full flex items-center justify-center ${visualMode ? '' : 'rounded-3xl'}`}>
         <div
           ref={containerRef}
-          className={`w-full aspect-[16/9] overflow-hidden max-h-full bg-white relative ${visualMode ? '' : 'rounded-4xl border border-[#52585A]'}`}
+          className={`w-full aspect-[16/9] overflow-hidden max-h-full bg-white relative ${visualMode ? '' : 'rounded-4xl border'}`}
         >
           <iframe
             ref={iframeRef}

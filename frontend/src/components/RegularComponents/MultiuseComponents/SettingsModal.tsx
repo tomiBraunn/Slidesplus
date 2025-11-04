@@ -17,13 +17,28 @@ type User = {
   user_number: number;
 };
 
-type Section = "profile" | "projects" | "data";
+type Section = "profile" | "projects";
+type ProjectMode = "code" | "visual" | "chat";
 
 function ensureDataUrl(v?: string | null): string | undefined {
   if (!v) return undefined;
   if (v.startsWith("data:")) return v;
   if (v.startsWith("http")) return v;
   return `data:image/svg+xml;base64,${v}`;
+}
+
+function getCookie(name: string): string | null {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  return null;
+}
+
+function setCookie(name: string, value: string, days: number = 365) {
+  const date = new Date();
+  date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+  const expires = `expires=${date.toUTCString()}`;
+  document.cookie = `${name}=${value};${expires};path=/`;
 }
 
 export default function SettingsModal({ onClose }: Props) {
@@ -44,6 +59,7 @@ export default function SettingsModal({ onClose }: Props) {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [language, setLanguage] = useState("en");
+  const [defaultMode, setDefaultMode] = useState<ProjectMode>("chat");
 
   const [showDeleteProjects, setShowDeleteProjects] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
@@ -56,12 +72,18 @@ export default function SettingsModal({ onClose }: Props) {
     setMounted(true);
     document.documentElement.classList.add("overflow-hidden");
     requestAnimationFrame(() => setShow(true));
-  
+
+    // Load default mode from cookies
+    const savedMode = getCookie("defaultMode");
+    if (savedMode === "code" || savedMode === "visual" || savedMode === "chat") {
+      setDefaultMode(savedMode);
+    }
+
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") handleClose();
     };
     document.addEventListener("keydown", handleEsc);
-  
+
     return () => {
       document.documentElement.classList.remove("overflow-hidden");
       document.removeEventListener("keydown", handleEsc);
@@ -238,6 +260,14 @@ export default function SettingsModal({ onClose }: Props) {
     }
   };
 
+  const handleDefaultModeChange = (mode: ProjectMode) => {
+    setDefaultMode(mode);
+    setCookie("defaultMode", mode);
+    setStatusMessage(`Default mode set to ${mode === "chat" ? "AI Chat" : mode === "code" ? "Code Editor" : "Visual Editor"}.`);
+    setStatusType("success");
+    clearStatusLater();
+  };
+
   const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
@@ -368,10 +398,10 @@ export default function SettingsModal({ onClose }: Props) {
     >
       <div
         onMouseDown={(e) => e.stopPropagation()}
-        className={`text-white rounded-xl w-[70vw] max-w-[900px] h-[85vh] overflow-hidden flex border border-white/10 bg-[#0b0b0bcc] transform transition-all duration-200 ease-out ${show ? "opacity-100 scale-100" : "opacity-0 scale-95"
+        className={` rounded-xl w-[70vw] max-w-[900px] h-[85vh] overflow-hidden flex border border-theme-tertiary bg-theme-primary text-theme-primary transform transition-all duration-200 ease-out ${show ? "opacity-100 scale-100" : "opacity-0 scale-95"
           }`}
       >
-        <div className="w-64 bg-[#0f0f0f] border-r border-[#2B2B2B] flex flex-col p-4">
+        <div className="w-64 bg-theme-quaternary border-r border-theme-tertiary flex flex-col p-4">
         <div className="flex items-center mb-6">
   <div className="flex items-center gap-2">
     <span className="material-symbols-outlined text-2xl animate-spin-slow">settings</span>
@@ -380,7 +410,7 @@ export default function SettingsModal({ onClose }: Props) {
   {}
   <button
     onClick={handleClose}
-    className="ml-auto flex items-center justify-center rounded-full p-1.5 hover:bg-white/10"
+    className="ml-auto flex items-center justify-center rounded-full p-1.5 hover:bg-theme-hover"
     aria-label="Close"
   >
     <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
@@ -393,7 +423,7 @@ export default function SettingsModal({ onClose }: Props) {
           <div className="flex flex-col gap-1">
             <button
               onClick={() => setSection("profile")}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${section === "profile" ? "bg-[#2B2B2B]" : "hover:bg-[#1a1a1a]"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${section === "profile" ? "bg-theme-tertiary" : "hover:bg-theme-hover"
                 }`}
             >
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
@@ -404,24 +434,13 @@ export default function SettingsModal({ onClose }: Props) {
 
             <button
               onClick={() => setSection("projects")}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${section === "projects" ? "bg-[#2B2B2B]" : "hover:bg-[#1a1a1a]"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${section === "projects" ? "bg-theme-tertiary" : "hover:bg-theme-hover"
                 }`}
             >
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
                 folder
               </span>
               <span className="text-sm">Projects</span>
-            </button>
-
-            <button
-              onClick={() => setSection("data")}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${section === "data" ? "bg-[#2B2B2B]" : "hover:bg-[#1a1a1a]"
-                }`}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
-                database
-              </span>
-              <span className="text-sm">Data</span>
             </button>
           </div>
         </div>
@@ -434,7 +453,7 @@ export default function SettingsModal({ onClose }: Props) {
                     ? "bg-green-700 text-white"
                     : statusType === "error"
                       ? "bg-red-700 text-white"
-                      : "bg-gray-700 text-white"
+                      : "bg-theme-tertiary text-white"
                   }`}
               >
                 {statusMessage}
@@ -447,17 +466,17 @@ export default function SettingsModal({ onClose }: Props) {
 
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium mb-3">Profile Picture</label>
+                    <label className="block text-sm font-medium mb-3 text-theme-secondary">Profile Picture</label>
                     <div className="flex items-center gap-4">
                       <div className="relative">
                         <div
-                          className="rounded-full overflow-hidden bg-gray-200 flex-shrink-0 relative group"
+                          className="rounded-full overflow-hidden bg-theme-tertiary flex-shrink-0 relative group"
                           style={{ width: 80, height: 80 }}
                         >
                           {src ? (
                             <img src={src} alt="User" className="w-full h-full object-cover" />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-500 font-bold text-2xl">
+                            <div className="w-full h-full flex items-center justify-center text-theme-secondary font-bold text-2xl">
                               {usernameInitial}
                             </div>
                           )}
@@ -472,14 +491,14 @@ export default function SettingsModal({ onClose }: Props) {
                         <button
                           onClick={() => fileInputRef.current?.click()}
                           disabled={isUploading}
-                          className="px-4 py-2 rounded-lg bg-[#2B2B2B] hover:bg-[#3a3a3a] disabled:opacity-50 text-sm"
+                          className="px-4 py-2 rounded-lg bg-theme-secondary hover:bg-theme-tertiary disabled:opacity-50 text-sm"
                         >
                           Upload Photo
                         </button>
                         <button
                           onClick={handleDeleteAvatar}
                           disabled={isUploading}
-                          className="px-4 py-2 rounded-lg border border-[#2B2B2B] hover:bg-[#1a1a1a] disabled:opacity-50 text-sm"
+                          className="px-4 py-2 rounded-lg border border-theme-tertiary hover:bg-theme-hover disabled:opacity-50 text-sm"
                         >
                           Delete Avatar
                         </button>
@@ -489,64 +508,128 @@ export default function SettingsModal({ onClose }: Props) {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-2">First Name</label>
+                      <label className="block text-sm font-medium mb-2 text-theme-secondary">First Name</label>
                       <input
                         type="text"
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg bg-[#0f0f0f] border border-[#2B2B2B] focus:border-[#4B4B4B] outline-none"
+                        className="w-full px-3 py-2 rounded-lg bg-theme-quaternary border border-theme-tertiary focus:border-theme-secondary outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-2">Last Name</label>
+                      <label className="block text-sm font-medium mb-2 text-theme-secondary">Last Name</label>
                       <input
                         type="text"
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg bg-[#0f0f0f] border border-[#2B2B2B] focus:border-[#4B4B4B] outline-none"
+                        className="w-full px-3 py-2 rounded-lg bg-theme-quaternary border border-theme-tertiary focus:border-theme-secondary outline-none"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">Username</label>
+                    <label className="block text-sm font-medium mb-2 text-theme-secondary">Username</label>
                     <input
                       type="text"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg bg-[#0f0f0f] border border-[#2B2B2B] focus:border-[#4B4B4B] outline-none"
+                      className="w-full px-3 py-2 rounded-lg bg-theme-quaternary border border-theme-tertiary focus:border-theme-secondary outline-none"
                     />
                   </div>
 
-                  <div className="border-t border-[#2B2B2B] pt-6">
+                  <div className="border-t border-theme-tertiary pt-6">
+                    <h4 className="text-lg font-semibold mb-4">Default Project Mode</h4>
+                    <p className="text-sm text-theme-secondary mb-4">Choose which mode opens by default when you open a project</p>
+                    <div className="grid grid-cols-3 gap-3">
+                      <button
+                        onClick={() => handleDefaultModeChange("code")}
+                        className={`flex flex-col items-center gap-2 px-4 py-4 rounded-lg border-2 transition-all ${
+                          defaultMode === "code"
+                            ? "border-blue-500 bg-blue-500/10"
+                            : "border-theme-tertiary hover:border-theme-secondary hover:bg-theme-hover"
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-2xl">code</span>
+                        <span className="text-sm font-medium">Code Editor</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleDefaultModeChange("visual")}
+                        className={`flex flex-col items-center gap-2 px-4 py-4 rounded-lg border-2 transition-all ${
+                          defaultMode === "visual"
+                            ? "border-blue-500 bg-blue-500/10"
+                            : "border-theme-tertiary hover:border-theme-secondary hover:bg-theme-hover"
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-2xl">palette</span>
+                        <span className="text-sm font-medium">Visual Editor</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleDefaultModeChange("chat")}
+                        className={`flex flex-col items-center gap-2 px-4 py-4 rounded-lg border-2 transition-all ${
+                          defaultMode === "chat"
+                            ? "border-blue-500 bg-blue-500/10"
+                            : "border-theme-tertiary hover:border-theme-secondary hover:bg-theme-hover"
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-2xl">chat</span>
+                        <span className="text-sm font-medium">AI Chat</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-theme-tertiary pt-6">
+                    <h4 className="text-lg font-semibold mb-4">Integrations</h4>
+                    <div className="bg-theme-quaternary border border-theme-tertiary rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-[#1DB954] flex items-center justify-center">
+                            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="font-medium">Spotify</p>
+                            <p className="text-sm text-theme-secondary">Connect your Spotify account</p>
+                          </div>
+                        </div>
+                        <button className="px-4 py-2 rounded-lg bg-[#1DB954] text-white hover:bg-[#1ed760] text-sm font-medium">
+                          Connect
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-theme-tertiary pt-6">
                     <h4 className="text-lg font-semibold mb-4">Change Password</h4>
 
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium mb-2">Current Password</label>
+                        <label className="block text-sm font-medium mb-2 text-theme-secondary">Current Password</label>
                         <input
                           type="password"
                           value={currentPassword}
                           onChange={(e) => setCurrentPassword(e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg bg-[#0f0f0f] border border-[#2B2B2B] focus:border-[#4B4B4B] outline-none"
+                          className="w-full px-3 py-2 rounded-lg bg-theme-quaternary border border-theme-tertiary focus:border-theme-secondary outline-none"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium mb-2">New Password</label>
+                        <label className="block text-sm font-medium mb-2 text-theme-secondary">New Password</label>
                         <input
                           type="password"
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg bg-[#0f0f0f] border border-[#2B2B2B] focus:border-[#4B4B4B] outline-none"
+                          className="w-full px-3 py-2 rounded-lg bg-theme-quaternary border border-theme-tertiary focus:border-theme-secondary outline-none"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium mb-2">Confirm New Password</label>
+                        <label className="block text-sm font-medium mb-2 text-theme-secondary">Confirm New Password</label>
                         <input
                           type="password"
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg bg-[#0f0f0f] border border-[#2B2B2B] focus:border-[#4B4B4B] outline-none"
+                          className="w-full px-3 py-2 rounded-lg bg-theme-quaternary border border-theme-tertiary focus:border-theme-secondary outline-none"
                         />
                       </div>
                     </div>
@@ -560,11 +643,11 @@ export default function SettingsModal({ onClose }: Props) {
                 <h3 className="text-2xl font-semibold mb-6">Projects</h3>
 
                 <div className="space-y-6">
-                  <div className="bg-[#0f0f0f] border border-[#2B2B2B] rounded-lg p-6">
+                  <div className="bg-theme-quaternary border border-theme-tertiary rounded-lg p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <h4 className="text-lg font-semibold mb-1">Delete All Projects</h4>
-                        <p className="text-sm text-gray-400">
+                        <p className="text-sm text-theme-secondary">
                           You have {projectCount} project{projectCount !== 1 ? "s" : ""}
                         </p>
                       </div>
@@ -572,48 +655,39 @@ export default function SettingsModal({ onClose }: Props) {
                         delete_forever
                       </span>
                     </div>
-                    <p className="text-sm text-gray-300 mb-4">
+                    <p className="text-sm text-theme-secondary mb-4">
                       This action will permanently delete all your projects. This cannot be undone.
                     </p>
                     <button
                       onClick={() => setShowDeleteProjects(true)}
                       disabled={projectCount === 0}
-                      className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                      className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium text-white"
                     >
                       Delete All Projects
                     </button>
                   </div>
 
-                  <div className="bg-[#0f0f0f] border border-[#2B2B2B] rounded-lg p-6">
+                  <div className="bg-theme-quaternary border border-theme-tertiary rounded-lg p-6">
                     <h4 className="text-lg font-semibold mb-2">Export Projects</h4>
-                    <p className="text-sm text-gray-400 mb-4">Download all your projects as a backup file</p>
-                    <button disabled className="px-4 py-2 rounded-lg border border-[#2B2B2B] hover:bg-[#1a1a1a] disabled:opacity-50 disabled:cursor-not-allowed text-sm">
+                    <p className="text-sm text-theme-secondary mb-4">Download all your projects as a backup file</p>
+                    <button disabled className="px-4 py-2 rounded-lg border border-theme-tertiary hover:bg-theme-hover disabled:opacity-50 disabled:cursor-not-allowed text-sm">
                       Coming Soon
                     </button>
                   </div>
                 </div>
               </div>
             )}
-
-            {section === "data" && (
-              <div className="max-w-2xl">
-                <h3 className="text-2xl font-semibold mb-6">Data & Privacy</h3>
-                <div className="bg-[#0f0f0f] border border-[#2B2B2B] rounded-lg p-6">
-                  <p className="text-sm text-gray-400">Data management features coming soon.</p>
-                </div>
-              </div>
-            )}
           </div>
 
           {section === "profile" && (
-            <div className="border-t border-[#2B2B2B] p-4 flex justify-end gap-2">
-              <button onClick={handleClose} className="px-4 py-2 rounded-lg border border-[#2B2B2B] hover:bg-[#1a1a1a]">
+            <div className="border-t border-theme-tertiary p-4 flex justify-end gap-2">
+              <button onClick={handleClose} className="px-4 py-2 rounded-lg border border-theme-tertiary hover:bg-theme-hover">
                 Cancel
               </button>
               <button
                 onClick={handleSaveProfile}
                 disabled={isSaving}
-                className="px-4 py-2 rounded-lg bg-[#d0d0d0] text-black hover:brightness-95 disabled:opacity-50"
+                className="px-4 py-2 rounded-lg bg-theme-inverted text-theme-inverted hover:brightness-95 disabled:opacity-50"
               >
                 {isSaving ? "Saving..." : "Save Changes"}
               </button>
@@ -639,14 +713,14 @@ export default function SettingsModal({ onClose }: Props) {
                 setDeleteConfirmText("");
                 setShowDeleteProjects(false);
               }}
-              className="px-4 py-2 rounded-lg border border-[#2B2B2B] hover:bg-[#1a1a1a]"
+              className="px-4 py-2 rounded-lg border border-theme-tertiary hover:bg-theme-hover"
             >
               Cancel
             </button>
             <button
               onClick={handleDeleteAllProjects}
               disabled={deleteConfirmText !== "DELETE ALL"}
-              className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50"
+              className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white"
             >
               Delete All
             </button>
@@ -654,7 +728,7 @@ export default function SettingsModal({ onClose }: Props) {
         }
       >
         <input
-          className="w-full rounded-lg bg-[#0f0f0f] border border-[#2B2B2B] px-3 py-2 text-sm text-white"
+          className="w-full rounded-lg bg-theme-quaternary border border-theme-tertiary px-3 py-2 text-sm"
           value={deleteConfirmText}
           onChange={(e) => setDeleteConfirmText(e.target.value)}
           placeholder="DELETE ALL"

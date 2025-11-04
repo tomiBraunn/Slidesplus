@@ -269,17 +269,17 @@ export default function VisualEditorMode({
   }
 
   return (
-    <div className="w-full h-full bg-[#1e1e1e] flex items-center justify-center">
+    <div className="w-full h-full bg-theme-primary flex items-center justify-center">
       {selectedElement ? (
-        <div className="w-full h-full bg-[#2a2a2a] p-6 overflow-y-auto">
-          <h3 className="text-lg font-semibold text-gray-100 mb-6">
+        <div className="w-full h-full bg-theme-quaternary p-6 overflow-y-auto">
+          <h3 className="text-lg font-semibold text-white mb-6">
             {selectedElement.type === 'section' ? 'Slide Properties' : 'Element Properties'}
           </h3>
 
           <div className="space-y-6">
             <div>
-              <label className="text-sm text-gray-400 mb-2 block">Element Type</label>
-              <div className="text-sm text-gray-200 bg-[#1e1e1e] px-4 py-3 rounded-lg font-mono">
+              <label className="text-sm text-theme-secondary mb-2 block">Element Type</label>
+              <div className="text-sm text-white bg-theme-primary px-4 py-3 rounded-lg font-mono">
                 {selectedElement.tagName}
               </div>
             </div>
@@ -287,17 +287,17 @@ export default function VisualEditorMode({
             {selectedElement.type === 'text' && (
               <>
                 <div>
-                  <label className="text-sm text-gray-400 mb-2 block">Content</label>
+                  <label className="text-sm text-theme-secondary mb-2 block">Content</label>
                   <textarea
                     value={selectedElement.content}
                     onChange={(e) => updateElement({ content: e.target.value })}
-                    className="w-full bg-[#1e1e1e] text-white text-sm px-4 py-3 rounded-lg border border-[#3a3a3a] focus:border-blue-500 focus:outline-none resize-none"
+                    className="w-full bg-theme-primary text-white text-sm px-4 py-3 rounded-lg border border-theme-tertiary focus:border-blue-500 focus:outline-none resize-none"
                     rows={4}
                   />
                 </div>
 
                 <div>
-                  <label className="text-sm text-gray-400 mb-2 block">Font Size</label>
+                  <label className="text-sm text-theme-secondary mb-2 block">Font Size</label>
                   <div className="flex gap-3 items-center">
                     <input
                       type="range"
@@ -311,17 +311,17 @@ export default function VisualEditorMode({
                       type="number"
                       value={selectedElement.fontSize}
                       onChange={(e) => updateElement({ fontSize: Number(e.target.value) })}
-                      className="w-20 bg-[#1e1e1e] text-white text-sm px-3 py-2 rounded-lg border border-[#3a3a3a] focus:border-blue-500 focus:outline-none"
+                      className="w-20 bg-theme-primary text-white text-sm px-3 py-2 rounded-lg border border-theme-tertiary focus:border-blue-500 focus:outline-none"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-sm text-gray-400 mb-2 block">Font Weight</label>
+                  <label className="text-sm text-theme-secondary mb-2 block">Font Weight</label>
                   <select
                     value={selectedElement.fontWeight}
                     onChange={(e) => updateElement({ fontWeight: e.target.value })}
-                    className="w-full bg-[#1e1e1e] text-white text-sm px-4 py-3 rounded-lg border border-[#3a3a3a] focus:border-blue-500 focus:outline-none"
+                    className="w-full bg-theme-primary text-white text-sm px-4 py-3 rounded-lg border border-theme-tertiary focus:border-blue-500 focus:outline-none"
                   >
                     <option value="300">Light (300)</option>
                     <option value="400">Regular (400)</option>
@@ -333,19 +333,19 @@ export default function VisualEditorMode({
                 </div>
 
                 <div>
-                  <label className="text-sm text-gray-400 mb-2 block">Text Color</label>
+                  <label className="text-sm text-theme-secondary mb-2 block">Text Color</label>
                   <div className="flex gap-3 items-center">
                     <input
                       type="color"
                       value={rgbToHex(selectedElement.color || '#000000')}
                       onChange={(e) => updateElement({ color: e.target.value })}
-                      className="w-16 h-12 rounded-lg border-2 border-[#3a3a3a] cursor-pointer"
+                      className="w-16 h-12 rounded-lg border-2 border-theme-tertiary cursor-pointer"
                     />
                     <input
                       type="text"
                       value={selectedElement.color}
                       onChange={(e) => updateElement({ color: e.target.value })}
-                      className="flex-1 bg-[#1e1e1e] text-white text-sm px-4 py-3 rounded-lg border border-[#3a3a3a] focus:border-blue-500 focus:outline-none font-mono"
+                      className="flex-1 bg-theme-primary text-white text-sm px-4 py-3 rounded-lg border border-theme-tertiary focus:border-blue-500 focus:outline-none font-mono"
                     />
                   </div>
                 </div>
@@ -353,66 +353,66 @@ export default function VisualEditorMode({
             )}
 
             <div>
-              <label className="text-sm text-gray-400 mb-2 block">Background Color</label>
+              <label className="text-sm text-theme-secondary mb-2 block">Background Color</label>
               <div className="flex gap-3 items-center">
                 <input
                   type="color"
                   value={rgbToHex(selectedElement.backgroundColor || '#ffffff')}
                   onChange={(e) => updateElement({ backgroundColor: e.target.value })}
-                  className="w-16 h-12 rounded-lg border-2 border-[#3a3a3a] cursor-pointer"
+                  className="w-16 h-12 rounded-lg border-2 border-theme-tertiary cursor-pointer"
                 />
                 <input
                   type="text"
                   value={selectedElement.backgroundColor}
                   onChange={(e) => updateElement({ backgroundColor: e.target.value })}
-                  className="flex-1 bg-[#1e1e1e] text-white text-sm px-4 py-3 rounded-lg border border-[#3a3a3a] focus:border-blue-500 focus:outline-none font-mono"
+                  className="flex-1 bg-theme-primary text-white text-sm px-4 py-3 rounded-lg border border-theme-tertiary focus:border-blue-500 focus:outline-none font-mono"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-sm text-gray-400 mb-2 block">Dimensions</label>
+              <label className="text-sm text-theme-secondary mb-2 block">Dimensions</label>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Width (px)</label>
+                  <label className="text-xs text-theme-secondary mb-1 block">Width (px)</label>
                   <input
                     type="number"
                     value={Math.round(selectedElement.width || 0)}
                     onChange={(e) => updateElement({ width: Number(e.target.value) })}
-                    className="w-full bg-[#1e1e1e] text-white text-sm px-3 py-2 rounded-lg border border-[#3a3a3a] focus:border-blue-500 focus:outline-none"
+                    className="w-full bg-theme-primary text-white text-sm px-3 py-2 rounded-lg border border-theme-tertiary focus:border-blue-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Height (px)</label>
+                  <label className="text-xs text-theme-secondary mb-1 block">Height (px)</label>
                   <input
                     type="number"
                     value={Math.round(selectedElement.height || 0)}
                     onChange={(e) => updateElement({ height: Number(e.target.value) })}
-                    className="w-full bg-[#1e1e1e] text-white text-sm px-3 py-2 rounded-lg border border-[#3a3a3a] focus:border-blue-500 focus:outline-none"
+                    className="w-full bg-theme-primary text-white text-sm px-3 py-2 rounded-lg border border-theme-tertiary focus:border-blue-500 focus:outline-none"
                   />
                 </div>
               </div>
             </div>
 
             <div>
-              <label className="text-sm text-gray-400 mb-2 block">Position</label>
+              <label className="text-sm text-theme-secondary mb-2 block">Position</label>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">X (px)</label>
+                  <label className="text-xs text-theme-secondary mb-1 block">X (px)</label>
                   <input
                     type="number"
                     value={Math.round(selectedElement.x || 0)}
                     onChange={(e) => updateElement({ x: Number(e.target.value) })}
-                    className="w-full bg-[#1e1e1e] text-white text-sm px-3 py-2 rounded-lg border border-[#3a3a3a] focus:border-blue-500 focus:outline-none"
+                    className="w-full bg-theme-primary text-white text-sm px-3 py-2 rounded-lg border border-theme-tertiary focus:border-blue-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Y (px)</label>
+                  <label className="text-xs text-theme-secondary mb-1 block">Y (px)</label>
                   <input
                     type="number"
                     value={Math.round(selectedElement.y || 0)}
                     onChange={(e) => updateElement({ y: Number(e.target.value) })}
-                    className="w-full bg-[#1e1e1e] text-white text-sm px-3 py-2 rounded-lg border border-[#3a3a3a] focus:border-blue-500 focus:outline-none"
+                    className="w-full bg-theme-primary text-white text-sm px-3 py-2 rounded-lg border border-theme-tertiary focus:border-blue-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -420,13 +420,13 @@ export default function VisualEditorMode({
           </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center text-gray-500 gap-4">
-          <svg className="w-24 h-24 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="flex flex-col items-center justify-center text-theme-secondary gap-4">
+          <svg className="w-24 h-24 text-theme-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
           </svg>
           <div className="text-center">
-            <p className="text-lg font-medium text-gray-400 mb-1">No element selected</p>
-            <p className="text-sm text-gray-600">Click on an element in the preview to edit its properties</p>
+            <p className="text-lg font-medium text-theme-secondary mb-1">No element selected</p>
+            <p className="text-sm text-theme-secondary">Click on an element in the preview to edit its properties</p>
           </div>
         </div>
       )}

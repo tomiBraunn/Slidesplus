@@ -41,7 +41,7 @@ function CreateProject({ onClose, onCreated }: Props) {
       return;
     }
     if (name.length > 120) {
-      setError("Title can’t be longer than 120 characters.");
+      setError("Title can't be longer than 120 characters.");
       return;
     }
 
@@ -90,21 +90,25 @@ function CreateProject({ onClose, onCreated }: Props) {
       <div
         onTransitionEnd={handleTransitionEnd}
         className={[
-          "text-white rounded-xl border border-[#2B2B2B] bg-[#0f0f0f] card-animate",
+          "rounded-[30px] border border-theme-tertiary bg-theme-primary card-animate",
           "transform transition-all duration-200 ease-out",
           open ? "opacity-100 scale-100" : "opacity-0 scale-95",
         ].join(" ")}
       >
-        <div className="flex items-center justify-center gap-4">
-          <div className="flex flex-col items-start justify-start gap-2 p-4 min-w-[360px]">
-            <div className="flex items-center justify-start gap-2">
-              <span className="material-symbols-outlined text-white" style={{ fontSize: 35 }}>
-                crop_landscape
-              </span>
-              <p className="text-white font-medium">Create presentation:</p>
-            </div>
+        <div className="flex flex-col items-center justify-center p-14 gap-8 text-theme-secondary relative">
+          <span
+            className="material-symbols-outlined text-theme-primary cursor-pointer absolute top-4 right-4"
+            style={{ fontSize: 28 }}
+            onClick={handleClose}
+          >
+            close
+          </span>
 
-            <div className="w-full">
+          <h2 className="text-4xl text-theme-primary font-bold">New presentation</h2>
+          <p className="text-[10px] text-center">Use our templates, code your presentation, or use Ai to boost your designs</p>
+
+          <div className="flex flex-col gap-2 w-min-full">
+            <div className="flex gap-2 w-full">
               <input
                 type="text"
                 placeholder="Title"
@@ -112,31 +116,20 @@ function CreateProject({ onClose, onCreated }: Props) {
                 onChange={(e) => setTitle(e.target.value)}
                 onKeyDown={onKeyDownInput}
                 disabled={submitting}
-                className="text-white rounded-lg border border-[#2B2B2B] bg-[#0f0f0f] p-2 w-full border-[2.5px focus:outline-none placeholder-white/50 disabled:opacity-60"
+                className="text-theme-primary placeholder-theme-secondary w-full bg-theme-primary border border-theme-tertiary rounded-[15px] px-4 py-3 focus:outline-none disabled:opacity-60"
               />
-              {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
+              <button
+                onClick={createProject}
+                disabled={submitting}
+                className={[
+                  "h-full aspect-square w-16 bg-theme-inverted text-theme-primary flex items-center justify-center rounded-[15px] transition-opacity",
+                  submitting ? "opacity-60 cursor-not-allowed" : "hover:opacity-90",
+                ].join(" ")}
+              >
+                <span className="material-symbols-outlined text-theme-inverted">arrow_forward</span>
+              </button>
             </div>
-          </div>
-
-          <div className="flex flex-col items-end justify-between gap-4 p-4">
-            <span
-              className="material-symbols-outlined text-white cursor-pointer"
-              style={{ fontSize: 35 }}
-              onClick={handleClose}
-            >
-              close
-            </span>
-
-            <button
-              onClick={createProject}
-              disabled={submitting}
-              className={[
-                "px-4 py-2 appColorFade rounded-lg text-white font-medium transition-colors",
-                submitting ? "opacity-60 cursor-not-allowed" : "hover:opacity-90",
-              ].join(" ")}
-            >
-              {submitting ? "Next" : "Next"}
-            </button>
+            {error && <p className="text-red-500 text-xs">{error}</p>}
           </div>
         </div>
       </div>

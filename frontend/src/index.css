@@ -12,11 +12,35 @@
     .bg-theme-tertiary {
         background-color: var(--bg-tertiary);
     }
+    .bg-theme-hover {
+        background-color: var(--bg-hover);
+    }
     .text-theme-primary {
         color: var(--text-primary);
     }
+    .text-theme-secondary {
+        color: var(--text-secondary);
+    }
+    .text-theme-inverted {
+        color: var(--text-inverted);
+    }
+    .bg-theme-quaternary {
+        background-color: var(--bg-quaternary);
+    }
+    .bg-theme-inverted {
+        background-color: var(--bg-inverted);
+    }
     .border-theme-tertiary {
         border-color: var(--bg-tertiary);
+    }
+    .hover\:bg-theme-hover:hover {
+        background-color: var(--bg-hover);
+    }
+    .placeholder-theme-secondary::placeholder {
+        color: var(--text-secondary);
+    }
+    .bg-theme-alt {
+        background-color: var(--bg-alt);
     }
 }
 
@@ -29,7 +53,13 @@
     --bg-primary: #121212;
     --bg-secondary: #4A4A4A;
     --bg-tertiary: #666666;
+    --bg-quaternary: #282828;
+    --bg-hover: #161616;
+    --bg-inverted: #EAEAEA;
+    --bg-alt: #161616;
     --text-primary: #FFFFFF;
+    --text-secondary: #666666;
+    --text-inverted: #000000;
 }
 
 .light {
@@ -37,7 +67,13 @@
     --bg-primary: #EAEAEA;
     --bg-secondary: #CACACA;
     --bg-tertiary: #A8A8A8;
+    --bg-quaternary: #D8D8D8;
+    --bg-hover: #D0D0D0;
+    --bg-inverted: #121212;
+    --bg-alt: #CACACA;
     --text-primary: #000000;
+    --text-secondary: #555555;
+    --text-inverted: #FFFFFF;
 }
 
 html {
@@ -48,6 +84,14 @@ html {
 
 input::placeholder {
     user-select: none;
+}
+
+input.placeholder-theme-secondary::placeholder {
+    color: var(--text-secondary);
+}
+
+textarea.placeholder-theme-secondary::placeholder {
+    color: var(--text-secondary);
 }
 
 .appColorFadeText {
@@ -92,6 +136,10 @@ input::placeholder {
 
 .defaultStyleHover:hover {
     background: var(--bg-secondary);
+}
+
+.hoverTheme:hover {
+    background: var(--bg-hover);
 }
 
 .glassPanel {
@@ -144,6 +192,22 @@ input::placeholder {
     100% {
         opacity: 0;
         transform: translateY(-40px) scale(0.95);
+    }
+}
+
+.shake {
+    animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+        transform: translateX(-8px);
+    }
+    20%, 40%, 60%, 80% {
+        transform: translateX(8px);
     }
 }
 

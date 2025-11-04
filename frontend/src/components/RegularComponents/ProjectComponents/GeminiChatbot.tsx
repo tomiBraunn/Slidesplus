@@ -35,10 +35,31 @@ function classifyPrompt(msg: string): "slides" | "code" | "chat" {
   return "chat"
 }
 
-const SLIDES_SYSTEM_PROMPT = `You are an elite presentation designer specializing in modern, stunning visual designs. Create presentations that look professional and captivating. Use modern gradients, glassmorphism, system fonts, and high-quality Unsplash images. 
+const SLIDES_SYSTEM_PROMPT = `You are an elite presentation designer specializing in modern, clean, and professional visual designs. Create presentations that are clear, readable, and visually appealing using solid colors with subtle patterns, clean typography with system fonts, and high-quality Unsplash images when appropriate.
 
 CRITICAL: All slides MUST have a 16:9 aspect ratio. Add this inline style to EVERY <section> tag:
-style="width: 100%; aspect-ratio: 16/9; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden;"
+style="width: 100%; aspect-ratio: 16/9; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; position: relative;"
+
+Design principles:
+- Use solid background colors with subtle SVG patterns (dots, lines, grids, geometric shapes, waves, diagonal lines)
+- Patterns should be very subtle (low opacity, typically 0.03-0.1) to avoid overwhelming the content
+- Use clean, readable typography with appropriate font sizes and spacing
+- Ensure good contrast between text and background for readability
+- Use whitespace effectively to create visual hierarchy
+- Keep layouts simple and focused on the content
+- When using images, integrate them thoughtfully without overwhelming the content
+
+Pattern implementation:
+Create SVG patterns inline using <svg> with <defs> and <pattern> elements, then reference them with fill="url(#patternId)".
+Example pattern types:
+- Dots: Small circles in a grid
+- Lines: Horizontal, vertical, or diagonal lines
+- Grid: Crossed lines forming squares
+- Geometric: Triangles, hexagons, or other shapes
+- Waves: Curved lines
+- Noise: Small random shapes
+
+Place patterns as background elements with position:absolute, inset:0, and z-index:-1 or low z-index to keep them behind content.
 
 Return ONLY HTML <section> tags with inline styles. NEVER include <!doctype html>, <html>, <head>, or <body> tags. Return ONLY the <section> elements.`
 
@@ -141,6 +162,7 @@ export default function GeminiChatbot({
   const [previewSlideIndex, setPreviewSlideIndex] = useState(0)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -242,10 +264,18 @@ export default function GeminiChatbot({
       return
     }
 
+    const userMsg = input.trim()
+
+    // Check for /clear command
+    if (userMsg === '/clear') {
+      await clearChat()
+      setInput("")
+      return
+    }
+
     setErrors({})
     setSaveMsg(null)
     setLoading(true)
-    const userMsg = input.trim()
 
     let uploadedAttachments: FileAttachment[] = []
     if (attachedFiles.length > 0) {
@@ -280,6 +310,12 @@ export default function GeminiChatbot({
 
     setInput("")
     setAttachedFiles([])
+
+    // Reset textarea height
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.style.height = '48px'
+    }
 
     try {
       const deleteKeywords = ['delete', 'remove', 'erase', 'elimina', 'borra', 'quita']
@@ -528,14 +564,14 @@ export default function GeminiChatbot({
         <div className="mt-3 space-y-3">
           <div className="bg-theme-primary border border-[#52585A] rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-theme-secondary">
                 Preview ({previewSlideIndex + 1} / {msg.previewSlides.length})
               </span>
               <div className="flex gap-2">
                 <button
                   onClick={() => setPreviewSlideIndex(Math.max(0, previewSlideIndex - 1))}
                   disabled={previewSlideIndex === 0}
-                  className="p-1 text-gray-400 hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="p-1 text-theme-secondary hover:text-theme-primary disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -544,7 +580,7 @@ export default function GeminiChatbot({
                 <button
                   onClick={() => setPreviewSlideIndex(Math.min(msg.previewSlides!.length - 1, previewSlideIndex + 1))}
                   disabled={previewSlideIndex === msg.previewSlides.length - 1}
-                  className="p-1 text-gray-400 hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="p-1 text-theme-secondary hover:text-theme-primary disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -579,19 +615,19 @@ export default function GeminiChatbot({
       <div className="flex gap-2 mt-3 flex-wrap">
         <button
           onClick={() => insertIntoEditor(snippet)}
-          className="px-3 py-1.5 text-xs font-medium text-gray-300 rounded-lg border transition-all"
+          className="px-3 py-1.5 text-xs font-medium  rounded-lg border transition-all"
         >
           Insert
         </button>
         <button
           onClick={() => replaceEditor(snippet)}
-          className="px-3 py-1.5 text-xs font-medium text-gray-300 rounded-lg border transition-all"
+          className="px-3 py-1.5 text-xs font-medium  rounded-lg border transition-all"
         >
           Replace
         </button>
         <button
           onClick={() => navigator.clipboard.writeText(snippet)}
-          className="px-3 py-1.5 text-xs font-medium text-gray-300 rounded-lg border transition-all"
+          className="px-3 py-1.5 text-xs font-medium  rounded-lg border transition-all"
         >
           Copy
         </button>
@@ -604,7 +640,7 @@ export default function GeminiChatbot({
       className="flex flex-col h-full w-full overflow-hidden p-3 relative"
     >
       <div
-        className="absolute inset-0 bg-theme-secondary"
+        className="absolute inset-0 bg-theme-alt"
         // style={{
         //   backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(`
         //     <svg width='832' height='982' viewBox='0 0 832 982' fill='none' xmlns='http://www.w3.org/2000/svg'>
@@ -645,32 +681,20 @@ export default function GeminiChatbot({
         // }}
       />
 
-      <div className="flex flex-col bg-theme-primary border border-[#52585A] rounded-xl h-full w-full p-5 overflow-hidden relative z-10">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#52585A]">
-          <h2 className="text-sm font-semibold text-gray-200">AI Assistant</h2>
-          {messages.length > 0 && (
-            <button
-              onClick={clearChat}
-              className="px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-gray-200 transition-colors"
-            >
-              Clear
-            </button>
-          )}
-        </div>
-
+      <div className="flex flex-col bg-theme-primary border border-theme-tertiary text-theme-primary rounded-xl h-full w-full p-5 overflow-hidden relative z-10">
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-6">
           {loadingHistory ? (
-            <div className="flex items-center justify-center gap-2 text-gray-500 text-sm mt-12">
+            <div className="flex items-center justify-center gap-2 text-theme-secondary text-sm mt-12">
               <div className="flex gap-1">
-                <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse"></div>
-                <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                <div className="w-2 h-2 bg-gray-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                <div className="w-2 h-2 bg-theme-secondary rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-theme-secondary rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-2 h-2 bg-theme-secondary rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
               </div>
             </div>
           ) : messages.length === 0 ? (
-            <div className="text-center text-gray-500 mt-12 space-y-3">
+            <div className="text-center text-theme-secondary mt-12 space-y-3">
               <p className="text-sm">How can I help you today?</p>
-              <p className="text-xs text-gray-600">Ask me to create slides, write code, or chat</p>
+              <p className="text-xs text-theme-secondary">Ask me to create slides, write code, or chat</p>
             </div>
           ) : null}
 
@@ -688,7 +712,7 @@ export default function GeminiChatbot({
                   animationDelay: `${i * 0.05}s`
                 }}
               >
-                <div className={`text-xs font-medium ${isAssistant ? "text-gray-400" : "text-gray-300"}`}>
+                <div className={`text-xs font-medium ${isAssistant ? "text-theme-secondary" : ""}`}>
                   {isAssistant ? "Assistant" : "You"}
                 </div>
 
@@ -703,27 +727,27 @@ export default function GeminiChatbot({
                         className="flex items-center gap-2 px-3 py-1.5 bg-theme-primary border border-[#52585A] rounded-lg text-xs hover:bg-[#1a1a1a] transition-colors"
                       >
                         {file.type.startsWith('image/') ? (
-                          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="w-4 h-4 text-theme-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
                         ) : (
-                          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="w-4 h-4 text-theme-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
                         )}
-                        <span className="text-gray-300">{file.name}</span>
-                        <span className="text-gray-500">({formatFileSize(file.size)})</span>
+                        <span className="">{file.name}</span>
+                        <span className="text-theme-secondary">({formatFileSize(file.size)})</span>
                       </a>
                     ))}
                   </div>
                 )}
 
                 {looksLikeCode ? (
-                  <pre className="glassPanel p-4 rounded-lg text-xs text-gray-300 overflow-x-auto border border whitespace-pre-wrap">
+                  <pre className="glassPanel p-4 rounded-lg text-xs  overflow-x-auto border border whitespace-pre-wrap">
                     {msg.content}
                   </pre>
                 ) : (
-                  <div className="text-sm leading-relaxed text-gray-300 whitespace-pre-wrap">
+                  <div className="text-sm leading-relaxed  whitespace-pre-wrap">
                     {msg.content}
                   </div>
                 )}
@@ -734,11 +758,11 @@ export default function GeminiChatbot({
 
           {loading && (
             <div className="flex items-center gap-2 animate-fadeIn">
-              <div className="text-xs font-medium text-gray-400">Assistant</div>
+              <div className="text-xs font-medium text-theme-primary">Assistant</div>
               <div className="flex gap-1 mt-1">
-                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-2 h-2 bg-theme-secondary rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-theme-secondary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-2 h-2 bg-theme-secondary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
               </div>
             </div>
           )}
@@ -778,11 +802,11 @@ export default function GeminiChatbot({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   )}
-                  <span className="text-gray-300">{file.name}</span>
-                  <span className="text-gray-500">({formatFileSize(file.size)})</span>
+                  <span className="">{file.name}</span>
+                  <span className="text-theme-secondary">({formatFileSize(file.size)})</span>
                   <button
                     onClick={() => removeFile(index)}
-                    className="ml-1 text-gray-400 hover:text-gray-200 transition-colors"
+                    className="ml-1 text-theme-secondary hover:text-theme-primary transition-colors"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -793,7 +817,7 @@ export default function GeminiChatbot({
             </div>
           )}
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-end">
             <input
               ref={fileInputRef}
               type="file"
@@ -805,22 +829,32 @@ export default function GeminiChatbot({
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadingFiles || loading}
-              className="bg-theme-primary hover:bg-[#52585A] border border-[#52585A] text-gray-300 rounded-lg px-3 py-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-theme-primary hover:bg-[#52585A] border border-[#52585A] rounded-lg px-3 py-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
               title="Attach files"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
             </button>
-            <input
-              type="text"
+            <textarea
+              ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={uploadingFiles || loading}
-              className="flex-1 bg-theme-primary text-gray-100 rounded-lg border border-[#52585A] px-4 py-3 text-sm focus:outline-none focus:border-[#3a3a3a] transition-colors disabled:opacity-50"
-              placeholder="Message AI Assistant..."
+              className="flex-1 bg-theme-primary rounded-lg border border-[#52585A] px-4 py-3 text-sm focus:outline-none focus:border-[#3a3a3a] transition-colors disabled:opacity-50 resize-none overflow-y-auto min-h-[48px] max-h-[200px]"
+              placeholder="Message AI Assistant"
+              rows={1}
+              style={{
+                height: 'auto',
+                minHeight: '48px'
+              }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement
+                target.style.height = 'auto'
+                target.style.height = Math.min(target.scrollHeight, 200) + 'px'
+              }}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !loading && !uploadingFiles) {
+                if (e.key === "Enter" && !e.shiftKey && !loading && !uploadingFiles) {
                   e.preventDefault()
                   sendMessage()
                 }
@@ -829,7 +863,7 @@ export default function GeminiChatbot({
             <button
               onClick={sendMessage}
               disabled={loading || uploadingFiles || (!input.trim() && attachedFiles.length === 0)}
-              className="bg-[#d0d0d0] hover:bg-[#bcbcbc] disabled:bg-[#52585A] disabled:opacity-50 text-black disabled:text-gray-600 rounded-lg px-6 py-3 font-medium text-sm transition-all disabled:cursor-not-allowed"
+              className="bg-theme-inverted text-theme-inverted disabled:bg-[#52585A] disabled:opacity-50 rounded-lg px-6 py-3 font-medium text-sm transition-all disabled:cursor-not-allowed shrink-0"
             >
               {uploadingFiles ? "Uploading..." : loading ? "..." : "Send"}
             </button>

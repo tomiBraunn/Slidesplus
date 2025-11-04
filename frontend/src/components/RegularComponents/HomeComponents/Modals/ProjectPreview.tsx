@@ -304,7 +304,7 @@ function ProjectPreview({
           </div>
           <button
             onClick={handleClose}
-            className="flex items-center justify-center rounded-full p-1.5 md:p-2 hover:bg-white/10 text-theme-primary flex-shrink-0"
+            className="flex items-center justify-center rounded-full p-1.5 md:p-2 hover:bg-theme-hover text-theme-primary flex-shrink-0"
             aria-label="Close"
             title="Close"
           >
@@ -315,7 +315,7 @@ function ProjectPreview({
         </div>
 
         <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} items-start justify-start gap-2 w-full flex-1 min-h-0 px-2 md:px-4 pb-1 md:pb-2`}>
-          <div ref={mainPreviewRef} className={`text-white rounded-xl border border-[#2B2B2B] bg-white ${isMobile ? 'w-full flex-1 min-h-0' : 'w-full'} ${isMobile ? '' : 'aspect-video'} p-0 overflow-hidden border-solid relative`}>
+          <div ref={mainPreviewRef} className={`text-white rounded-xl border  bg-white ${isMobile ? 'w-full flex-1 min-h-0' : 'w-full'} ${isMobile ? '' : 'aspect-video'} p-0 overflow-hidden border-solid relative`}>
             <iframe ref={iframeRef} title="Project Preview" className="w-full h-full border-0 bg-white" style={{ background: 'white' }} />
           </div>
           <div
@@ -332,7 +332,7 @@ function ProjectPreview({
                 <div
                   key={s.id}
                   onClick={() => setSelectedSlide(s.position)}
-                  className={`cursor-pointer border rounded-md overflow-hidden bg-white ${selectedSlide === s.position ? "border-blue-500 border-2" : "border-[#2B2B2B]"}`}
+                  className={`cursor-pointer border rounded-md overflow-hidden bg-white ${selectedSlide === s.position ? "border-blue-500 border-2" : "border-transparent"}`}
                   style={{
                     flex: "0 0 auto",
                     aspectRatio: "16/9",
@@ -358,7 +358,7 @@ function ProjectPreview({
               <button
                 key={item.label}
                 onClick={item.onClick}
-                className={`${isMobile ? 'flex-1' : 'min-w-[100px]'} flex items-center justify-center bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300 bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300Hover rounded-3xl p-1.5 md:p-2.5 hover:bg-[#222]`}
+                className={`${isMobile ? 'flex-1' : 'min-w-[100px]'} flex items-center justify-center bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300 bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300 hover:bg-theme-hover rounded-3xl p-1.5 md:p-2.5 hover:bg-[#222]`}
                 title={item.label}
                 disabled={item.label === "Open" && !projectId}
               >
@@ -389,7 +389,7 @@ function ProjectPreview({
                   setShowDelete(false)
                 }}
                 disabled={busy}
-                className="px-4 py-2 rounded-lg border border-[#2B2B2B] hover:bg-[#1a1a1a]"
+                className="px-4 py-2 rounded-lg border hover:bg-theme-hover"
               >
                 Cancel
               </button>
@@ -420,7 +420,7 @@ function ProjectPreview({
               <button
                 onClick={() => setShowRename(false)}
                 disabled={busy}
-                className="px-4 py-2 rounded-lg border border-[#2B2B2B] hover:bg-[#1a1a1a]"
+                className="px-4 py-2 rounded-lg border hover:bg-theme-hover"
               >
                 Cancel
               </button>
