@@ -103,7 +103,7 @@ export const deleteAvatar = async (req, res) => {
 		}
 
 		const user = await pool.query(`SELECT username FROM users WHERE id=$1`, [userId])
-		const avatar = generateAvatar(String(user.rows[0].username)[0] || "U")
+		const avatar = await generateAvatar(String(user.rows[0].username)[0] || "U", userId)
 
 		const q = await pool.query(
 			`UPDATE users SET avatar=$1, updated_at=NOW() WHERE id=$2
@@ -130,7 +130,7 @@ export const regenerateAvatar = async (req, res) => {
 		}
 		const q0 = await pool.query(`SELECT username FROM users WHERE id=$1`, [userId])
 		if (q0.rowCount === 0) return res.status(404).json({ message: "User not found" })
-		const avatar = generateAvatar(String(q0.rows[0].username)[0] || "U")
+		const avatar = await generateAvatar(String(q0.rows[0].username)[0] || "U", userId)
 		const u = await pool.query(
 			`UPDATE users SET avatar=$1, updated_at=NOW() WHERE id=$2
        RETURNING id, username, email, first_name, last_name, avatar, user_number`,

@@ -11,14 +11,22 @@ export const createUser = async (req, res) => {
 			return res.status(400).json({ message: "Missing fields" })
 
 		const hashed = await bcrypt.hash(password, 10)
-		const avatar = generateAvatar(String(username)[0] || "U")
 
+		// First create user without avatar to get the ID
 		const q = await pool.query(
-			`INSERT INTO users (username, email, password, first_name, last_name, avatar)
-         VALUES ($1,$2,$3,$4,$5,$6)
+			`INSERT INTO users (username, email, password, first_name, last_name)
+         VALUES ($1,$2,$3,$4,$5)
          RETURNING id, username, email, first_name, last_name, avatar, user_number`,
-			[username, email, hashed, first_name, last_name, avatar]
+			[username, email, hashed, first_name, last_name]
 		)
+
+		const userId = q.rows[0].id
+		const avatar = await generateAvatar(String(username)[0] || "U", userId)
+
+		// Update user with avatar URL
+		await pool.query(`UPDATE users SET avatar=$1, updated_at=NOW() WHERE id=$2`, [avatar, userId])
+		q.rows[0].avatar = avatar
+
 		res.status(201).json({ ok: true, user: q.rows[0] })
 	} catch (err) {
 		console.error("ERROR CREATING USER:", err)
@@ -45,7 +53,7 @@ export const login = async (req, res) => {
 		if (!valid) return res.status(401).json({ message: "Invalid password" })
 
 		if (!u.avatar || String(u.avatar).trim() === "") {
-			const fix = generateAvatar(String(u.username)[0] || "U")
+			const fix = await generateAvatar(String(u.username)[0] || "U", u.id)
 			await pool.query(`UPDATE users SET avatar=$1, updated_at=NOW() WHERE id=$2`, [fix, u.id])
 			u.avatar = fix
 		}
