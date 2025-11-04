@@ -60,6 +60,8 @@ export default function SettingsModal({ onClose }: Props) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [language, setLanguage] = useState("en");
   const [defaultMode, setDefaultMode] = useState<ProjectMode>("chat");
+  const [spotifyConnected, setSpotifyConnected] = useState(false);
+  const [isConnectingSpotify, setIsConnectingSpotify] = useState(false);
 
   const [showDeleteProjects, setShowDeleteProjects] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
@@ -147,7 +149,24 @@ export default function SettingsModal({ onClose }: Props) {
 
     fetchUser();
     fetchProjects();
+    checkSpotifyConnection();
   }, []);
+
+  const checkSpotifyConnection = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const response = await fetch(`${urlbackend}/spotify/status`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSpotifyConnected(data.connected || false);
+      }
+    } catch (error) {
+      console.error("Error checking Spotify connection:", error);
+    }
+  };
 
   const clearStatusLater = (ms = 4000) => {
     setTimeout(() => {
@@ -266,6 +285,70 @@ export default function SettingsModal({ onClose }: Props) {
     setStatusMessage(`Default mode set to ${mode === "chat" ? "AI Chat" : mode === "code" ? "Code Editor" : "Visual Editor"}.`);
     setStatusType("success");
     clearStatusLater();
+  };
+
+  const handleSpotifyConnect = async () => {
+    try {
+      setIsConnectingSpotify(true);
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${urlbackend}/spotify/auth-url`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        window.open(data.url, '_blank', 'width=500,height=700');
+
+        // Poll for connection status
+        const pollInterval = setInterval(async () => {
+          await checkSpotifyConnection();
+          const statusRes = await fetch(`${urlbackend}/spotify/status`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const statusData = await statusRes.json();
+          if (statusData.connected) {
+            clearInterval(pollInterval);
+            setSpotifyConnected(true);
+            setStatusMessage("Spotify connected successfully!");
+            setStatusType("success");
+            clearStatusLater();
+            setIsConnectingSpotify(false);
+          }
+        }, 2000);
+
+        // Stop polling after 60 seconds
+        setTimeout(() => {
+          clearInterval(pollInterval);
+          setIsConnectingSpotify(false);
+        }, 60000);
+      }
+    } catch (error) {
+      console.error("Error connecting Spotify:", error);
+      setStatusMessage("Failed to connect Spotify.");
+      setStatusType("error");
+      clearStatusLater();
+      setIsConnectingSpotify(false);
+    }
+  };
+
+  const handleSpotifyDisconnect = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${urlbackend}/spotify/disconnect`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        setSpotifyConnected(false);
+        setStatusMessage("Spotify disconnected.");
+        setStatusType("info");
+        clearStatusLater();
+      }
+    } catch (error) {
+      console.error("Error disconnecting Spotify:", error);
+      setStatusMessage("Failed to disconnect Spotify.");
+      setStatusType("error");
+      clearStatusLater();
+    }
   };
 
   const handleSaveProfile = async () => {
@@ -594,9 +677,22 @@ export default function SettingsModal({ onClose }: Props) {
                             <p className="text-sm text-theme-secondary">Connect your Spotify account</p>
                           </div>
                         </div>
-                        <button className="px-4 py-2 rounded-lg bg-[#1DB954] text-white hover:bg-[#1ed760] text-sm font-medium">
-                          Connect
-                        </button>
+                        {spotifyConnected ? (
+                          <button
+                            onClick={handleSpotifyDisconnect}
+                            className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 text-sm font-medium"
+                          >
+                            Disconnect
+                          </button>
+                        ) : (
+                          <button
+                            onClick={handleSpotifyConnect}
+                            disabled={isConnectingSpotify}
+                            className="px-4 py-2 rounded-lg bg-[#1DB954] text-white hover:bg-[#1ed760] text-sm font-medium disabled:opacity-50"
+                          >
+                            {isConnectingSpotify ? "Connecting..." : "Connect"}
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

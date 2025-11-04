@@ -4,6 +4,8 @@ import AppIcon from "../MultiuseComponents/AppIcon";
 import UserPicture from "../MultiuseComponents/UserPicture";
 import { ActiveUsersAvatars } from "./ActiveUsers";
 import { VersionHistoryModal } from "./VersionHistoryModal";
+import { SpotifyController } from "./SpotifyController";
+import SettingsModal from "../MultiuseComponents/SettingsModal";
 
 export type ProjectMode = "code" | "visual" | "ai";
 
@@ -63,6 +65,7 @@ export default function ProjectNavBar({
 }: Props) {
   const [user, setUser] = useState<User | null>(null);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -169,6 +172,7 @@ export default function ProjectNavBar({
               wand_stars
             </span>
           </div>
+          <SpotifyController onOpenSettings={() => setSettingsOpen(true)} />
           <UserPicture avatar={user?.avatar} username={user?.username} size={38} />
         </div>
       </nav>
@@ -178,6 +182,8 @@ export default function ProjectNavBar({
         onClose={() => setVersionHistoryOpen(false)}
         projectId={projectId || null}
       />
+
+      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
     </>
   );
 }

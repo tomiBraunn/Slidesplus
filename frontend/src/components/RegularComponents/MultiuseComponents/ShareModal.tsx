@@ -219,13 +219,16 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
-                <div className="px-6 py-4 border-b border-gray-200">
+            <div className="bg-theme-primary text-theme-primary rounded-xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+                <div className="px-6 py-4">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-normal text-gray-900">Share "{projectName || 'Project'}"</h2>
+                        <div>
+                            <h2 className="text-lg font-semibold">Share {projectName || 'presentation'}</h2>
+                            <p className="text-xs text-theme-secondary mt-1">Invite your friends to create with you</p>
+                        </div>
                         <button
                             onClick={onClose}
-                            className="text-gray-500 hover:text-gray-700 transition-colors p-2 hover:bg-gray-100 rounded-full"
+                            className="text-theme-secondary hover:text-theme-primary transition-colors p-1.5 hover:bg-theme-hover rounded-full"
                         >
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -235,99 +238,49 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                 </div>
 
                 <div className="flex-1 overflow-y-auto px-6 py-4">
-                    <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <div className="flex items-center justify-between mb-3">
-                            <div className="flex-1">
-                                <div className="text-sm font-medium text-gray-900 mb-1">Public Link</div>
-                                <div className="text-xs text-gray-500">
-                                    {isPublic
-                                        ? "Anyone with the link can view this presentation"
-                                        : "Only you and collaborators can view this project"}
-                                </div>
-                            </div>
-                            <button
-                                onClick={handleTogglePublic}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                    isPublic ? 'bg-blue-600' : 'bg-gray-300'
-                                }`}
-                            >
-                                <span
-                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                        isPublic ? 'translate-x-6' : 'translate-x-1'
-                                    }`}
-                                />
-                            </button>
-                        </div>
-
-                        {isPublic && (
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="text"
-                                    value={`${window.location.origin}/v/${projectId}`}
-                                    readOnly
-                                    className="flex-1 px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg text-gray-700"
-                                />
-                                <button
-                                    onClick={handleCopyLink}
-                                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                                        linkCopied
-                                            ? 'bg-green-600 text-white'
-                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                    }`}
-                                >
-                                    {linkCopied ? (
-                                        <div className="flex items-center gap-1">
-                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                            </svg>
-                                            Copied
-                                        </div>
-                                    ) : (
-                                        'Copy'
-                                    )}
-                                </button>
-                            </div>
-                        )}
-                    </div>
-
                     <div className="mb-6" ref={searchRef}>
-                        <div className="flex items-center gap-2 border border-gray-300 rounded-lg p-3 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
+                        <div className="flex items-center gap-2 border border-theme-tertiary rounded-lg px-3 py-2.5 focus-within:border-blue-500">
                             <input
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 onFocus={() => searchQuery.length >= 2 && setShowSearchResults(true)}
-                                placeholder="Add editors by username or email"
-                                className="flex-1 outline-none text-sm text-gray-900"
+                                placeholder="Add email to invite"
+                                className="flex-1 outline-none text-sm bg-transparent placeholder-theme-secondary"
                             />
+                            <button className="p-1 hover:bg-theme-hover rounded transition-colors">
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                </svg>
+                            </button>
                         </div>
 
                         {showSearchResults && searchResults.length > 0 && (
-                            <div className="mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                            <div className="mt-2 bg-theme-quaternary border border-theme-tertiary rounded-lg shadow-lg max-h-64 overflow-y-auto">
                                 {searchResults.map((user) => (
                                     <button
                                         key={user.id}
                                         onClick={() => handleAddCollaborator(user)}
-                                        className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer transition-colors w-full text-left"
+                                        className="flex items-center gap-3 p-3 hover:bg-theme-hover cursor-pointer transition-colors w-full text-left"
                                     >
                                         {user.avatar ? (
                                             <img
                                                 src={normalizeAvatar(user.avatar)}
                                                 alt={user.username}
-                                                className="w-10 h-10 rounded-full"
+                                                className="w-9 h-9 rounded-full object-cover"
                                             />
                                         ) : (
-                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-medium">
+                                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-medium text-sm">
                                                 {getInitials(user.first_name, user.last_name, user.username)}
                                             </div>
                                         )}
                                         <div className="flex-1 min-w-0">
-                                            <div className="text-sm font-medium text-gray-900">
+                                            <div className="text-sm font-medium">
                                                 {user.first_name && user.last_name
                                                     ? `${user.first_name} ${user.last_name}`
                                                     : user.username}
                                             </div>
-                                            <div className="text-xs text-gray-500 truncate">{user.email || user.username}</div>
+                                            <div className="text-xs text-theme-secondary truncate">{user.email || user.username}</div>
                                         </div>
                                     </button>
                                 ))}
@@ -335,33 +288,33 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                         )}
                     </div>
 
-                    <div className="mb-4">
-                        <div className="text-sm font-medium text-gray-900 mb-3">Editors</div>
+                    <div className="mb-6">
+                        <div className="text-xs font-semibold text-theme-secondary tracking-wide mb-3">People with access</div>
 
                         {owner && (
-                            <div className="flex items-center justify-between py-2">
+                            <div className="flex items-center justify-between py-2.5">
                                 <div className="flex items-center gap-3">
                                     {owner.avatar ? (
                                         <img
                                             src={normalizeAvatar(owner.avatar)}
                                             alt={owner.username}
-                                            className="w-10 h-10 rounded-full"
+                                            className="w-9 h-9 rounded-full object-cover"
                                         />
                                     ) : (
-                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-medium">
+                                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm">
                                             {getInitials(owner.firstName, owner.lastName, owner.username)}
                                         </div>
                                     )}
                                     <div>
-                                        <div className="text-sm font-medium text-gray-900">
+                                        <div className="text-sm font-medium">
                                             {owner.firstName && owner.lastName
                                                 ? `${owner.firstName} ${owner.lastName}`
                                                 : owner.username}
+                                            <span className="text-theme-secondary text-xs ml-1">(you)</span>
                                         </div>
-                                        <div className="text-xs text-gray-500">{owner.username}</div>
                                     </div>
                                 </div>
-                                <span className="text-sm text-gray-600">Owner</span>
+                                <span className="text-xs text-theme-secondary">Owner</span>
                             </div>
                         )}
 
@@ -369,37 +322,66 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                             const userId = collab.user_id || collab.id
                             const displayName = collab.name || (collab.first_name && collab.last_name ? `${collab.first_name} ${collab.last_name}` : collab.username || collab.email)
                             return (
-                                <div key={userId} className="flex items-center justify-between py-2 group">
+                                <div key={userId} className="flex items-center justify-between py-2.5 group">
                                     <div className="flex items-center gap-3">
                                         {collab.avatar ? (
                                             <img
                                                 src={normalizeAvatar(collab.avatar)}
                                                 alt={collab.username}
-                                                className="w-10 h-10 rounded-full"
+                                                className="w-9 h-9 rounded-full object-cover"
                                             />
                                         ) : (
-                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center text-white font-medium">
+                                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center text-white font-semibold text-sm">
                                                 {getInitials(collab.first_name, collab.last_name, collab.username || collab.name)}
                                             </div>
                                         )}
                                         <div>
-                                            <div className="text-sm font-medium text-gray-900">
+                                            <div className="text-sm font-medium">
                                                 {displayName}
                                             </div>
-                                            <div className="text-xs text-gray-500">{collab.email || collab.username}</div>
                                         </div>
                                     </div>
-                                    <button
-                                        onClick={() => handleRemoveCollaborator(userId)}
-                                        className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 transition-all p-1"
-                                    >
-                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-theme-secondary">Can edit</span>
+                                        <button
+                                            onClick={() => handleRemoveCollaborator(userId)}
+                                            className="opacity-0 group-hover:opacity-100 text-theme-secondary hover:text-theme-primary transition-all p-1"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
                             )
                         })}
+                    </div>
+
+                    <div className="">
+                        <div className="text-xs font-semibold text-theme-secondary uppercase tracking-wide mb-3">General Access</div>
+                        <div className="flex items-center justify-between py-2.5 hover:bg-theme-hover rounded-lg px-2 -mx-2 cursor-pointer transition-colors" onClick={handleTogglePublic}>
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-full bg-theme-tertiary flex items-center justify-center">
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div className="text-sm font-medium">
+                                        {isPublic ? "Anyone with the link" : "Restricted"}
+                                    </div>
+                                    <div className="text-xs text-theme-secondary">
+                                        {isPublic ? "Can view" : "Only people with access"}
+                                    </div>
+                                </div>
+                            </div>
+                            <button className="text-xs text-theme-secondary hover:text-theme-primary flex items-center gap-1">
+                                {isPublic ? "Can view" : "Change"}
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
 
                     {error && (
@@ -407,15 +389,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                             {error}
                         </div>
                     )}
-                </div>
-
-                <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-end">
-                    <button
-                        onClick={onClose}
-                        className="px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-                    >
-                        Done
-                    </button>
                 </div>
             </div>
         </div>
