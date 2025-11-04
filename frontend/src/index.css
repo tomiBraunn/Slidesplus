@@ -2,13 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+    .bg-theme-primary {
+        background-color: var(--bg-primary);
+    }
+    .bg-theme-secondary {
+        background-color: var(--bg-secondary);
+    }
+    .bg-theme-tertiary {
+        background-color: var(--bg-tertiary);
+    }
+    .text-theme-primary {
+        color: var(--text-primary);
+    }
+    .border-theme-tertiary {
+        border-color: var(--bg-tertiary);
+    }
+}
+
 * {
     font-family: "Inter", sans-serif;
+}
+
+:root {
+    /* Dark theme (default) */
+    --bg-primary: #121212;
+    --bg-secondary: #4A4A4A;
+    --bg-tertiary: #666666;
+    --text-primary: #FFFFFF;
+}
+
+.light {
+    /* Light theme */
+    --bg-primary: #EAEAEA;
+    --bg-secondary: #CACACA;
+    --bg-tertiary: #A8A8A8;
+    --text-primary: #000000;
 }
 
 html {
     scroll-behavior: smooth;
     overflow: hidden;
+    background-color: var(--bg-primary);
 }
 
 input::placeholder {
@@ -49,26 +84,26 @@ input::placeholder {
 
 
 .defaultStyle {
-    background: #0f0f0f;
-    border: solid 1px #666666;
-    color: white;
-    transition: background-color 0.3s, border-color 0.3s;
+    background: var(--bg-primary);
+    border: solid 1px var(--bg-tertiary);
+    color: var(--text-primary);
+    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
 }
 
 .defaultStyleHover:hover {
-    background: #161616;
+    background: var(--bg-secondary);
 }
 
 .glassPanel {
     background-color: rgba(255, 255, 255, 0.012);
-    border: 2px solid #666666;
+    border: 2px solid var(--bg-tertiary);
     backdrop-filter: blur(10.2px) brightness(100%);
     -webkit-backdrop-filter: blur(10.2px) brightness(100%);
 }
 
 .glassPanelOpaque {
     background-color: rgba(0, 0, 0, 0.400);
-    border: 1px solid #666666;
+    border: 1px solid var(--bg-tertiary);
     backdrop-filter: blur(10.2px) brightness(100%);
     -webkit-backdrop-filter: blur(10.2px) brightness(100%);
 }

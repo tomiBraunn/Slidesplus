@@ -65,7 +65,7 @@ export default function ChatBotMode({
   }
 
   return (
-    <div ref={containerRef} className="w-full h-full flex bg-[#121212]">
+    <div ref={containerRef} className="w-full h-full flex bg-theme-primary">
       <div
         style={{ width: `${previewWidth}%` }}
         className="h-full flex flex-col border-r border-[#2a2a2a]"

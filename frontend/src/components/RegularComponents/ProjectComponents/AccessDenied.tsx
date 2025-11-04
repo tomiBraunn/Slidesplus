@@ -9,7 +9,7 @@ export default function AccessDenied({ projectExists }: AccessDeniedProps) {
   const navigate = useNavigate()
 
   return (
-    <div className="w-screen h-screen bg-[#121212] flex items-center justify-center">
+    <div className="w-screen h-screen bg-theme-primary flex items-center justify-center">
       <div className="max-w-md w-full mx-4">
         <div className="text-center">
           <div className="mb-6">

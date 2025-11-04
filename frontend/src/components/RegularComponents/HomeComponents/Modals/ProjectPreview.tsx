@@ -290,21 +290,21 @@ function ProjectPreview({
     >
       <div
         onMouseDown={(e) => e.stopPropagation()}
-        className={`text-white rounded-xl defaultStyle card-animate w-[95vw] md:w-[70vw] max-w-[1100px] h-[90vh] md:max-h-[85vh] overflow-hidden flex flex-col border border-white/10 bg-[#0b0b0bcc] transform transition-all duration-200 ease-out backdrop-bl-sm${show ? " opacity-100 scale-100" : " opacity-0 scale-95"}`}
+        className={`text-white rounded-xl bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300 card-animate w-[95vw] md:w-[70vw] max-w-[1100px] h-[90vh] md:max-h-[85vh] overflow-hidden flex flex-col border border-white/10 bg-[#0b0b0bcc] transform transition-all duration-200 ease-out backdrop-bl-sm${show ? " opacity-100 scale-100" : " opacity-0 scale-95"}`}
       >
         <div className="flex items-center justify-between gap-2 w-full p-2 md:p-4 flex-shrink-0">
-          <div className="flex items-start flex-col min-w-0 flex-1">
+          <div className="flex items-start flex-col min-w-0 flex-1 text-theme-primary">
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-white" style={{ fontSize: isMobile ? 24 : 35 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: isMobile ? 24 : 35 }}>
                 crop_landscape
               </span>
-              <p className="text-white font-medium text-sm md:text-lg truncate">{name || "Untitled"}</p>
+              <p className="font-medium text-sm md:text-lg truncate">{name || "Untitled"}</p>
             </div>
-            {!isMobile && <p className="text-[#ffffff] text-xs md:text-sm">{description}</p>}
+            {!isMobile && <p className="text-xs md:text-sm">{description}</p>}
           </div>
           <button
             onClick={handleClose}
-            className="flex items-center justify-center rounded-full p-1.5 md:p-2 hover:bg-white/10 text-white flex-shrink-0"
+            className="flex items-center justify-center rounded-full p-1.5 md:p-2 hover:bg-white/10 text-theme-primary flex-shrink-0"
             aria-label="Close"
             title="Close"
           >
@@ -319,7 +319,7 @@ function ProjectPreview({
             <iframe ref={iframeRef} title="Project Preview" className="w-full h-full border-0 bg-white" style={{ background: 'white' }} />
           </div>
           <div
-            className={`rounded-xl ${isMobile ? 'w-full h-16' : 'w-1/5'} p-1.5 md:p-2 bg-[#0f0f0f] flex ${isMobile ? 'flex-row overflow-x-auto' : 'flex-col overflow-y-auto'} gap-1.5 md:gap-2 scrollbar-custom flex-shrink-0`}
+            className={`rounded-xl ${isMobile ? 'w-full h-16' : 'w-1/5'} p-1.5 md:p-2 flex ${isMobile ? 'flex-row overflow-x-auto' : 'flex-col overflow-y-auto'} gap-1.5 md:gap-2 scrollbar-custom flex-shrink-0`}
             style={isMobile ? {} : { height: previewsHeight }}
           >
             {slides.map((s) => {
@@ -358,12 +358,12 @@ function ProjectPreview({
               <button
                 key={item.label}
                 onClick={item.onClick}
-                className={`${isMobile ? 'flex-1' : 'min-w-[100px]'} flex items-center justify-center defaultStyle defaultStyleHover rounded-3xl p-1.5 md:p-2.5 hover:bg-[#222]`}
+                className={`${isMobile ? 'flex-1' : 'min-w-[100px]'} flex items-center justify-center bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300 bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300Hover rounded-3xl p-1.5 md:p-2.5 hover:bg-[#222]`}
                 title={item.label}
                 disabled={item.label === "Open" && !projectId}
               >
-                <div className="flex items-center justify-center gap-1">
-                  <span className="material-symbols-outlined" style={{ fontSize: isMobile ? 18 : 18, color: "#ffffff" }}>
+                <div className="flex items-center justify-center gap-1 text-theme-primary">
+                  <span className="material-symbols-outlined" style={{ fontSize: isMobile ? 18 : 18,}}>
                     {item.icon}
                   </span>
                   <span className={`text-xs ${isMobile ? 'hidden' : ''}`}>{item.label}</span>
@@ -404,7 +404,7 @@ function ProjectPreview({
           }
         >
           <input
-            className="w-full rounded-lg defaultStyle px-3 py-2 text-sm"
+            className="w-full rounded-lg bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300 px-3 py-2 text-sm"
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
             placeholder={name}
@@ -435,7 +435,7 @@ function ProjectPreview({
           }
         >
           <input
-            className="w-full rounded-lg defaultStyle px-3 py-2 text-sm text-white"
+            className="w-full rounded-lg bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300 px-3 py-2 text-sm text-white"
             value={renameText}
             onChange={(e) => setRenameText(e.target.value)}
           />

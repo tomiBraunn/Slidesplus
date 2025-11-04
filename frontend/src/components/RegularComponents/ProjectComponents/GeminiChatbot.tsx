@@ -526,7 +526,7 @@ export default function GeminiChatbot({
     if (msg.previewSlides && msg.previewSlides.length > 0) {
       return (
         <div className="mt-3 space-y-3">
-          <div className="bg-[#121212] border border-[#52585A] rounded-lg p-4">
+          <div className="bg-theme-primary border border-[#52585A] rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs text-gray-400">
                 Preview ({previewSlideIndex + 1} / {msg.previewSlides.length})
@@ -604,7 +604,7 @@ export default function GeminiChatbot({
       className="flex flex-col h-full w-full overflow-hidden p-3 relative"
     >
       <div
-        className="absolute inset-0 bg-[#161616]"
+        className="absolute inset-0 bg-theme-secondary"
         // style={{
         //   backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(`
         //     <svg width='832' height='982' viewBox='0 0 832 982' fill='none' xmlns='http://www.w3.org/2000/svg'>
@@ -645,7 +645,7 @@ export default function GeminiChatbot({
         // }}
       />
 
-      <div className="flex flex-col bg-[#121212] border border-[#52585A] rounded-xl h-full w-full p-5 overflow-hidden relative z-10">
+      <div className="flex flex-col bg-theme-primary border border-[#52585A] rounded-xl h-full w-full p-5 overflow-hidden relative z-10">
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#52585A]">
           <h2 className="text-sm font-semibold text-gray-200">AI Assistant</h2>
           {messages.length > 0 && (
@@ -700,7 +700,7 @@ export default function GeminiChatbot({
                         href={file.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-3 py-1.5 bg-[#121212] border border-[#52585A] rounded-lg text-xs hover:bg-[#1a1a1a] transition-colors"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-theme-primary border border-[#52585A] rounded-lg text-xs hover:bg-[#1a1a1a] transition-colors"
                       >
                         {file.type.startsWith('image/') ? (
                           <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -767,7 +767,7 @@ export default function GeminiChatbot({
               {attachedFiles.map((file, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-[#121212] border border-[#52585A] rounded-lg text-xs"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-theme-primary border border-[#52585A] rounded-lg text-xs"
                 >
                   {file.type.startsWith('image/') ? (
                     <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -805,7 +805,7 @@ export default function GeminiChatbot({
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadingFiles || loading}
-              className="bg-[#121212] hover:bg-[#52585A] border border-[#52585A] text-gray-300 rounded-lg px-3 py-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-theme-primary hover:bg-[#52585A] border border-[#52585A] text-gray-300 rounded-lg px-3 py-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               title="Attach files"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -817,7 +817,7 @@ export default function GeminiChatbot({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={uploadingFiles || loading}
-              className="flex-1 bg-[#121212] text-gray-100 rounded-lg border border-[#52585A] px-4 py-3 text-sm focus:outline-none focus:border-[#3a3a3a] transition-colors disabled:opacity-50"
+              className="flex-1 bg-theme-primary text-gray-100 rounded-lg border border-[#52585A] px-4 py-3 text-sm focus:outline-none focus:border-[#3a3a3a] transition-colors disabled:opacity-50"
               placeholder="Message AI Assistant..."
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !loading && !uploadingFiles) {

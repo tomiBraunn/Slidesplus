@@ -16,7 +16,7 @@ export default function SearchBar({ onAddClick, setFiltrar }: Props) {
 
   return (
     <div className="flex flex-1 items-center justify-center">
-      <div className="flex flex-1 items-center justify-start rounded-l-full w-fit h-fit min-h-[50px] defaultStyle defaultStyleHover px-0.5">
+      <div className="flex flex-1 items-center justify-start rounded-l-full w-fit h-fit min-h-[50px] bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300 bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300Hover px-0.5">
         <input
           type="text"
           placeholder="Search"
@@ -30,7 +30,7 @@ export default function SearchBar({ onAddClick, setFiltrar }: Props) {
       </div>
       <button
         type="button"
-        className="flex items-center justify-center rounded-xl defaultStyle defaultStyleHover rounded-r-full ml-2 cursor-pointer"
+        className="flex items-center justify-center rounded-xl bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300 bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300Hover rounded-r-full ml-2 cursor-pointer"
         onClick={onAddClick}
       >
         <span className="material-symbols-outlined w-[2em] aspect-square">add</span>

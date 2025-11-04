@@ -19,7 +19,7 @@ function BasicModal({ open, title, description, children, onClose, actions }: Ba
     >
       <div
         onMouseDown={(e) => e.stopPropagation()}
-        className="w-120 rounded-xl defaultStyle border p-6 text-white"
+        className="w-120 rounded-xl bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300 border p-6 text-white"
       >
         <p className="text-lg font-semibold">{title}</p>
         {description && <p className="text-sm text-[#9aa0a6] mt-1">{description}</p>}

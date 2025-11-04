@@ -8,21 +8,24 @@ import SignUpPage from "./components/FullScreens/SignUpPage";
 import AuthCallbackPage from "./components/FullScreens/AuthCallbackPage";
 import UrlNotFoundPage from "./components/FullScreens/UrlNotFoundPage";
 import ProtectedRoute from "./ProtectedRoute";
+import { ThemeProvider } from "./contexts/ThemeContext";
 
 export default function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LogInPage />} />
-        <Route path="/signup" element={<SignUpPage />} />
-        <Route path="/auth/callback" element={<AuthCallbackPage />} />
-        <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
-        <Route path="/p/:id" element={<ProtectedRoute><ProjectPage /></ProtectedRoute>} />
-        <Route path="/v/:id" element={<ProjectViewPage />} />
-        <Route path="/notfound" element={<UrlNotFoundPage />} />
-        <Route path="*" element={<Navigate to="/notfound" replace />} />
-      </Routes>
-    </Router>
+    <ThemeProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LogInPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+          <Route path="/p/:id" element={<ProtectedRoute><ProjectPage /></ProtectedRoute>} />
+          <Route path="/v/:id" element={<ProjectViewPage />} />
+          <Route path="/notfound" element={<UrlNotFoundPage />} />
+          <Route path="*" element={<Navigate to="/notfound" replace />} />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
 }

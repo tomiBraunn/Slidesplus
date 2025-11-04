@@ -85,11 +85,11 @@ export default function ProjectNavBar({
 
   return (
     <>
-      <nav className="flex items-center justify-between p-3 h-18 w-screen border-b border-[#222831] bg-[#121212]">
+      <nav className="flex items-center justify-between p-3 h-18 w-screen border-b border-[#222831] bg-theme-primary">
         <div className="flex items-center gap-3">
           <AppIcon />
-          <span className="text-white text-sm">{name}</span>
-          <span className="text-xs px-2 py-0.5 rounded-full border border-[#666666] text-white">
+          <span className="text-theme-primary text-md truncate w-50">{name}</span>
+          <span className="text-xs px-2 py-0.5 rounded-full border border-theme-tertiary text-theme-primary">
             {saveState === "saving"
               ? "Saving…"
               : saveState === "saved"
@@ -137,7 +137,7 @@ export default function ProjectNavBar({
             History
           </button>
 
-          <div className="flex items-center justify-between gap-1 w-auto defaultStyle rounded-[20px]">
+          <div className="flex items-center justify-between gap-1 w-auto bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300 rounded-[20px]">
             <span
               onClick={() => onChangeMode("code")}
               className={`material-symbols-outlined cursor-pointer w-[1.5em] aspect-square flex items-center justify-center rounded-l-[20px] transition ${mode === "code"

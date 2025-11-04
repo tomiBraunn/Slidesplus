@@ -188,8 +188,8 @@ function HomePage() {
 
   return (
     <>
-      <div className="bg-[#121212] w-screen h-screen flex items-center justify-start flex-col gap-5 relative overflow-y-auto">
-        <div className="bg-[#121212] flex flex-col items-center justify-start z-10 w-full">
+      <div className="bg-theme-primary w-screen h-screen flex items-center justify-start flex-col gap-5 relative overflow-y-auto">
+        <div className="bg-theme-primary flex flex-col items-center justify-start z-10 w-full">
           <NavBar user={user} />
           <div className="flex flex-col items-center justify-start text-white w-[90vw] md:w-[70vw] px-4 md:px-0">
             <div className="searchbar flex flex-col items-center justify-start w-full">

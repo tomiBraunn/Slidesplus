@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import AccessDenied from './AccessDenied'
+import UrlNotFoundPage from '../../FullScreens/UrlNotFoundPage'
 import { urlbackend } from '../../../config.js'
 
 type Props = {
@@ -39,7 +40,8 @@ export default function ProjectAccessRoute({ children }: Props) {
             setProjectExists(true)
           } else {
             setHasAccess(false)
-            setProjectExists(data.exists || false)
+            // Verificar explícitamente si el proyecto existe
+            setProjectExists(data.exists === true)
           }
           setChecking(false)
         }
@@ -61,7 +63,7 @@ export default function ProjectAccessRoute({ children }: Props) {
 
   if (checking) {
     return (
-      <div className="w-screen h-screen bg-[#121212] flex items-center justify-center">
+      <div className="w-screen h-screen bg-theme-primary flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-400">Loading project...</p>
@@ -70,8 +72,12 @@ export default function ProjectAccessRoute({ children }: Props) {
     )
   }
 
+  if (!projectExists) {
+    return <UrlNotFoundPage />
+  }
+
   if (!hasAccess) {
-    return <AccessDenied projectExists={projectExists} />
+    return <AccessDenied />
   }
 
   return children(hasAccess, userRole)

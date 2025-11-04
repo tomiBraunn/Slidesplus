@@ -50,7 +50,7 @@ function Settings() {
 
       {isOpen && (
         <div className="fixed z-50 inset-0 flex items-center justify-center bg-black/40 transition-[backdrop-filter,opacity] duration-200 ease-out opacity-100 backdrop-blur-xl">
-          <div className="text-white rounded-xl defaultStyle card-animate w-[70vw] max-w-[1100px] max-h-[85vh] overflow-hidden flex flex-col border border-white/10 bg-[#0b0b0bcc] transform transition-all duration-200 ease-out backdrop-bl-sm opacity-100 scale-100">
+          <div className="text-white rounded-xl bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300 card-animate w-[70vw] max-w-[1100px] max-h-[85vh] overflow-hidden flex flex-col border border-white/10 bg-[#0b0b0bcc] transform transition-all duration-200 ease-out backdrop-bl-sm opacity-100 scale-100">
             {/* Header */}
             <div className="flex items-center justify-between gap-2 w-full p-4">
               <div className="flex items-start flex-col">

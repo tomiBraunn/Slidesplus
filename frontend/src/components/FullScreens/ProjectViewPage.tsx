@@ -127,7 +127,7 @@ ${slidesHtml}
 
   if (loading) {
     return (
-      <div className="w-screen h-screen bg-[#121212] flex items-center justify-center">
+      <div className="w-screen h-screen bg-theme-primary flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-400">Loading presentation...</p>
@@ -138,7 +138,7 @@ ${slidesHtml}
 
   if (error) {
     return (
-      <div className="w-screen h-screen bg-[#121212] flex items-center justify-center">
+      <div className="w-screen h-screen bg-theme-primary flex items-center justify-center">
         <div className="text-center max-w-2xl px-4">
           <h1 className="text-4xl text-white mb-4">Presentation not available</h1>
           <p className="text-gray-400 mb-2">{errorMessage}</p>

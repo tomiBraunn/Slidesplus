@@ -382,7 +382,7 @@ function ProjectPageContent() {
       />
 
       <div className="flex-1 overflow-hidden">
-        <div ref={containerRef} className="w-full h-full flex bg-[#121212]">
+        <div ref={containerRef} className="w-full h-full flex bg-theme-primary">
           <div
             style={{ width: `${previewWidth}%` }}
             className="h-full flex flex-col"
@@ -400,7 +400,7 @@ function ProjectPageContent() {
               </div>
 
               <div className="border border-[#666666] rounded-3xl overflow-hidden flex flex-col" style={{ maxHeight: '30vh' }}>
-                <div className="flex items-center gap-2 px-4 py-3 border-b border-[#666666] bg-[#1a1a1a]">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-theme-tertiary">
                   <span className="text-xs text-gray-500">
                     {slides.length > 0 ? `${currentSlide + 1} / ${slides.length}` : 'No slides'}
                   </span>
