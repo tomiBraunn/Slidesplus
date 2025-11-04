@@ -24,15 +24,15 @@ export async function generateAvatar(letter, userId) {
 		`</text></svg>`
 
 	try {
-		const fileName = `avatars/${userId}-${Date.now()}.svg`
+		const fileName = `${userId}-${Date.now()}.svg`
 		const buffer = Buffer.from(svg, "utf-8")
 
 		const { data, error } = await supabase.storage
-			.from("chat-attachments")
+			.from("avatars")
 			.upload(fileName, buffer, {
 				contentType: "image/svg+xml",
 				cacheControl: "3600",
-				upsert: false
+				upsert: true
 			})
 
 		if (error) {
@@ -43,7 +43,7 @@ export async function generateAvatar(letter, userId) {
 		}
 
 		const { data: publicUrlData } = supabase.storage
-			.from("chat-attachments")
+			.from("avatars")
 			.getPublicUrl(fileName)
 
 		return publicUrlData.publicUrl
