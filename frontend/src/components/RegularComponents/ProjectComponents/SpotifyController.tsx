@@ -275,7 +275,7 @@ export const SpotifyController: React.FC<SpotifyControllerProps> = ({ onOpenSett
     >
       <button
         onClick={handleClick}
-        className="w-9 h-9 flex items-center justify-center transition-all hover:opacity-80"
+        className="w-8 flex items-center justify-center transition-all"
         title={isConnected ? 'Spotify Player' : 'Connect Spotify'}
       >
         <svg className="w-9 h-9 text-theme-primary" fill="currentColor" viewBox="0 0 24 24">

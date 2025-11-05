@@ -1,11 +1,11 @@
 // @ts-nocheck
 import ProjectTile from "../RegularComponents/HomeComponents/ProjectTile"
 import AppTextLogo from "../RegularComponents/MultiuseComponents/AppTextLogo"
-// import WelcomeMessages from "../RegularComponents/HomeComponents/WelcomeMessages"
-import ProjectSearchBar from "../RegularComponents/HomeComponents/ProjectSearchBar"
 import NavBar from "../RegularComponents/HomeComponents/Navbar"
 import CreateProject from "../RegularComponents/HomeComponents/Modals/CreateProject"
 import ProjectPreview from "../RegularComponents/HomeComponents/Modals/ProjectPreview"
+import SortBy from "../RegularComponents/HomeComponents/SortBy"
+import ViewModeSwitch from "../RegularComponents/HomeComponents/ViewModeSwitch"
 import { useEffect, useState } from "react"
 import { urlbackend } from "../../config.js"
 
@@ -16,6 +16,21 @@ type Project = {
   created_at?: string
   updated_at?: string
   slideCount?: number
+  owner?: {
+    id: string
+    username: string
+    avatar?: string
+    first_name?: string
+    last_name?: string
+  }
+  collaborators?: Array<{
+    id: string
+    username: string
+    avatar?: string
+    first_name?: string
+    last_name?: string
+  }>
+  preview_url?: string
 }
 
 type User = {
@@ -48,6 +63,18 @@ function HomePage() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
+  useEffect(() => {
+    const savedSort = localStorage.getItem('sortOption')
+    if (savedSort) {
+      setSortOption(savedSort)
+    }
+  }, [])
+
+  const handleSortChange = (option: string) => {
+    setSortOption(option)
+    localStorage.setItem('sortOption', option)
+  }
+
   const fetchUser = async () => {
     try {
       const token = localStorage.getItem("token")
@@ -70,6 +97,27 @@ function HomePage() {
     setLoading(true)
     try {
       const token = localStorage.getItem("token")
+
+      // First, get user data if not already loaded
+      let currentUser = user
+      if (!currentUser && token) {
+        try {
+          const userRes = await fetch(`${urlbackend}/me`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          })
+          if (userRes.ok) {
+            const userData = await userRes.json()
+            currentUser = userData.user
+            setUser(currentUser)
+          }
+        } catch (err) {
+          console.error("Error fetching user:", err)
+        }
+      }
+
+      // Then fetch projects
       const res = await fetch(`${urlbackend}/projects`, {
         headers: {
           "Content-Type": "application/json",
@@ -82,6 +130,8 @@ function HomePage() {
         return
       }
       const data = await res.json()
+
+      // Map projects using owner and collaborators from backend
       const mapped: Project[] = (data || []).map((p: any) => ({
         id: p.id,
         name: p.name,
@@ -89,7 +139,11 @@ function HomePage() {
         created_at: p.created_at,
         updated_at: p.updated_at,
         slideCount: p.slideCount,
+        owner: p.owner || currentUser,  // Use owner from backend, fallback to current user
+        collaborators: p.collaborators || [],  // Use collaborators from backend
+        preview_url: p.preview_url,
       }))
+
       setProjects(mapped)
       setFilteredProjects(mapped)
     } catch {
@@ -186,84 +240,154 @@ function HomePage() {
     sortProjects(sortOption)
   }, [sortOption])
 
+  const [activeTab, setActiveTab] = useState<"my-designs" | "ai-tryout" | "templates">("my-designs")
+
   return (
     <>
-      <div className="bg-theme-primary w-screen h-screen flex items-center justify-start flex-col gap-5 relative overflow-y-auto">
+      <div className="bg-theme-primary w-screen h-screen flex items-center justify-start flex-col gap-5 relative overflow-y-auto overflow-x-hidden">
         <div className="bg-theme-primary flex flex-col items-center justify-start z-10 w-full">
           <NavBar user={user} />
-          <div className="flex flex-col items-center justify-start text-white w-[90vw] md:w-[70vw] px-4 md:px-0">
-            <div className="searchbar flex flex-col items-center justify-start w-full">
+          <div className="flex flex-col items-center justify-start text-white w-full max-w-[90vw] md:max-w-[70vw] px-4 md:px-0">
+            <div className="searchbar flex flex-col items-center justify-start w-full gap-6">
               <AppTextLogo />
-              {/* <WelcomeMessages username={user?.username}/> */}
-              <ProjectSearchBar
-                onAddClick={() => setShowCreate(true)}
-                viewMode={isMobile ? "list" : viewMode}
-                setViewMode={setViewMode}
-                setFiltrar={filterProjects}
-                selected={sortOption}
-                setSelected={setSortOption}
-                isMobile={isMobile}
-              />
+
+              <div className="relative w-full flex items-center justify-center">
+                <div className="absolute inset-0 pointer-events-none" style={{ padding: '0 50px' }}>
+                  <svg className="w-full h-full" viewBox="0 0 1112 189" fill="none" preserveAspectRatio="none">
+                    <defs>
+                      <filter id="glow" x="-50%" y="-50%" width="200%" height="200%" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+                        <feGaussianBlur stdDeviation="30" result="blur"/>
+                      </filter>
+                      <linearGradient id="gradient" x1="0%" y1="50%" x2="100%" y2="50%">
+                        <stop offset="0%" stopColor="#249931"/>
+                        <stop offset="100%" stopColor="#7182FF"/>
+                      </linearGradient>
+                    </defs>
+                    <rect x="2.5%" y="27.5%" width="95%" height="45%" rx="40" stroke="url(#gradient)" strokeWidth="3" fill="none" filter="url(#glow)"/>
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search for your projects"
+                  onChange={(e) => filterProjects(e.target.value)}
+                  className="relative z-10 w-full bg-transparent border border-theme-tertiary rounded-full px-6 py-3 text-theme-primary placeholder-theme-secondary focus:outline-none"
+                />
+                <span className="absolute right-6 z-10 material-symbols-outlined text-theme-secondary">search</span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setActiveTab("my-designs")}
+                  className={`px-6 py-2 rounded-full transition-all ${
+                    activeTab === "my-designs"
+                      ? "bg-white text-black"
+                      : "bg-transparent text-theme-secondary hover:text-theme-primary"
+                  }`}
+                >
+                  My designs
+                </button>
+                <button
+                  onClick={() => setActiveTab("ai-tryout")}
+                  className={`px-6 py-2 rounded-full transition-all ${
+                    activeTab === "ai-tryout"
+                      ? "bg-white text-black"
+                      : "bg-transparent text-theme-secondary hover:text-theme-primary"
+                  }`}
+                >
+                  AI Tryout
+                </button>
+                <button
+                  onClick={() => setActiveTab("templates")}
+                  className={`px-6 py-2 rounded-full transition-all ${
+                    activeTab === "templates"
+                      ? "bg-white text-black"
+                      : "bg-transparent text-theme-secondary hover:text-theme-primary"
+                  }`}
+                >
+                  Templates
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        <main className="flex justify-center w-full relative px-4 md:px-0 pb-8">
-          <div
-            className={`w-[90vw] md:w-[70vw] gap-4 ${isMobile ? "flex flex-col" : viewMode === "grid" ? "grid grid-cols-4" : "flex flex-col"
-              }`}
-          >
-            {(() => {
-              if (loading)
-                return (
-                  <div className="text-white/70 col-span-4">Loading projects…</div>
-                )
-              if (err) return <div className="text-red-400 col-span-4">{err}</div>
-              if (projects.length === 0)
-                return (
-                  <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-4">
-                    <span
-                      className="material-symbols-outlined mb-2 opacity-70"
-                      style={{ fontSize: "40px" }}
-                    >
-                      scan_delete
-                    </span>
-                    <p className="text-center text-sm max-w-xs">
-                      No projects available.
-                      <br /> Try creating one.
-                    </p>
+        <main className="flex justify-center w-full relative px-4 md:px-0 pb-8 overflow-x-hidden">
+          <div className="w-full max-w-[90vw] md:max-w-[70vw]">
+            <div className="flex items-center justify-between mb-6 w-full">
+              <h2 className="text-2xl font-semibold text-theme-primary">{sortOption}</h2>
+              <div className="flex items-center gap-2">
+                <SortBy selected={sortOption} setSelected={handleSortChange} />
+                {!isMobile && <ViewModeSwitch viewMode={viewMode} setViewMode={setViewMode} />}
+              </div>
+            </div>
+
+            <div
+              className={`gap-4 ${isMobile ? "flex flex-col" : viewMode === "grid" ? "grid grid-cols-4" : "flex flex-col"
+                }`}
+            >
+              {(() => {
+                if (loading)
+                  return (
+                    <div className="text-white/70 col-span-4">Loading projects…</div>
+                  )
+                if (err) return <div className="text-red-400 col-span-4">{err}</div>
+                if (projects.length === 0)
+                  return (
+                    <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-4">
+                      <span
+                        className="material-symbols-outlined mb-2 opacity-70"
+                        style={{ fontSize: "40px" }}
+                      >
+                        scan_delete
+                      </span>
+                      <p className="text-center text-sm max-w-xs">
+                        No projects available.
+                        <br /> Try creating one.
+                      </p>
+                    </div>
+                  )
+                if (projects.length > 0 && filteredProjects.length === 0) {
+                  return (
+                    <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-4">
+                      <span className="material-symbols-outlined">block</span>
+                      <p className="text-center text-sm max-w-xs">
+                        No projects match your search.
+                      </p>
+                    </div>
+                  )
+                }
+                return filteredProjects.map((p) => (
+                  <div
+                    key={p.id}
+                    className={
+                      isMobile ? "flex items-center gap-3" : viewMode === "grid"
+                        ? "relative"
+                        : "flex items-center gap-3"
+                    }
+                  >
+                    <ProjectTile
+                      name={p.name}
+                      description={p.description ?? ""}
+                      onClick={() => openPreview(p)}
+                      listMode={isMobile || viewMode === "list"}
+                      owner={p.owner}
+                      collaborators={p.collaborators}
+                      previewUrl={p.preview_url}
+                      projectId={p.id}
+                    />
                   </div>
-                )
-              if (projects.length > 0 && filteredProjects.length === 0) {
-                return (
-                  <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-4">
-                    <span className="material-symbols-outlined">block</span>
-                    <p className="text-center text-sm max-w-xs">
-                      No projects match your search.
-                    </p>
-                  </div>
-                )
-              }
-              return filteredProjects.map((p) => (
-                <div
-                  key={p.id}
-                  className={
-                    isMobile ? "flex items-center gap-3" : viewMode === "grid"
-                      ? "relative"
-                      : "flex items-center gap-3"
-                  }
-                >
-                  <ProjectTile
-                    name={p.name}
-                    description={p.description ?? ""}
-                    onClick={() => openPreview(p)}
-                    listMode={isMobile || viewMode === "list"}
-                  />
-                </div>
-              ))
-            })()}
+                ))
+              })()}
+            </div>
           </div>
         </main>
+
+        <button
+          onClick={() => setShowCreate(true)}
+          className="fixed bottom-8 right-8 w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform z-50"
+        >
+          <span className="material-symbols-outlined text-black text-4xl">add</span>
+        </button>
 
         {showCreate && (
           <CreateProject onClose={() => setShowCreate(false)} onCreated={onCreated} />

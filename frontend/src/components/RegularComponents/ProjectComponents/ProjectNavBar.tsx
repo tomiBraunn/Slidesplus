@@ -92,11 +92,11 @@ export default function ProjectNavBar({
     ? {
       background: `linear-gradient(to left, ${spotifyColor} 0%, var(--bg-primary) 60%)`,
       backdropFilter: 'blur(20px)',
-      transition: 'background 3s ease-in-out'
+      transition: 'background .1s ease-in-out'
     }
     : {
       backgroundColor: 'var(--bg-primary)',
-      transition: 'background 3s ease-in-out'
+      transition: 'background .1s ease-in-out'
     };
 
   return (
@@ -133,27 +133,23 @@ export default function ProjectNavBar({
 
             <button
               onClick={() => window.open(`/v/${projectId}`, '_blank')}
-              className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+              className="flex items-center gap-2 px-3 py-1.5 text-white rounded-full transition-colors text-sm font-medium appColorFade"
             >
               <span className="material-symbols-outlined text-base">play_arrow</span>
-              Present
+              <p>Present</p>
             </button>
 
             {onShareClick && (
               <button
                 onClick={onShareClick}
-                className="flex items-center gap-2 px-3 py-1.5 bg-theme-secondary hover:bg-theme-hover text-white rounded-lg transition-colors text-sm"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                </svg>
-                Share
+                className="flex items-center justify-center w-8 h-8 p-1 bg-theme-inverted text-theme-inverted rounded-full transition-colors text-sm">
+                  <span className="material-symbols-outlined text-base">group</span>
               </button>
             )}
 
             <button
               onClick={() => setVersionHistoryOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-theme-secondary hover:bg-theme-hover text-white rounded-lg transition-colors text-sm"
+              className="flex items-center justify-center w-8 h-8 p-1 bg-theme-inverted text-theme-inverted rounded-full transition-colors text-sm"
             >
               <span className="material-symbols-outlined text-base">history</span>
             </button>
