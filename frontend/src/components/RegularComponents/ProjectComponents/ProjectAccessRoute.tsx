@@ -72,12 +72,8 @@ export default function ProjectAccessRoute({ children }: Props) {
     )
   }
 
-  if (!projectExists) {
-    return <UrlNotFoundPage />
-  }
-
   if (!hasAccess) {
-    return <AccessDenied />
+    return <AccessDenied projectExists={projectExists} />
   }
 
   return children(hasAccess, userRole)

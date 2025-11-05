@@ -8,44 +8,32 @@ interface AccessDeniedProps {
 export default function AccessDenied({ projectExists }: AccessDeniedProps) {
   const navigate = useNavigate()
 
+  const goHome = () => {
+    navigate('/home', { replace: true })
+  }
+
   return (
-    <div className="w-screen h-screen bg-theme-primary flex items-center justify-center">
-      <div className="max-w-md w-full mx-4">
-        <div className="text-center">
-          <div className="mb-6">
-            <svg
-              className="w-24 h-24 mx-auto text-red-500"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-              />
-            </svg>
-          </div>
-
-          <h1 className="text-3xl font-bold text-white mb-4">
-            {projectExists ? 'Access Denied' : 'Project Not Found'}
-          </h1>
-
-          <p className="text-gray-400 mb-8">
-            {projectExists
-              ? 'You do not have permission to view this project. Please contact the owner to request access.'
-              : 'This project does not exist or has been deleted.'}
-          </p>
-
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
-          >
-            Go to Dashboard
-          </button>
+    <div className="w-screen h-screen bg-theme-primary flex flex-col gap-10 items-center justify-center">
+      <div className='flex select-none font-extrabold gap-1 z-20 text-white'>
+        <div className='flex flex-col items-end justify-center [&>*]:text-6xl text-red-800 [writing-mode:vertical-rl] rotate-90'>
+          <p>ACCESS</p>
+          <p>DENIED</p>
+        </div>
+        <div className='flex flex-col items-start justify-center [&>*]:text-4xl'>
+          <p>ASK</p>
+          <p>THE</p>
+          <p>OWNER</p>
+          <p>FOR</p>
+          <p>PERMISSION</p>
+          <p>TO</p>
+          <p>ACCESS</p>
         </div>
       </div>
+      <button
+        onClick={goHome}
+        className="text-white rounded-xl border border-[#2B2B2B] bg-[#0f0f0f] hover:bg-[#161616] transition-colors cursor-pointer flex items-center justify-center px-5 py-2 select-none z-20">
+        HOME PAGE
+      </button>
     </div>
   )
 }

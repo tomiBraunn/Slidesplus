@@ -1,18 +1,119 @@
 // @ts-nocheck
-import { useEffect, useState } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useEffect, useState, useRef } from "react"
+import { useParams } from "react-router-dom"
 import { urlbackend } from "../../config.js"
 import { ShareModal } from "../RegularComponents/MultiuseComponents/ShareModal"
 
 export default function ProjectViewPage() {
   const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
   const [doc, setDoc] = useState("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
   const [shareModalOpen, setShareModalOpen] = useState(false)
   const [isOwner, setIsOwner] = useState(false)
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const [totalSlides, setTotalSlides] = useState(0)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [showControls, setShowControls] = useState(true)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const hideControlsTimeout = useRef<NodeJS.Timeout | null>(null)
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.type === 'slideChange') {
+        setCurrentSlide(event.data.slide)
+      }
+    }
+
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [])
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        handleNextSlide()
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        handlePrevSlide()
+      } else if (e.key === 'f' || e.key === 'F') {
+        toggleFullscreen()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [currentSlide, totalSlides])
+
+  useEffect(() => {
+    if (!isFullscreen) {
+      setShowControls(true)
+      if (hideControlsTimeout.current) {
+        clearTimeout(hideControlsTimeout.current)
+      }
+      return
+    }
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const windowHeight = window.innerHeight
+      const mouseY = e.clientY
+
+      if (mouseY > windowHeight - 100) {
+        setShowControls(true)
+        if (hideControlsTimeout.current) {
+          clearTimeout(hideControlsTimeout.current)
+        }
+        hideControlsTimeout.current = setTimeout(() => {
+          setShowControls(false)
+        }, 3000)
+      } else {
+        if (hideControlsTimeout.current) {
+          clearTimeout(hideControlsTimeout.current)
+        }
+        setShowControls(false)
+      }
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      if (hideControlsTimeout.current) {
+        clearTimeout(hideControlsTimeout.current)
+      }
+    }
+  }, [isFullscreen])
+
+  const handleNextSlide = () => {
+    if (currentSlide < totalSlides - 1) {
+      iframeRef.current?.contentWindow?.postMessage({ type: 'nextSlide' }, '*')
+    }
+  }
+
+  const handlePrevSlide = () => {
+    if (currentSlide > 0) {
+      iframeRef.current?.contentWindow?.postMessage({ type: 'prevSlide' }, '*')
+    }
+  }
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen()
+      setIsFullscreen(true)
+    } else {
+      document.exitFullscreen()
+      setIsFullscreen(false)
+    }
+  }
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement)
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [])
 
   useEffect(() => {
     async function fetchProject() {
@@ -22,7 +123,6 @@ export default function ProjectViewPage() {
           "Content-Type": "application/json",
         }
 
-        // Add authorization header if token exists (for private projects)
         if (token) {
           headers.Authorization = `Bearer ${token}`
         }
@@ -35,8 +135,8 @@ export default function ProjectViewPage() {
           const statusText = response.status === 401
             ? "Backend needs to be updated to support this endpoint"
             : response.status === 404
-            ? "Project not found"
-            : `Server error (${response.status})`
+              ? "Project not found"
+              : `Server error (${response.status})`
 
           setErrorMessage(statusText)
           setError(true)
@@ -46,7 +146,6 @@ export default function ProjectViewPage() {
 
         const data = await response.json()
 
-        // Support both response formats
         const project = data.ok ? data.project : data
         const slides = project?.slides || []
 
@@ -57,7 +156,6 @@ export default function ProjectViewPage() {
           return
         }
 
-        // Check if user is owner
         if (token) {
           try {
             const userRes = await fetch(`${urlbackend}/me`, {
@@ -68,7 +166,6 @@ export default function ProjectViewPage() {
               setIsOwner(userData.id === project.owner_id)
             }
           } catch (err) {
-            // Ignore error, user just won't see share button
           }
         }
 
@@ -76,6 +173,8 @@ export default function ProjectViewPage() {
           .sort((a: any, b: any) => a.position - b.position)
           .map((slide: any) => slide.html)
           .join("\n")
+
+        setTotalSlides(slides.length)
 
         const fullDoc = `<!doctype html>
 <html>
@@ -87,27 +186,77 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
+  background: black;
 }
 .slide {
   width: 100vw;
   height: 100vh;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  scroll-snap-align: start;
+  overflow: hidden;
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+  pointer-events: none;
+}
+.slide.active {
+  opacity: 1;
+  pointer-events: auto;
 }
 .slides-container {
   width: 100vw;
   height: 100vh;
-  overflow-y: scroll;
-  scroll-snap-type: y mandatory;
+  position: relative;
+  overflow: hidden;
 }
 </style>
 </head>
 <body>
-<div class="slides-container">
+<div class="slides-container" id="slides-container">
 ${slidesHtml}
 </div>
+<script>
+let currentSlide = 0;
+let isTransitioning = false;
+const slides = document.querySelectorAll('.slide');
+
+function updateSlide(index) {
+  if (index >= 0 && index < slides.length && !isTransitioning) {
+    isTransitioning = true;
+
+    slides[currentSlide].classList.remove('active');
+
+    setTimeout(() => {
+      currentSlide = index;
+      slides[currentSlide].classList.add('active');
+      
+      setTimeout(() => {
+        isTransitioning = false;
+      }, 500);
+    }, 50);
+
+    window.parent.postMessage({ type: 'slideChange', slide: currentSlide }, '*');
+  }
+}
+
+if (slides.length > 0) {
+  slides[0].classList.add('active');
+}
+
+window.addEventListener('message', (event) => {
+  if (event.data.type === 'nextSlide') {
+    updateSlide(currentSlide + 1);
+  } else if (event.data.type === 'prevSlide') {
+    updateSlide(currentSlide - 1);
+  } else if (event.data.type === 'goToSlide') {
+    updateSlide(event.data.slide);
+  }
+});
+</script>
 </body>
 </html>`
 
@@ -147,20 +296,12 @@ ${slidesHtml}
               ? "Your backend needs to implement the GET /projects/:id endpoint with slides support."
               : "The presentation you're looking for doesn't exist or you don't have access."}
           </p>
-          <div className="flex gap-3 justify-center">
-            <button
-              onClick={() => navigate("/home")}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Go to Projects
-            </button>
-            <button
-              onClick={() => window.location.reload()}
-              className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
-            >
-              Retry
-            </button>
-          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+          >
+            Retry
+          </button>
         </div>
       </div>
     )
@@ -168,8 +309,9 @@ ${slidesHtml}
 
   return (
     <>
-      <div className="relative w-screen h-screen">
+      <div ref={containerRef} className="relative w-screen h-screen user-select-none">
         <iframe
+          ref={iframeRef}
           srcDoc={doc}
           className="w-screen h-screen border-0"
           title="Project View"
@@ -181,22 +323,52 @@ ${slidesHtml}
             onClick={() => setShareModalOpen(true)}
             className="fixed top-4 right-4 flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-lg z-50"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-            </svg>
+            <span className="material-symbols-outlined">share</span>
             Share
           </button>
         )}
 
-        <button
-          onClick={() => navigate(`/p/${id}`)}
-          className="fixed top-4 left-4 flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors shadow-lg z-50"
+        <div
+          className={`fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-sm flex items-center justify-between px-2 z-50 transition-all duration-300 ${isFullscreen && !showControls ? 'translate-y-full opacity-0' : 'translate-y-0 opacity-100'
+            }`}
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Back to Editor
-        </button>
+          <p className="appColorFadeText text-xl">Slides+</p>
+          <div className="flex">
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handlePrevSlide}
+                disabled={currentSlide === 0}
+                className="p-2 text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                title="Previous slide"
+              >
+                <span className="material-symbols-outlined text-3xl">chevron_left</span>
+              </button>
+
+              <span className="text-sm text-white">
+                {currentSlide + 1} / {totalSlides}
+              </span>
+
+              <button
+                onClick={handleNextSlide}
+                disabled={currentSlide === totalSlides - 1}
+                className="p-2 text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                title="Next slide"
+              >
+                <span className="material-symbols-outlined text-3xl">chevron_right</span>
+              </button>
+            </div>
+
+            <button
+              onClick={toggleFullscreen}
+              className="p-2 text-white transition-colors"
+              title="Fullscreen (F)"
+            >
+              <span className="material-symbols-outlined text-2xl">
+                {isFullscreen ? 'fullscreen_exit' : 'fullscreen'}
+              </span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <ShareModal
