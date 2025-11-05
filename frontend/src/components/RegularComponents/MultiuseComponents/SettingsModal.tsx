@@ -91,7 +91,7 @@ export default function SettingsModal({ onClose }: Props) {
       document.removeEventListener("keydown", handleEsc);
     };
   }, []);
-  
+
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -485,22 +485,13 @@ export default function SettingsModal({ onClose }: Props) {
           }`}
       >
         <div className="w-64 bg-theme-quaternary border-r border-theme-tertiary flex flex-col p-4">
-        <div className="flex items-center mb-6">
-  <div className="flex items-center gap-2">
-    <span className="material-symbols-outlined text-2xl animate-spin-slow">settings</span>
-    <h2 className="text-lg font-semibold">Settings</h2>
-  </div>
-  {}
-  <button
-    onClick={handleClose}
-    className="ml-auto flex items-center justify-center rounded-full p-1.5 hover:bg-theme-hover"
-    aria-label="Close"
-  >
-    <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
-      close
-    </span>
-  </button>
-</div>
+          <div className="flex items-center mb-6">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-2xl animate-spin-slow">settings</span>
+              <h2 className="text-lg font-semibold">Settings</h2>
+            </div>
+            { }
+          </div>
 
 
           <div className="flex flex-col gap-1">
@@ -530,13 +521,24 @@ export default function SettingsModal({ onClose }: Props) {
 
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto p-6">
+            <div className="absolute top-3 right-5 rounded-full glassBackground">
+              <button
+                onClick={handleClose}
+                className="flex items-center justify-center rounded-full p-1.5 hover:bg-theme-hover"
+                aria-label="Close"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+                  close
+                </span>
+              </button>
+            </div>
             {statusMessage && (
               <div
                 className={`mb-4 px-4 py-2 rounded text-sm ${statusType === "success"
-                    ? "bg-green-700 text-white"
-                    : statusType === "error"
-                      ? "bg-red-700 text-white"
-                      : "bg-theme-tertiary text-white"
+                  ? "bg-green-700 text-white"
+                  : statusType === "error"
+                    ? "bg-red-700 text-white"
+                    : "bg-theme-tertiary text-white"
                   }`}
               >
                 {statusMessage}
@@ -626,11 +628,10 @@ export default function SettingsModal({ onClose }: Props) {
                     <div className="grid grid-cols-3 gap-3">
                       <button
                         onClick={() => handleDefaultModeChange("code")}
-                        className={`flex flex-col items-center gap-2 px-4 py-4 rounded-lg border-2 transition-all ${
-                          defaultMode === "code"
-                            ? "border-blue-500 bg-blue-500/10"
-                            : "border-theme-tertiary hover:border-theme-secondary hover:bg-theme-hover"
-                        }`}
+                        className={`flex flex-col items-center gap-2 px-4 py-4 rounded-lg border-2 transition-all ${defaultMode === "code"
+                          ? "border-blue-500 bg-blue-500/10"
+                          : "border-theme-tertiary hover:border-theme-secondary hover:bg-theme-hover"
+                          }`}
                       >
                         <span className="material-symbols-outlined text-2xl">code</span>
                         <span className="text-sm font-medium">Code Editor</span>
@@ -638,11 +639,10 @@ export default function SettingsModal({ onClose }: Props) {
 
                       <button
                         onClick={() => handleDefaultModeChange("visual")}
-                        className={`flex flex-col items-center gap-2 px-4 py-4 rounded-lg border-2 transition-all ${
-                          defaultMode === "visual"
-                            ? "border-blue-500 bg-blue-500/10"
-                            : "border-theme-tertiary hover:border-theme-secondary hover:bg-theme-hover"
-                        }`}
+                        className={`flex flex-col items-center gap-2 px-4 py-4 rounded-lg border-2 transition-all ${defaultMode === "visual"
+                          ? "border-blue-500 bg-blue-500/10"
+                          : "border-theme-tertiary hover:border-theme-secondary hover:bg-theme-hover"
+                          }`}
                       >
                         <span className="material-symbols-outlined text-2xl">palette</span>
                         <span className="text-sm font-medium">Visual Editor</span>
@@ -650,11 +650,10 @@ export default function SettingsModal({ onClose }: Props) {
 
                       <button
                         onClick={() => handleDefaultModeChange("chat")}
-                        className={`flex flex-col items-center gap-2 px-4 py-4 rounded-lg border-2 transition-all ${
-                          defaultMode === "chat"
-                            ? "border-blue-500 bg-blue-500/10"
-                            : "border-theme-tertiary hover:border-theme-secondary hover:bg-theme-hover"
-                        }`}
+                        className={`flex flex-col items-center gap-2 px-4 py-4 rounded-lg border-2 transition-all ${defaultMode === "chat"
+                          ? "border-blue-500 bg-blue-500/10"
+                          : "border-theme-tertiary hover:border-theme-secondary hover:bg-theme-hover"
+                          }`}
                       >
                         <span className="material-symbols-outlined text-2xl">chat</span>
                         <span className="text-sm font-medium">AI Chat</span>
@@ -669,7 +668,7 @@ export default function SettingsModal({ onClose }: Props) {
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-[#1DB954] flex items-center justify-center">
                             <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+                              <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
                             </svg>
                           </div>
                           <div>

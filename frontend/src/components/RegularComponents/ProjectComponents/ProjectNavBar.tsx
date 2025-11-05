@@ -156,9 +156,12 @@ export default function ProjectNavBar({
               className="flex items-center gap-2 px-3 py-1.5 bg-theme-secondary hover:bg-theme-hover text-white rounded-lg transition-colors text-sm"
             >
               <span className="material-symbols-outlined text-base">history</span>
-              History
             </button>
-
+            <SpotifyController
+              onOpenSettings={() => setSettingsOpen(true)}
+              refreshTrigger={spotifyRefreshTrigger}
+              onColorChange={setSpotifyColor}
+            />
             <div className="flex items-center justify-between w-auto bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300 rounded-[20px]">
               <span
                 onClick={() => onChangeMode("code")}
@@ -191,11 +194,6 @@ export default function ProjectNavBar({
                 wand_stars
               </span>
             </div>
-            <SpotifyController
-              onOpenSettings={() => setSettingsOpen(true)}
-              refreshTrigger={spotifyRefreshTrigger}
-              onColorChange={setSpotifyColor}
-            />
             <UserPicture avatar={user?.avatar} username={user?.username} size={38} />
           </div>
         </div>

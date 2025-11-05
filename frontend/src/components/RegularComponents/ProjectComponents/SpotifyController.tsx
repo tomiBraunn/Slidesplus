@@ -231,7 +231,6 @@ export const SpotifyController: React.FC<SpotifyControllerProps> = ({ onOpenSett
 
   const handleMouseEnter = () => {
     if (!isConnected) {
-      onOpenSettings()
       return
     }
     if (hoverTimeoutRef.current) {
@@ -244,9 +243,18 @@ export const SpotifyController: React.FC<SpotifyControllerProps> = ({ onOpenSett
   }
 
   const handleMouseLeave = () => {
+    if (!isConnected) {
+      return
+    }
     hoverTimeoutRef.current = setTimeout(() => {
       setIsOpen(false)
     }, 300)
+  }
+
+  const handleClick = () => {
+    if (!isConnected) {
+      onOpenSettings()
+    }
   }
 
   const formatTime = (ms: number) => {
@@ -266,6 +274,7 @@ export const SpotifyController: React.FC<SpotifyControllerProps> = ({ onOpenSett
       onMouseLeave={handleMouseLeave}
     >
       <button
+        onClick={handleClick}
         className="w-9 h-9 flex items-center justify-center transition-all hover:opacity-80"
         title={isConnected ? 'Spotify Player' : 'Connect Spotify'}
       >

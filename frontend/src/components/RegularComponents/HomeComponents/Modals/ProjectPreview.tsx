@@ -77,13 +77,23 @@ function ProjectPreview({
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") handleClose()
+      if (e.altKey && (e.key === "ArrowRight" || e.key === "ArrowDown")) {
+        if (selectedSlide < slides.length - 1) {
+          setSelectedSlide(selectedSlide + 1)
+        }
+      }
+      if (e.altKey && (e.key === "ArrowLeft" || e.key === "ArrowUp")) {
+        if (selectedSlide > 0) {
+          setSelectedSlide(selectedSlide - 1)
+        }
+      }
     }
     if (mounted) window.addEventListener("keydown", handler)
     return () => {
       window.removeEventListener("keydown", handler)
       document.documentElement.classList.remove("overflow-hidden")
     }
-  }, [mounted])
+  }, [mounted, selectedSlide, slides.length])
 
   useEffect(() => {
     setRenameText(name || "")
@@ -211,10 +221,14 @@ function ProjectPreview({
     return `${m}/${day}/${y}`
   }
 
-  const description = `${slideCount} slides${formatUSDate(lastModified) ? " · " + formatUSDate(lastModified) : ""}`
+  const description = `${slides.length} slides${formatUSDate(lastModified) ? " · " + formatUSDate(lastModified) : ""}`
 
   const goOpen = () => {
     if (projectId) navigate(`/p/${projectId}`)
+  }
+
+  const goPresent = () => {
+    if (projectId) navigate(`/v/${projectId}`)
   }
 
   const token = localStorage.getItem("token")
@@ -272,6 +286,7 @@ function ProjectPreview({
     { icon: "delete", label: "Delete", onClick: () => setShowDelete(true) },
     { icon: "edit", label: "Rename", onClick: () => setShowRename(true) },
     { icon: "share", label: "Share", onClick: () => setShowShare(true) },
+    { icon: "slideshow", label: "Present", onClick: goPresent },
     { icon: "open_in_new", label: "Open", onClick: goOpen },
   ]
   const items = actions?.length ? actions : defaultActions
@@ -290,7 +305,7 @@ function ProjectPreview({
     >
       <div
         onMouseDown={(e) => e.stopPropagation()}
-        className={`text-white rounded-xl bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300 card-animate w-[95vw] md:w-[70vw] max-w-[1100px] h-[90vh] md:max-h-[85vh] overflow-hidden flex flex-col border border-white/10 bg-[#0b0b0bcc] transform transition-all duration-200 ease-out backdrop-bl-sm${show ? " opacity-100 scale-100" : " opacity-0 scale-95"}`}
+        className={`text-white rounded-xl bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300 card-animate w-[95vw] md:w-[85vw] max-w-[1400px] h-[90vh] md:max-h-[90vh] overflow-hidden flex flex-col border border-white/10 bg-[#0b0b0bcc] transform transition-all duration-200 ease-out backdrop-bl-sm select-none${show ? " opacity-100 scale-100" : " opacity-0 scale-95"}`}
       >
         <div className="flex items-center justify-between gap-2 w-full p-2 md:p-4 flex-shrink-0">
           <div className="flex items-start flex-col min-w-0 flex-1 text-theme-primary">
@@ -298,7 +313,7 @@ function ProjectPreview({
               <span className="material-symbols-outlined" style={{ fontSize: isMobile ? 24 : 35 }}>
                 crop_landscape
               </span>
-              <p className="font-medium text-sm md:text-lg truncate">{name || "Untitled"}</p>
+              <p className="font-medium text-sm md:text-lg truncate select-text">{name || "Untitled"}</p>
             </div>
             {!isMobile && <p className="text-xs md:text-sm">{description}</p>}
           </div>
@@ -314,12 +329,18 @@ function ProjectPreview({
           </button>
         </div>
 
-        <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} items-start justify-start gap-2 w-full flex-1 min-h-0 px-2 md:px-4 pb-1 md:pb-2`}>
-          <div ref={mainPreviewRef} className={`text-white rounded-xl border  bg-white ${isMobile ? 'w-full flex-1 min-h-0' : 'w-full'} ${isMobile ? '' : 'aspect-video'} p-0 overflow-hidden border-solid relative`}>
-            <iframe ref={iframeRef} title="Project Preview" className="w-full h-full border-0 bg-white" style={{ background: 'white' }} />
+        <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} items-start justify-start gap-2 w-full min-h-0 px-2 md:px-4 pb-1 md:pb-2`} style={{ flex: '1 1 0', overflow: 'hidden' }}>
+          <div ref={mainPreviewRef} className={`text-white rounded-xl border  bg-white ${isMobile ? 'w-full flex-1 min-h-0' : 'w-full'} ${isMobile ? '' : 'aspect-video'} p-0 overflow-hidden border-solid relative select-none`}>
+            {slides.length === 0 ? (
+              <div className="w-full h-full flex items-center justify-center">
+                <p className="text-gray-400 text-lg">Empty presentation - Add slides to get started!</p>
+              </div>
+            ) : (
+              <iframe ref={iframeRef} title="Project Preview" className="w-full h-full border-0 bg-white" style={{ background: 'white' }} />
+            )}
           </div>
           <div
-            className={`rounded-xl ${isMobile ? 'w-full h-16' : 'w-1/5'} p-1.5 md:p-2 flex ${isMobile ? 'flex-row overflow-x-auto' : 'flex-col overflow-y-auto'} gap-1.5 md:gap-2 scrollbar-custom flex-shrink-0`}
+            className={`rounded-xl ${isMobile ? 'w-full h-16' : 'w-1/6 min-w-[120px]'} p-1.5 md:p-2 flex ${isMobile ? 'flex-row overflow-x-auto' : 'flex-col overflow-y-auto'} gap-1.5 md:gap-2 scrollbar-custom flex-shrink-0`}
             style={isMobile ? {} : { height: previewsHeight }}
           >
             {slides.map((s) => {

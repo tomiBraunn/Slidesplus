@@ -162,6 +162,25 @@ function ProjectPageContent() {
     clearLastChange()
   }, [lastChange, clearLastChange])
 
+  // Keyboard shortcuts for mode switching
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && e.key === '1') {
+        e.preventDefault()
+        setMode('code')
+      } else if (e.altKey && e.key === '2') {
+        e.preventDefault()
+        setMode('visual')
+      } else if (e.altKey && e.key === '3') {
+        e.preventDefault()
+        setMode('ai')
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   useEffect(() => {
     const extractedSlides = doc
       .split(/<section/i)

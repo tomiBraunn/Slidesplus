@@ -57,12 +57,33 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
     const [isPublic, setIsPublic] = useState(false)
     const [linkCopied, setLinkCopied] = useState(false)
     const searchRef = useRef<HTMLDivElement>(null)
+    const [mounted, setMounted] = useState(false)
+    const [show, setShow] = useState(false)
 
     useEffect(() => {
-        if (isOpen && projectId) {
-            fetchProjectAccess()
+        if (isOpen) {
+            setMounted(true)
+            if (projectId) {
+                fetchProjectAccess()
+            }
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => setShow(true))
+            })
+        } else {
+            setShow(false)
         }
     }, [isOpen, projectId])
+
+    const handleClose = () => {
+        setShow(false)
+    }
+
+    const handleTransitionEnd = () => {
+        if (!show) {
+            setMounted(false)
+            onClose()
+        }
+    }
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -74,6 +95,19 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
         document.addEventListener('mousedown', handleClickOutside)
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [])
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                handleClose()
+            }
+        }
+
+        if (mounted) {
+            window.addEventListener('keydown', handleKeyDown)
+        }
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [mounted])
 
     useEffect(() => {
         if (searchQuery.length >= 2) {
@@ -215,11 +249,22 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
         setTimeout(() => setLinkCopied(false), 2000)
     }
 
-    if (!isOpen) return null
+    if (!mounted) return null
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-theme-primary text-theme-primary rounded-xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+        <div
+            className={[
+                "fixed z-50 inset-0 flex items-center justify-center p-4",
+                "bg-black/40 transition-[backdrop-filter,opacity] duration-200 ease-out",
+                show ? "opacity-100 backdrop-blur-xl" : "opacity-0 backdrop-blur-0",
+            ].join(" ")}
+            onMouseDown={handleClose}
+            onTransitionEnd={handleTransitionEnd}
+        >
+            <div
+                onMouseDown={(e) => e.stopPropagation()}
+                className={`bg-theme-primary text-theme-primary rounded-xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col shadow-2xl transform transition-all duration-200 ease-out ${show ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
+            >
                 <div className="px-6 py-4">
                     <div className="flex items-center justify-between">
                         <div>
@@ -227,12 +272,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                             <p className="text-xs text-theme-secondary mt-1">Invite your friends to create with you</p>
                         </div>
                         <button
-                            onClick={onClose}
+                            onClick={handleClose}
                             className="text-theme-secondary hover:text-theme-primary transition-colors p-1.5 hover:bg-theme-hover rounded-full"
                         >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
+                            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
                         </button>
                     </div>
                 </div>
@@ -249,9 +292,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                                 className="flex-1 outline-none text-sm bg-transparent placeholder-theme-secondary"
                             />
                             <button className="p-1 hover:bg-theme-hover rounded transition-colors">
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                </svg>
+                                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>arrow_forward</span>
                             </button>
                         </div>
 
@@ -268,12 +309,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                                                 src={normalizeAvatar(user.avatar)}
                                                 alt={user.username}
                                                 className="w-9 h-9 rounded-full object-cover"
+                                                onError={(e) => {
+                                                    e.currentTarget.style.display = 'none';
+                                                    e.currentTarget.nextElementSibling && (e.currentTarget.nextElementSibling.style.display = 'flex');
+                                                }}
                                             />
-                                        ) : (
-                                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-medium text-sm">
-                                                {getInitials(user.first_name, user.last_name, user.username)}
-                                            </div>
-                                        )}
+                                        ) : null}
+                                        <div className={`w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-medium text-sm ${user.avatar ? 'hidden' : ''}`}>
+                                            {getInitials(user.first_name, user.last_name, user.username)}
+                                        </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="text-sm font-medium">
                                                 {user.first_name && user.last_name
@@ -299,12 +343,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                                             src={normalizeAvatar(owner.avatar)}
                                             alt={owner.username}
                                             className="w-9 h-9 rounded-full object-cover"
+                                            onError={(e) => {
+                                                e.currentTarget.style.display = 'none';
+                                                e.currentTarget.nextElementSibling && (e.currentTarget.nextElementSibling.style.display = 'flex');
+                                            }}
                                         />
-                                    ) : (
-                                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm">
-                                            {getInitials(owner.firstName, owner.lastName, owner.username)}
-                                        </div>
-                                    )}
+                                    ) : null}
+                                    <div className={`w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm ${owner.avatar ? 'hidden' : ''}`}>
+                                        {getInitials(owner.firstName, owner.lastName, owner.username)}
+                                    </div>
                                     <div>
                                         <div className="text-sm font-medium">
                                             {owner.firstName && owner.lastName
@@ -329,12 +376,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                                                 src={normalizeAvatar(collab.avatar)}
                                                 alt={collab.username}
                                                 className="w-9 h-9 rounded-full object-cover"
+                                                onError={(e) => {
+                                                    e.currentTarget.style.display = 'none';
+                                                    e.currentTarget.nextElementSibling && (e.currentTarget.nextElementSibling.style.display = 'flex');
+                                                }}
                                             />
-                                        ) : (
-                                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center text-white font-semibold text-sm">
-                                                {getInitials(collab.first_name, collab.last_name, collab.username || collab.name)}
-                                            </div>
-                                        )}
+                                        ) : null}
+                                        <div className={`w-9 h-9 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center text-white font-semibold text-sm ${collab.avatar ? 'hidden' : ''}`}>
+                                            {getInitials(collab.first_name, collab.last_name, collab.username || collab.name)}
+                                        </div>
                                         <div>
                                             <div className="text-sm font-medium">
                                                 {displayName}
@@ -347,9 +397,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                                             onClick={() => handleRemoveCollaborator(userId)}
                                             className="opacity-0 group-hover:opacity-100 text-theme-secondary hover:text-theme-primary transition-all p-1"
                                         >
-                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
+                                            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
                                         </button>
                                     </div>
                                 </div>
@@ -362,9 +410,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                         <div className="flex items-center justify-between py-2.5 hover:bg-theme-hover rounded-lg px-2 -mx-2 cursor-pointer transition-colors" onClick={handleTogglePublic}>
                             <div className="flex items-center gap-3">
                                 <div className="w-9 h-9 rounded-full bg-theme-tertiary flex items-center justify-center">
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
+                                    <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+                                        {isPublic ? "public" : "lock"}
+                                    </span>
                                 </div>
                                 <div>
                                     <div className="text-sm font-medium">
@@ -377,11 +425,37 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                             </div>
                             <button className="text-xs text-theme-secondary hover:text-theme-primary flex items-center gap-1">
                                 {isPublic ? "Can view" : "Change"}
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
+                                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>chevron_right</span>
                             </button>
                         </div>
+
+                        {isPublic && (
+                            <div className="mt-3 pt-3 border-t border-theme-tertiary">
+                                <button
+                                    onClick={handleCopyLink}
+                                    className="w-full flex items-center justify-between py-2.5 px-2 hover:bg-theme-hover rounded-lg transition-colors"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-9 h-9 rounded-full bg-theme-tertiary flex items-center justify-center">
+                                            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+                                                {linkCopied ? "check" : "content_copy"}
+                                            </span>
+                                        </div>
+                                        <div className="text-left">
+                                            <div className="text-sm font-medium">
+                                                {linkCopied ? "Link copied!" : "Copy presentation link"}
+                                            </div>
+                                            <div className="text-xs text-theme-secondary truncate max-w-[200px]">
+                                                {`${window.location.origin}/v/${projectId}`}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span className="material-symbols-outlined text-theme-secondary flex-shrink-0" style={{ fontSize: 20 }}>
+                                        content_copy
+                                    </span>
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {error && (
