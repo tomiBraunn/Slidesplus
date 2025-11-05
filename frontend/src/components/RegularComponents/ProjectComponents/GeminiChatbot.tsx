@@ -681,7 +681,7 @@ export default function GeminiChatbot({
         // }}
       />
 
-      <div className="flex flex-col bg-theme-primary border border-theme-tertiary text-theme-primary rounded-xl h-full w-full p-5 overflow-hidden relative z-10">
+      <div className="flex flex-col bg-theme-primary border border-theme-tertiary text-theme-primary rounded-xl h-full w-full p-5 overflow-hidden relative z-[1]">
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-6">
           {loadingHistory ? (
             <div className="flex items-center justify-center gap-2 text-theme-secondary text-sm mt-12">

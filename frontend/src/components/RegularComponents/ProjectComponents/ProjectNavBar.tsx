@@ -107,7 +107,7 @@ export default function ProjectNavBar({
           style={navbarBgStyle}
         />
 
-        <div className="relative flex items-center justify-between p-3 h-full" style={{ zIndex: 1 }}>
+        <div className="relative flex items-center justify-between p-3 h-full" style={{ zIndex: 20 }}>
           <div className="flex items-center gap-3">
             <AppIcon />
             <span className="text-theme-primary text-md truncate w-max-50">{name}</span>
