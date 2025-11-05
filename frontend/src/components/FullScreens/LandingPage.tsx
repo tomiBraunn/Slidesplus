@@ -122,148 +122,6 @@ export default function LandingPage() {
 
   return (
     <>
-      <style>{`
-        /* Menu Styles - Desktop mantiene ancho fijo, Mobile/Tablet fullscreen */
-        
-        /* CRITICAL: Asegurar que el scope no bloquee */
-        .sm-scope {
-          pointer-events: none !important;
-          position: fixed !important;
-          top: 0 !important;
-          left: 0 !important;
-          width: 100% !important;
-          height: 100% !important;
-          z-index: 60 !important;
-        }
-        
-        /* Posicionar el botón del menú DENTRO del navbar */
-        .sm-scope .staggered-menu-header {
-          position: fixed !important;
-          top: 0 !important;
-          left: 0 !important;
-          width: auto !important;
-          z-index: 100 !important;
-          padding: 0 !important;
-          margin: 0 !important;
-          background: transparent !important;
-          pointer-events: none !important;
-        }
-
-        .sm-scope .sm-logo {
-          display: none !important;
-        }
-
-        .sm-scope .sm-toggle {
-          pointer-events: auto !important;
-          position: fixed !important;
-          top: 1rem !important;
-          left: 1.5rem !important;
-          z-index: 100 !important;
-        }
-
-        @media (min-width: 640px) {
-          .sm-scope .sm-toggle {
-            top: 1.25rem !important;
-            left: 2rem !important;
-          }
-        }
-
-        @media (min-width: 768px) {
-          .sm-scope .sm-toggle {
-            top: 1.5rem !important;
-            left: 2.5rem !important;
-          }
-        }
-
-        /* El wrapper del menú no debe bloquear cuando está cerrado */
-        .sm-scope .staggered-menu-wrapper {
-          pointer-events: none !important;
-        }
-
-        /* Solo cuando el menú está abierto, el panel es interactivo */
-        .sm-scope .staggered-menu-wrapper[data-open] .staggered-menu-panel {
-          pointer-events: auto !important;
-        }
-
-        .sm-scope .staggered-menu-panel {
-          background: transparent !important;
-        }
-
-        .sm-scope .sm-panel-item {
-          color: #fff !important;
-          cursor: pointer !important;
-          pointer-events: auto !important;
-          margin-bottom: 0.5rem !important;
-        }
-
-        .sm-scope .sm-panel-list {
-          gap: 0.5rem !important;
-        }
-
-        .sm-scope .sm-panel-itemLabel {
-          pointer-events: auto !important;
-        }
-
-        .sm-scope .sm-panel-item:hover {
-          color: var(--sm-accent, white) !important;
-        }
-
-        .sm-scope .staggered-menu-wrapper[data-open] .sm-toggle {
-          color: #fff !important;
-        }
-
-        .sm-scope .sm-prelayer:last-child {
-          background: linear-gradient(135deg, #B19EEF, #5227FF) !important;
-        }
-
-        .sm-scope .sm-prelayers {
-          pointer-events: none !important;
-        }
-
-        /* Fullscreen solo en tablets y móviles (menos de 1024px) */
-        @media (max-width: 1024px) {
-          .sm-scope .staggered-menu-panel {
-            width: 100vw !important;
-            left: 0 !important;
-            right: 0 !important;
-          }
-
-          .sm-scope .sm-prelayers {
-            width: 100vw !important;
-            left: 0 !important;
-            right: 0 !important;
-          }
-
-          .sm-scope .sm-panel-inner {
-            align-items: flex-start;
-            justify-content: center;
-            padding-left: 3rem;
-            padding-right: 3rem;
-          }
-
-          .sm-scope .sm-panel-item {
-            font-size: clamp(2.5rem, 8vw, 5rem) !important;
-          }
-        }
-
-        /* Mobile específico (menos de 640px) */
-        @media (max-width: 640px) {
-          .sm-scope .sm-toggle {
-            top: 0.75rem !important;
-            left: 1rem !important;
-          }
-
-          .sm-scope .sm-panel-inner {
-            padding-left: 2rem;
-            padding-right: 2rem;
-          }
-          
-          .sm-scope .sm-panel-item {
-            font-size: clamp(2rem, 10vw, 3.5rem) !important;
-          }
-        }
-      `}</style>
-
       <div className="min-h-screen w-full bg-[#121212] text-white overflow-x-hidden cursor-default relative">
         <header className="sticky top-0 w-full px-3 sm:px-4 md:px-6 py-3 md:py-4 flex justify-between items-center z-50 bg-[#121212]/80 backdrop-blur-md">
           <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-wide text-white">Slides+</h1>
@@ -282,8 +140,6 @@ export default function LandingPage() {
             </button>
           </div>
         </header>
-
-        {/* ---- HERO ---- */}
         <section
           id="hero"
           className="min-h-screen h-auto py-20 sm:py-24 md:py-0 md:h-screen flex flex-col justify-center items-center text-center relative overflow-hidden px-4 sm:px-6 md:px-8"
@@ -361,8 +217,6 @@ export default function LandingPage() {
             <span className="text-[10px] sm:text-xs md:text-sm text-white/50 mt-1">Scroll Down</span>
           </motion.div>
         </section>
-
-        {/* ---- FEATURES ---- */}
         <motion.section
           id="features"
           className="py-16 sm:py-20 md:py-24 lg:py-28 px-4 sm:px-6 md:px-12 lg:px-20 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-7 md:gap-8 lg:gap-10"
@@ -384,8 +238,6 @@ export default function LandingPage() {
             </motion.div>
           ))}
         </motion.section>
-
-        {/* ---- COLLAB ---- */}
         <motion.section
           id="ai"
           className="py-20 sm:py-24 md:py-28 lg:py-36 px-4 sm:px-6 md:px-8 flex flex-col items-center justify-center text-center relative"
@@ -402,8 +254,6 @@ export default function LandingPage() {
             Share it with your partners. You can make projects with many users.
           </motion.p>
         </motion.section>
-
-        {/* ---- DESIGN ---- */}
         <motion.section
           id="design"
           className="py-16 sm:py-20 md:py-24 lg:py-28 px-4 sm:px-6 md:px-8 lg:px-12 flex flex-col md:flex-row items-center justify-center gap-8 sm:gap-10 md:gap-12 lg:gap-16 relative overflow-hidden"
@@ -443,8 +293,6 @@ export default function LandingPage() {
             />
           </motion.div>
         </motion.section>
-
-        {/* ---- CTA ---- */}
         <motion.section
           id="start"
           className="py-20 sm:py-24 md:py-28 lg:py-32 px-4 sm:px-6 md:px-8 text-center bg-gradient-to-r from-[#249931]/20 via-[#7182FF]/20 to-[#121212] relative"
