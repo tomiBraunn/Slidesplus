@@ -5,7 +5,6 @@ import TextType from "../ThirdPartyComponents/TextType/TextType";
 import RotatingText from "../ThirdPartyComponents/TextType/RotatingText";
 import LogoLoop from "../ThirdPartyComponents/TextType/LogoLoop";
 import homePageImage from "../../assets/homePage.png";
-import StaggeredMenu from "../ThirdPartyComponents/StaggredMenu/StaggredMenu";
 
 import {
   SiReact,
@@ -266,26 +265,8 @@ export default function LandingPage() {
       `}</style>
 
       <div className="min-h-screen w-full bg-[#121212] text-white overflow-x-hidden cursor-default relative">
-        {/* ---- MENU ---- */}
-        <StaggeredMenu
-          ref={menuRef}
-          position="left"
-          items={menuItems}
-          displaySocials={true}
-          displayItemNumbering={false}
-          menuButtonColor="#fff"
-          openMenuButtonColor="#fff"
-          changeMenuColorOnOpen={true}
-          colors={['#B19EEF', '#5227FF']}
-          accentColor="white"
-          isFixed={false}
-          onMenuOpen={() => console.log('Menu opened')}
-          onMenuClose={() => console.log('Menu closed')}
-        />
-        
-        {/* ---- HEADER ---- */}
         <header className="sticky top-0 w-full px-3 sm:px-4 md:px-6 py-3 md:py-4 flex justify-between items-center z-50 bg-[#121212]/80 backdrop-blur-md">
-          <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-wide text-white ml-16 sm:ml-20 md:ml-24">Slides+</h1>
+          <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-wide text-white">Slides+</h1>
           <div className="flex gap-2 sm:gap-3 md:gap-4">
             <button
               onClick={() => navigate("/login")}
@@ -434,7 +415,7 @@ export default function LandingPage() {
           <div className="absolute inset-0 bg-gradient-to-tr from-[#7182FF]/15 to-[#249931]/15 blur-3xl"></div>
 
           <motion.div variants={sectionReveal} className="max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl z-10 text-center md:text-left px-4 md:px-0">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 leading-snug text-[#249931]">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 leading-snug text-[#FFFFFF]">
               Our Home with UX/UI.
             </h2>
             <p className="text-white/70 mb-5 sm:mb-6 text-xs sm:text-sm md:text-base lg:text-lg">
