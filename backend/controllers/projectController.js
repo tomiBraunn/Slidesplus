@@ -99,15 +99,69 @@ export const listProjects = async (req, res) => {
 	if (!pool) return res.status(500).json({ message: "Database not configured" })
 	try {
 		const query = `
-			SELECT DISTINCT p.id, p.owner_id, p.name, p.document, p.created_at, p.updated_at, p.visibility
+			SELECT DISTINCT p.id, p.owner_id, p.name, p.document, p.created_at, p.updated_at, p.visibility,
+			       u.username as owner_username, u.email as owner_email, u.first_name as owner_first_name,
+			       u.last_name as owner_last_name, u.avatar as owner_avatar
 			FROM projects p
+			LEFT JOIN users u ON u.id = p.owner_id
 			LEFT JOIN project_collaborators pc ON pc.project_id = p.id
 			WHERE p.owner_id = $1 OR pc.user_id = $1 OR p.visibility = 'public'
 			ORDER BY p.updated_at DESC, p.created_at DESC
 		`
-		const q = await pool.query(query, [req.user.sub])
-		res.json(q.rows)
-	} catch {
+		const projectsResult = await pool.query(query, [req.user.sub])
+
+		// Get slide count and collaborators for each project
+		const projectsWithDetails = await Promise.all(
+			projectsResult.rows.map(async (project) => {
+				// Get slide count
+				const slideCountResult = await pool.query(
+					`SELECT COUNT(*) as count FROM slides WHERE project_id = $1`,
+					[project.id]
+				)
+
+				// Get collaborators
+				const collaboratorsResult = await pool.query(
+					`SELECT pc.user_id, u.username, u.email, u.first_name, u.last_name, u.avatar, pc.role
+					FROM project_collaborators pc
+					JOIN users u ON u.id = pc.user_id
+					WHERE pc.project_id = $1
+					ORDER BY pc.joined_at ASC`,
+					[project.id]
+				)
+
+				return {
+					id: project.id,
+					owner_id: project.owner_id,
+					name: project.name,
+					document: project.document,
+					created_at: project.created_at,
+					updated_at: project.updated_at,
+					visibility: project.visibility,
+					slideCount: parseInt(slideCountResult.rows[0].count),
+					owner: {
+						id: project.owner_id,
+						username: project.owner_username,
+						email: project.owner_email,
+						first_name: project.owner_first_name,
+						last_name: project.owner_last_name,
+						avatar: project.owner_avatar
+					},
+					collaborators: collaboratorsResult.rows.map(c => ({
+						id: c.user_id,
+						username: c.username,
+						email: c.email,
+						first_name: c.first_name,
+						last_name: c.last_name,
+						avatar: c.avatar,
+						role: c.role
+					}))
+				}
+			})
+		)
+
+		res.json(projectsWithDetails)
+	} catch (err) {
+		console.error("Error listing projects:", err)
 		res.status(500).json({ message: "Internal error" })
 	}
 }
@@ -119,9 +173,12 @@ export const getProject = async (req, res) => {
 		const userId = req.user?.sub || null
 
 		const projectQuery = await pool.query(
-			`SELECT id, owner_id, name, document, chat_history, created_at, updated_at, visibility, is_public
-			FROM projects
-			WHERE id = $1`,
+			`SELECT p.id, p.owner_id, p.name, p.document, p.chat_history, p.created_at, p.updated_at, p.visibility, p.is_public,
+			       u.username as owner_username, u.email as owner_email, u.first_name as owner_first_name,
+			       u.last_name as owner_last_name, u.avatar as owner_avatar
+			FROM projects p
+			LEFT JOIN users u ON u.id = p.owner_id
+			WHERE p.id = $1`,
 			[id]
 		)
 
@@ -169,9 +226,44 @@ export const getProject = async (req, res) => {
 			[id]
 		)
 
+		// Get collaborators
+		const collaboratorsResult = await pool.query(
+			`SELECT pc.user_id, u.username, u.email, u.first_name, u.last_name, u.avatar, pc.role
+			FROM project_collaborators pc
+			JOIN users u ON u.id = pc.user_id
+			WHERE pc.project_id = $1
+			ORDER BY pc.joined_at ASC`,
+			[id]
+		)
+
 		res.json({
-			...project,
+			id: project.id,
+			owner_id: project.owner_id,
+			name: project.name,
+			document: project.document,
+			chat_history: project.chat_history,
+			created_at: project.created_at,
+			updated_at: project.updated_at,
+			visibility: project.visibility,
+			is_public: project.is_public,
 			user_role: role,
+			owner: {
+				id: project.owner_id,
+				username: project.owner_username,
+				email: project.owner_email,
+				first_name: project.owner_first_name,
+				last_name: project.owner_last_name,
+				avatar: project.owner_avatar
+			},
+			collaborators: collaboratorsResult.rows.map(c => ({
+				id: c.user_id,
+				username: c.username,
+				email: c.email,
+				first_name: c.first_name,
+				last_name: c.last_name,
+				avatar: c.avatar,
+				role: c.role
+			})),
 			slides: slidesQuery.rows || []
 		})
 	} catch (err) {
