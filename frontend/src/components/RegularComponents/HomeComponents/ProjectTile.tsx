@@ -62,7 +62,6 @@ function ProjectTile({ name, description, onClick, listMode = false, owner, coll
             }
         }
 
-        // Pequeño delay para asegurar que el contenedor tenga dimensiones
         const timer = setTimeout(updateScale, 100)
 
         window.addEventListener('resize', updateScale)
@@ -88,27 +87,7 @@ function ProjectTile({ name, description, onClick, listMode = false, owner, coll
                 const slideHtml = firstSlide.html || firstSlide.content
 
                 if (slideHtml) {
-                    const fullHtml = `
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                            <meta charset="UTF-8">
-                            <style>
-                                * { margin: 0; padding: 0; box-sizing: border-box; }
-                                html, body {
-                                    width: 1920px;
-                                    height: 1080px;
-                                    overflow: hidden;
-                                    background: white;
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            ${slideHtml}
-                        </body>
-                        </html>
-                    `
-                    setSlidePreview(fullHtml)
+                    setSlidePreview(slideHtml)
                 }
             }
         } catch (err) {
@@ -154,29 +133,23 @@ function ProjectTile({ name, description, onClick, listMode = false, owner, coll
     return (
         <SpotlightCard
             onClick={onClick}
-            className="rounded-[20px] bg-theme-primary border border-theme-tertiary transition-all duration-300 w-full cursor-pointer flex flex-col gap-2 overflow-hidden group p-1.5 hover:bg-theme-hover"
+            className="rounded-[15px] bg-theme-primary border border-theme-tertiary transition-all duration-300 w-full cursor-pointer flex flex-col gap-2 overflow-hidden group p-1.5 hover:bg-theme-hover"
             spotlightColor="rgba(255, 255, 255, 0.15)"
         >
             <div ref={containerRef} className="w-full aspect-[16/9] bg-white overflow-hidden relative rounded-[15px] border border-theme-tertiary flex items-center justify-center">
                 {slidePreview ? (
                     <iframe
-                        srcDoc={slidePreview}
-                        className="border-0 pointer-events-none"
+                        srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:1920px;height:1080px;overflow:hidden;background:white;}body{transform:scale(${scale});transform-origin:top left;width:1920px;height:1080px;display:flex;align-items:center;justify-content:center;}section{width:1920px;height:1080px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem;text-align:center;background:white;}</style></head><body>${slidePreview}</body></html>`}
+                        className="w-full h-full border-0 pointer-events-none bg-white"
                         sandbox="allow-same-origin allow-scripts"
-                        style={{
-                            width: '1920px',
-                            height: '1080px',
-                            transform: `scale(${scale})`,
-                            transformOrigin: 'center center',
-                            backgroundColor: 'white'
-                        }}
+                        style={{ background: 'white' }}
                     />
                 ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
                         <span className="material-symbols-outlined text-gray-400 opacity-50" style={{ fontSize: "35px" }}>
                             crop_landscape
                         </span>
-                        <p className='text-[8px]'>Empty project</p>
+                        <p className='text-[10px] text-gray-500'>Empty project</p>
                     </div>
                 )}
             </div>
@@ -189,7 +162,7 @@ function ProjectTile({ name, description, onClick, listMode = false, owner, coll
                                 <img
                                     src={normalizeAvatar(owner.avatar)}
                                     alt={owner.username}
-                                    className="w-3.5 rounded-full object-cover"
+                                    className="w-3.5 h-3.5 rounded-full object-cover"
                                     onError={(e) => {
                                         e.currentTarget.style.display = 'none'
                                         const sibling = e.currentTarget.nextElementSibling as HTMLElement
@@ -197,7 +170,7 @@ function ProjectTile({ name, description, onClick, listMode = false, owner, coll
                                     }}
                                 />
                             ) : null}
-                            <div className={`w-3.5 rounded-full flex items-center justify-center text-white font-medium text-sm ${owner.avatar ? 'hidden' : ''}`}>
+                            <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-white font-medium text-[6px] bg-gradient-to-br from-blue-500 to-purple-600 ${owner.avatar ? 'hidden' : ''}`}>
                                 {getInitials(owner.first_name, owner.last_name, owner.username)}
                             </div>
                         </div>
@@ -208,7 +181,7 @@ function ProjectTile({ name, description, onClick, listMode = false, owner, coll
                                 <img
                                     src={normalizeAvatar(collab.avatar)}
                                     alt={collab.username}
-                                    className="w-3.5 rounded-full object-cover"
+                                    className="w-3.5 h-3.5 rounded-full object-cover"
                                     onError={(e) => {
                                         e.currentTarget.style.display = 'none'
                                         const sibling = e.currentTarget.nextElementSibling as HTMLElement
@@ -216,7 +189,7 @@ function ProjectTile({ name, description, onClick, listMode = false, owner, coll
                                     }}
                                 />
                             ) : null}
-                            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-medium text-sm ${collab.avatar ? 'hidden' : ''}`}>
+                            <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-white font-medium text-[6px] bg-gradient-to-br from-green-500 to-teal-600 ${collab.avatar ? 'hidden' : ''}`}>
                                 {getInitials(collab.first_name, collab.last_name, collab.username)}
                             </div>
                         </div>
