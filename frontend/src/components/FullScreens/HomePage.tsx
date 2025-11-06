@@ -98,7 +98,6 @@ function HomePage() {
     try {
       const token = localStorage.getItem("token")
 
-      // First, get user data if not already loaded
       let currentUser = user
       if (!currentUser && token) {
         try {
@@ -117,7 +116,6 @@ function HomePage() {
         }
       }
 
-      // Then fetch projects
       const res = await fetch(`${urlbackend}/projects`, {
         headers: {
           "Content-Type": "application/json",
@@ -131,7 +129,6 @@ function HomePage() {
       }
       const data = await res.json()
 
-      // Map projects using owner and collaborators from backend
       const mapped: Project[] = (data || []).map((p: any) => ({
         id: p.id,
         name: p.name,
@@ -139,8 +136,8 @@ function HomePage() {
         created_at: p.created_at,
         updated_at: p.updated_at,
         slideCount: p.slideCount,
-        owner: p.owner || currentUser,  // Use owner from backend, fallback to current user
-        collaborators: p.collaborators || [],  // Use collaborators from backend
+        owner: p.owner || currentUser, 
+        collaborators: p.collaborators || [],
         preview_url: p.preview_url,
       }))
 
@@ -249,23 +246,8 @@ function HomePage() {
           <NavBar user={user} />
           <div className="flex flex-col items-center justify-start text-white w-full max-w-[90vw] md:max-w-[70vw] px-4 md:px-0">
             <div className="searchbar flex flex-col items-center justify-start w-full gap-6">
-              <AppTextLogo />
-
-              <div className="relative w-full flex items-center justify-center">
-                <div className="absolute inset-0 pointer-events-none" style={{ padding: '0 50px' }}>
-                  <svg className="w-full h-full" viewBox="0 0 1112 189" fill="none" preserveAspectRatio="none">
-                    <defs>
-                      <filter id="glow" x="-50%" y="-50%" width="200%" height="200%" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
-                        <feGaussianBlur stdDeviation="30" result="blur"/>
-                      </filter>
-                      <linearGradient id="gradient" x1="0%" y1="50%" x2="100%" y2="50%">
-                        <stop offset="0%" stopColor="#249931"/>
-                        <stop offset="100%" stopColor="#7182FF"/>
-                      </linearGradient>
-                    </defs>
-                    <rect x="2.5%" y="27.5%" width="95%" height="45%" rx="40" stroke="url(#gradient)" strokeWidth="3" fill="none" filter="url(#glow)"/>
-                  </svg>
-                </div>
+              <AppTextLogo size={isMobile ? 60 : 100} />
+              <div className="relative w-full md:w-[50vw] flex items-center justify-center">
                 <input
                   type="text"
                   placeholder="Search for your projects"
@@ -311,9 +293,9 @@ function HomePage() {
           </div>
         </div>
 
-        <main className="flex justify-center w-full relative px-4 md:px-0 pb-8 overflow-x-hidden">
-          <div className="w-full max-w-[90vw] md:max-w-[70vw]">
-            <div className="flex items-center justify-between mb-6 w-full">
+        <main className="flex justify-center w-full overflow-x-hidden px-4 flex-1 overflow-y-auto">
+          <div className="w-full md:max-w-7xl h-full flex flex-col">
+            <div className="flex items-center justify-between py-2 w-full flex-shrink-0">
               <h2 className="text-2xl font-semibold text-theme-primary">{sortOption}</h2>
               <div className="flex items-center gap-2">
                 <SortBy selected={sortOption} setSelected={handleSortChange} />
@@ -322,18 +304,18 @@ function HomePage() {
             </div>
 
             <div
-              className={`gap-4 ${isMobile ? "flex flex-col" : viewMode === "grid" ? "grid grid-cols-4" : "flex flex-col"
+              className={`gap-4 flex-1 overflow-y-auto pb-8 ${isMobile ? "flex flex-col" : viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 transition-all duration-300" : "flex flex-col"
                 }`}
             >
               {(() => {
                 if (loading)
                   return (
-                    <div className="text-white/70 col-span-4">Loading projects…</div>
+                    <div className="text-white/70 col-span-full">Loading projects…</div>
                   )
-                if (err) return <div className="text-red-400 col-span-4">{err}</div>
+                if (err) return <div className="text-red-400 col-span-full">{err}</div>
                 if (projects.length === 0)
                   return (
-                    <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-4">
+                    <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-full">
                       <span
                         className="material-symbols-outlined mb-2 opacity-70"
                         style={{ fontSize: "40px" }}
@@ -348,7 +330,7 @@ function HomePage() {
                   )
                 if (projects.length > 0 && filteredProjects.length === 0) {
                   return (
-                    <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-4">
+                    <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-full">
                       <span className="material-symbols-outlined">block</span>
                       <p className="text-center text-sm max-w-xs">
                         No projects match your search.
@@ -361,7 +343,7 @@ function HomePage() {
                     key={p.id}
                     className={
                       isMobile ? "flex items-center gap-3" : viewMode === "grid"
-                        ? "relative"
+                        ? "relative transition-all duration-300 ease-in-out"
                         : "flex items-center gap-3"
                     }
                   >
@@ -382,12 +364,14 @@ function HomePage() {
           </div>
         </main>
 
-        <button
-          onClick={() => setShowCreate(true)}
-          className="fixed bottom-8 right-8 w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform z-50"
-        >
-          <span className="material-symbols-outlined text-black text-4xl">add</span>
-        </button>
+        {isMobile && (
+          <button
+            onClick={() => setShowCreate(true)}
+            className="fixed bottom-3 right-3 w-12 h-12 bg-theme-inverted text-theme-inverted border border-theme-tertiary rounded-full flex items-center justify-center transition-transform z-50"
+          >
+            <span className="material-symbols-outlined text-4xl">add</span>
+          </button>
+        )}
 
         {showCreate && (
           <CreateProject onClose={() => setShowCreate(false)} onCreated={onCreated} />

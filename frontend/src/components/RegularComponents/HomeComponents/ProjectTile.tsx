@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { urlbackend } from '../../../config.js'
+import SpotlightCard from '../MultiuseComponents/SpotlightCard'
 
 type UserInfo = {
     id: string
@@ -120,9 +121,10 @@ function ProjectTile({ name, description, onClick, listMode = false, owner, coll
 
     if (listMode) {
         return (
-            <button
+            <SpotlightCard
                 onClick={onClick}
                 className="rounded-xl bg-theme-primary border border-theme-tertiary text-theme-primary hover:bg-theme-hover transition-colors duration-300 w-full cursor-pointer flex flex-row items-center py-2 px-3 gap-3 rounded-full"
+                spotlightColor="rgba(255, 255, 255, 0.15)"
             >
                 <span
                     className="material-symbols-outlined aspect-square shrink-0"
@@ -145,14 +147,15 @@ function ProjectTile({ name, description, onClick, listMode = false, owner, coll
                         {description}
                     </p>
                 </div>
-            </button>
+            </SpotlightCard>
         )
     }
 
     return (
-        <button
+        <SpotlightCard
             onClick={onClick}
             className="rounded-[20px] bg-theme-primary border border-theme-tertiary transition-all duration-300 w-full cursor-pointer flex flex-col gap-2 overflow-hidden group p-1.5 hover:bg-theme-hover"
+            spotlightColor="rgba(255, 255, 255, 0.15)"
         >
             <div ref={containerRef} className="w-full aspect-[16/9] bg-white overflow-hidden relative rounded-[15px] border border-theme-tertiary flex items-center justify-center">
                 {slidePreview ? (
@@ -224,7 +227,7 @@ function ProjectTile({ name, description, onClick, listMode = false, owner, coll
                     {name}
                 </p>
             </div>
-        </button>
+        </SpotlightCard>
     )
 }
 
