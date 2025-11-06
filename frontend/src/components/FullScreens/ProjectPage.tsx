@@ -35,7 +35,7 @@ function getDefaultMode(): ProjectMode {
   if (savedMode === "code") return "code";
   if (savedMode === "visual") return "visual";
   if (savedMode === "chat") return "ai";
-  return "ai"; // Default to AI chat
+  return "ai";
 }
 
 function getUserFromStorage(): User | null {
@@ -161,8 +161,6 @@ function ProjectPageContent() {
 
     clearLastChange()
   }, [lastChange, clearLastChange])
-
-  // Keyboard shortcuts for mode switching
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.altKey && e.key === '1') {

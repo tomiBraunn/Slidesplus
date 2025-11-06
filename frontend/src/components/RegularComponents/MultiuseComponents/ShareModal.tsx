@@ -3,10 +3,10 @@ import React, { useState, useEffect, useRef } from 'react'
 import { urlbackend } from '../../../config.js'
 
 interface Collaborator {
-    id?: string  // Backend returns 'id'
-    user_id?: string  // Some endpoints might use 'user_id'
+    id?: string
+    user_id?: string
     username?: string
-    name?: string  // Backend returns 'name'
+    name?: string
     first_name?: string
     last_name?: string
     email?: string

@@ -73,8 +73,6 @@ function Settings() {
                 </span>
               </button>
             </div>
-
-            {/* Body */}
             <div className="flex items-start justify-start gap-2 w-full h-full px-4 pb-2">
               <div className="text-white rounded-xl border border-[#2B2B2B] bg-[#0f0f0f] w-full p-4 flex flex-col gap-3">
                 <button className="text-left px-4 py-2 rounded hover:bg-[#222]">Profile Picture</button>

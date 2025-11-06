@@ -112,8 +112,6 @@ function SignUpForm() {
                   <span className="text-red-500 text-xs">{errors.email}</span>
                 )}
               </div>
-
-              {/* Password */}
               <div className="grid gap-1 relative">
                 <label className="text-sm font-medium">Password</label>
                 <div className="relative">
@@ -137,8 +135,6 @@ function SignUpForm() {
                   </button>
                 </div>
               </div>
-
-              {/* Confirm Password */}
               <div className="grid gap-1 relative">
                 <label className="text-sm font-medium">Confirm Password</label>
                 <div className="relative">

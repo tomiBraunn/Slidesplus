@@ -297,8 +297,6 @@ export default function SettingsModal({ onClose }: Props) {
       if (response.ok) {
         const data = await response.json();
         window.open(data.url, '_blank', 'width=500,height=700');
-
-        // Poll for connection status
         const pollInterval = setInterval(async () => {
           await checkSpotifyConnection();
           const statusRes = await fetch(`${urlbackend}/spotify/status`, {
@@ -314,8 +312,6 @@ export default function SettingsModal({ onClose }: Props) {
             setIsConnectingSpotify(false);
           }
         }, 2000);
-
-        // Stop polling after 60 seconds
         setTimeout(() => {
           clearInterval(pollInterval);
           setIsConnectingSpotify(false);

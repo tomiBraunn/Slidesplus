@@ -45,8 +45,6 @@ function WelcomeMessages() {
 
         fetchUser();
     }, []);
-
-    // Carga la fuente manualmente
     useEffect(() => {
         const loadFont = async () => {
             try {
@@ -60,14 +58,12 @@ function WelcomeMessages() {
                 console.log('✅ Fuente NType82 cargada correctamente');
             } catch (error) {
                 console.error('❌ Error cargando fuente:', error);
-                setFontLoaded(true); // Continúa sin la fuente
+                setFontLoaded(true);
             }
         };
 
         loadFont();
     }, []);
-
-    // Genera el mensaje solo cuando el usuario está cargado
     const currentMessage = useMemo(() => {
         const firstName = user?.first_name || "there";
         const messages = [
@@ -82,10 +78,8 @@ function WelcomeMessages() {
         ];
         return messages[Math.floor(Math.random() * messages.length)];
     }, [user?.first_name]);
-
-    // No renderiza nada hasta que termine de cargar
     if (isLoading || !fontLoaded) {
-        return <div className="h-8" />; // Espacio reservado mientras carga
+        return <div className="h-8" />;
     }
 
     return (

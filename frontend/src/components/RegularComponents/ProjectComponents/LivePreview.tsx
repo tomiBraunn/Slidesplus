@@ -126,8 +126,6 @@ const LivePreview = forwardRef<HTMLIFrameElement, Props>(({
   const handlePrev = () => {
     if (currentSlide > 0) onSlideChange(currentSlide - 1)
   }
-
-  // Add keyboard navigation with Alt key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.altKey && (e.key === 'ArrowRight' || e.key === 'ArrowDown')) {

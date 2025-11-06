@@ -265,8 +265,6 @@ export default function GeminiChatbot({
     }
 
     const userMsg = input.trim()
-
-    // Check for /clear command
     if (userMsg === '/clear') {
       await clearChat()
       setInput("")
@@ -310,8 +308,6 @@ export default function GeminiChatbot({
 
     setInput("")
     setAttachedFiles([])
-
-    // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
       textareaRef.current.style.height = '48px'
@@ -641,44 +637,6 @@ export default function GeminiChatbot({
     >
       <div
         className="absolute inset-0 bg-theme-alt"
-        // style={{
-        //   backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(`
-        //     <svg width='832' height='982' viewBox='0 0 832 982' fill='none' xmlns='http://www.w3.org/2000/svg'>
-        //     <g clip-path='url(#clip0_3086_852)'>
-        //     <rect x='0.5' y='0.5' width='838' height='994' fill='#121212' stroke='#181818'/>
-        //     <g opacity='0.4'>
-        //     <g filter='url(#filter0_f_3086_852)'>
-        //     <path d='M202.748 343L0 -206H828L580.129 343H202.748Z' fill='#7182FF'/>
-        //     </g>
-        //     <g filter='url(#filter1_f_3086_852)'>
-        //     <path d='M254.125 319L28 35.8061L788 0L583.661 319H254.125Z' fill='#249931'/>
-        //     <path d='M254.125 319L28 35.8061L788 0L583.661 319H254.125Z' stroke='black'/>
-        //     </g>
-        //     </g>
-        //     </g>
-        //     <defs>
-        //     <filter id='filter0_f_3086_852' x='-400' y='-606' width='1628' height='1349' filterUnits='userSpaceOnUse' color-interpolation-filters='sRGB'>
-        //     <feFlood flood-opacity='0' result='BackgroundImageFix'/>
-        //     <feBlend mode='normal' in='SourceGraphic' in2='BackgroundImageFix' result='shape'/>
-        //     <feGaussianBlur stdDeviation='200' result='effect1_foregroundBlur_3086_852'/>
-        //     </filter>
-        //     <filter id='filter1_f_3086_852' x='-173.002' y='-200.545' width='1161.95' height='720.045' filterUnits='userSpaceOnUse' color-interpolation-filters='sRGB'>
-        //     <feFlood flood-opacity='0' result='BackgroundImageFix'/>
-        //     <feBlend mode='normal' in='SourceGraphic' in2='BackgroundImageFix' result='shape'/>
-        //     <feGaussianBlur stdDeviation='100' result='effect1_foregroundBlur_3086_852'/>
-        //     </filter>
-        //     <clipPath id='clip0_3086_852'>
-        //     <rect width='839' height='995' fill='white'/>
-        //     </clipPath>
-        //     </defs>
-        //     </svg>
-        //   `)}")`,
-        //   backgroundSize: "cover",
-        //   backgroundPosition: "center",
-        //   backgroundRepeat: "no-repeat",
-        //   transform: "rotate(180deg)",
-        //   zIndex: 0
-        // }}
       />
 
       <div className="flex flex-col bg-theme-primary border border-theme-tertiary text-theme-primary rounded-xl h-full w-full p-5 overflow-hidden relative z-[1]">

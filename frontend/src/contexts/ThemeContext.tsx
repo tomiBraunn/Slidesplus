@@ -13,16 +13,12 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
-    // Leer del localStorage
     const saved = localStorage.getItem('theme');
     return (saved as Theme) || 'dark';
   });
 
   useEffect(() => {
-    // Guardar en localStorage
     localStorage.setItem('theme', theme);
-
-    // Aplicar clase al body
     document.documentElement.classList.remove('light', 'dark');
     document.documentElement.classList.add(theme);
   }, [theme]);

@@ -85,9 +85,6 @@ export default function ChatBotMode({
           {slides.length > 0 && (
             <div className="mt-4 pt-4 border-t border-[#2a2a2a]">
               <div className="flex items-center gap-2 mb-2 px-1">
-                {/* <span className="text-xs text-gray-400 font-medium">
-                  Slides ({slides.length})
-                </span> */}
                 <span className="text-xs text-gray-500">
                   {currentSlide + 1} / {slides.length}
                 </span>

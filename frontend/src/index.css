@@ -49,7 +49,6 @@
 }
 
 :root {
-    /* Dark theme (default) */
     --bg-primary: #121212;
     --bg-secondary: #4A4A4A;
     --bg-tertiary: #666666;
@@ -63,7 +62,6 @@
 }
 
 .light {
-    /* Light theme */
     --bg-primary: #EAEAEA;
     --bg-secondary: #CACACA;
     --bg-tertiary: #A8A8A8;
@@ -113,20 +111,6 @@ textarea.placeholder-theme-secondary::placeholder {
     align-items: center;
     user-select: none;
 }
-
-
-/* .presentationComponentsStyle {
-    background: #1F1F1F;
-    padding: .1rem;
-    border: solid 10px #181818;
-}
-
-.presentationComponentsStyleBorderLess {
-    background: #1F1F1F;
-    padding: .1rem;
-} */
-
-
 .defaultStyle {
     background: var(--bg-primary);
     border: solid 1px var(--bg-tertiary);

@@ -20,10 +20,8 @@ export default function AuthCallbackPage() {
     }
 
     if (token) {
-      // Guardar el token en localStorage
       localStorage.setItem('token', token);
 
-      // Redirigir a home
       navigate('/home');
     } else {
       setError('No authentication token received');
