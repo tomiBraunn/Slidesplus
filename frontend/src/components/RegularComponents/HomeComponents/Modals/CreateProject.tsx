@@ -66,10 +66,8 @@ function CreateProject({ onClose, onCreated }: Props) {
         return;
       }
 
-      // Notificar al padre
       onCreated?.(data);
 
-      // Cerrar con animación
       setSubmitting(false);
       handleClose();
     } catch (e) {
@@ -90,12 +88,12 @@ function CreateProject({ onClose, onCreated }: Props) {
       <div
         onTransitionEnd={handleTransitionEnd}
         className={[
-          "rounded-[30px] border border-theme-tertiary bg-theme-primary card-animate",
+          "rounded-[30px] border border-theme-tertiary bg-theme-primary card-animate m-3",
           "transform transition-all duration-200 ease-out",
           open ? "opacity-100 scale-100" : "opacity-0 scale-95",
         ].join(" ")}
       >
-        <div className="flex flex-col items-center justify-center p-14 gap-8 text-theme-secondary relative">
+        <div className="flex flex-col items-center justify-center p-10 gap-5 text-theme-secondary relative">
           <span
             className="material-symbols-outlined text-theme-primary cursor-pointer absolute top-4 right-4"
             style={{ fontSize: 28 }}
