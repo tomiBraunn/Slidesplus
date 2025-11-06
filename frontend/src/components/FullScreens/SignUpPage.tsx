@@ -5,9 +5,9 @@ import Threads from "../ThirdPartyComponents/Threads/Threads";
 
 function SignUpPage() {
   return (
-    <div className=" bg-[#121212] w-screen h-screen flex flex-col items-center justify-center text-white">
+    <div className="bg-[#121212] w-screen h-screen flex flex-col items-center justify-center text-white overflow-y-auto overflow-x-hidden py-4 sm:py-0">
       <SignUpForm />
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 pointer-events-none">
         <Threads
           color={[0.2, 0.6, 1]}
           amplitude={1.2}
