@@ -18,6 +18,37 @@ import {
 
 import React, { useEffect, useState, useRef } from "react";
 
+const MetallicPaint: React.FC<{ text: string; className?: string }> = ({ 
+  text, 
+  className = "" 
+}) => {
+  return (
+    <span
+      className={className}
+      style={{
+        background: 'linear-gradient(110deg, #d0d0d0 0%, #ffffff 20%, #b0b0b0 30%, #ffffff 45%, #d0d0d0 50%, #ffffff 55%, #b0b0b0 70%, #ffffff 80%, #d0d0d0 100%)',
+        backgroundSize: '200% auto',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text',
+        animation: 'shine 3s linear infinite',
+        display: 'inline-block',
+      }}
+    >
+      {text}
+      <style>
+        {`
+          @keyframes shine {
+            to {
+              background-position: 200% center;
+            }
+          }
+        `}
+      </style>
+    </span>
+  );
+};
+
 const menuItems = [
   { label: "Home", ariaLabel: "Go to home section", link: "#hero" },
   { label: "Features", ariaLabel: "Go to features section", link: "#features" },
@@ -41,7 +72,7 @@ const GradualBlur: React.FC<{
   maxBlur?: number;
   className?: string;
   style?: React.CSSProperties;
-}> = ({ position = "bottom", maxBlur = 16, className = "", style = {} }) => {
+}> = ({ position = "bottom", maxBlur = 0, className = "", style = {} }) => {
   const [blur, setBlur] = useState(0);
 
   useEffect(() => {
@@ -124,7 +155,9 @@ export default function LandingPage() {
     <>
       <div className="min-h-screen w-full bg-[#121212] text-white overflow-x-hidden cursor-default relative">
         <header className="sticky top-0 w-full px-3 sm:px-4 md:px-6 py-3 md:py-4 flex justify-between items-center z-50 bg-[#121212]/80 backdrop-blur-md">
-          <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-wide text-white">Slides+</h1>
+          <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-wide">
+            <MetallicPaint text="Slides+" className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-wide" />
+          </h1>
           <div className="flex gap-2 sm:gap-3 md:gap-4">
             <button
               onClick={() => navigate("/login")}
