@@ -5,17 +5,7 @@ import TextType from "../ThirdPartyComponents/TextType/TextType";
 import RotatingText from "../ThirdPartyComponents/TextType/RotatingText";
 import LogoLoop from "../ThirdPartyComponents/TextType/LogoLoop";
 import homePageImage from "../../assets/homePage.png";
-
-import {
-  SiReact,
-  SiTypescript,
-  SiTailwindcss,
-  SiVercel,
-  SiSupabase,
-  SiGithub,
-  SiGoogle,
-} from "react-icons/si";
-
+import {SiReact,SiTypescript,SiTailwindcss,SiVercel,SiSupabase,SiGithub,SiGoogle,} from "react-icons/si";
 import React, { useEffect, useState, useRef } from "react";
 
 const MetallicPaint: React.FC<{ text: string; className?: string }> = ({ 
@@ -48,14 +38,6 @@ const MetallicPaint: React.FC<{ text: string; className?: string }> = ({
     </span>
   );
 };
-
-const menuItems = [
-  { label: "Home", ariaLabel: "Go to home section", link: "#hero" },
-  { label: "Features", ariaLabel: "Go to features section", link: "#features" },
-  { label: "Collab", ariaLabel: "Go to AI section", link: "#ai" },
-  { label: "UI Preview", ariaLabel: "Go to design section", link: "#design" },
-  { label: "Get Started", ariaLabel: "Go to CTA section", link: "#start" },
-];
 
 const techLogos = [
   { node: <SiReact />, title: "React", href: "https://react.dev" },
