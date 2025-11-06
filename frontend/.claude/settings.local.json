@@ -13,7 +13,8 @@
       "Bash(then)",
       "Bash(fi)",
       "Bash(done)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(dir /s /b *.tsx 2)"
     ],
     "deny": [],
     "ask": []
