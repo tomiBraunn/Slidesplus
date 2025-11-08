@@ -717,3 +717,134 @@ export const updateProjectVisibility = async (req, res) => {
 		res.status(500).json({ ok: false, message: "Internal error" })
 	}
 }
+
+/**
+ * POST /projects/:projectId/auto-save
+ * Auto-save project content (creates version in project_changes)
+ */
+export const autoSaveProject = async (req, res) => {
+	if (!pool) return res.status(500).json({ message: "Database not configured" })
+	try {
+		const { projectId } = req.params
+		const { content } = req.body
+		const userId = req.user.sub
+
+		if (!content) {
+			return res.status(400).json({ ok: false, message: "Content is required" })
+		}
+
+		// Check project access
+		const { hasAccess } = await checkProjectAccess(projectId, userId, true)
+		if (!hasAccess) {
+			return res.status(403).json({ ok: false, message: "Access denied" })
+		}
+
+		// Check if content changed from last version
+		const lastVersionQuery = await pool.query(
+			`SELECT change_data->>'content' as content
+			FROM project_changes
+			WHERE project_id = $1
+			ORDER BY created_at DESC
+			LIMIT 1`,
+			[projectId]
+		)
+
+		// If content is the same as last version, don't create new version
+		if (lastVersionQuery.rowCount > 0 && lastVersionQuery.rows[0].content === content) {
+			return res.json({ ok: true, message: "No changes detected", version_id: null })
+		}
+
+		// Count slides in the content
+		const slideCount = (content.match(/<section/g) || []).length
+
+		// Create new version
+		const versionQuery = await pool.query(
+			`INSERT INTO project_changes (project_id, user_id, change_type, change_data, created_at)
+			VALUES ($1, $2, $3, $4, NOW())
+			RETURNING id, created_at`,
+			[
+				projectId,
+				userId,
+				'auto_save',
+				JSON.stringify({ content, slide_count: slideCount })
+			]
+		)
+
+		// Also update the main project document
+		await pool.query(
+			`UPDATE projects
+			SET document = $1, updated_at = NOW(), last_modified_by = $2, last_modified_at = NOW()
+			WHERE id = $3`,
+			[content, userId, projectId]
+		)
+
+		res.json({
+			ok: true,
+			version_id: versionQuery.rows[0].id,
+			created_at: versionQuery.rows[0].created_at
+		})
+	} catch (err) {
+		console.error("Error auto-saving project:", err)
+		res.status(500).json({ ok: false, message: "Internal error" })
+	}
+}
+
+/**
+ * GET /projects/:projectId/versions
+ * Get version history from project_changes
+ */
+export const getProjectVersions = async (req, res) => {
+	if (!pool) return res.status(500).json({ message: "Database not configured" })
+	try {
+		const { projectId } = req.params
+		const userId = req.user.sub
+
+		// Check project access
+		const { hasAccess } = await checkProjectAccess(projectId, userId)
+		if (!hasAccess) {
+			return res.status(403).json({ ok: false, message: "Access denied" })
+		}
+
+		// Get all versions with user info
+		const versionsQuery = await pool.query(
+			`SELECT
+				pc.id,
+				pc.created_at,
+				pc.change_data,
+				u.id as user_id,
+				u.username,
+				u.first_name,
+				u.last_name,
+				u.avatar
+			FROM project_changes pc
+			JOIN users u ON u.id = pc.user_id
+			WHERE pc.project_id = $1
+			ORDER BY pc.created_at DESC`,
+			[projectId]
+		)
+
+		const versions = versionsQuery.rows.map((v, index) => {
+			const changeData = v.change_data
+			const createdAt = new Date(v.created_at)
+			const autoSaveName = `Auto-saved at ${createdAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`
+
+			return {
+				id: v.id,
+				version_number: versionsQuery.rowCount - index,
+				name: autoSaveName,
+				created_at: v.created_at,
+				username: v.username,
+				first_name: v.first_name,
+				last_name: v.last_name,
+				avatar: v.avatar,
+				slide_count: changeData.slide_count || 0,
+				content: changeData.content // Include content for preview/restore
+			}
+		})
+
+		res.json({ ok: true, versions })
+	} catch (err) {
+		console.error("Error fetching project versions:", err)
+		res.status(500).json({ ok: false, message: "Internal error" })
+	}
+}

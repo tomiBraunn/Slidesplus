@@ -23,4 +23,8 @@ router.get("/projects/:id/chat", auth, ctrl.getChat)
 router.post("/projects/:id/chat", auth, ctrl.postChat)
 router.delete("/projects/:id/chat", auth, ctrl.clearChat)
 
+// Auto-save and version history
+router.post("/projects/:projectId/auto-save", auth, ctrl.autoSaveProject)
+router.get("/projects/:projectId/versions", auth, ctrl.getProjectVersions)
+
 export default router
