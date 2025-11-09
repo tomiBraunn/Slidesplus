@@ -385,19 +385,37 @@ export const saveSlides = async (req, res) => {
 		const projectCheck = await pool.query(`SELECT id FROM projects WHERE id=$1 AND owner_id=$2`, [projectId, req.user.sub])
 		if (projectCheck.rowCount === 0) return res.status(404).json({ message: "Project not found" })
 
-		await pool.query(`DELETE FROM slides WHERE project_id=$1`, [projectId])
-		const insertedSlides = []
+		// Use UPSERT to handle existing slides
+		const upsertedSlides = []
 		for (const slide of slides) {
 			if (!slide.html) continue
 			const q = await pool.query(
-				`INSERT INTO slides (project_id, position, html)
-         VALUES ($1, $2, $3)
-         RETURNING id, project_id, position, html, created_at, updated_at`,
-				[projectId, slide.position || 0, slide.html]
+				`INSERT INTO slides (project_id, position, html, css, js)
+				VALUES ($1, $2, $3, $4, $5)
+				ON CONFLICT (project_id, position)
+				DO UPDATE SET
+					html = EXCLUDED.html,
+					css = EXCLUDED.css,
+					js = EXCLUDED.js,
+					updated_at = NOW()
+				RETURNING id, project_id, position, html, css, js, created_at, updated_at`,
+				[projectId, slide.position || 0, slide.html, slide.css || null, slide.js || null]
 			)
-			insertedSlides.push(q.rows[0])
+			upsertedSlides.push(q.rows[0])
 		}
-		res.status(201).json({ ok: true, slides: insertedSlides })
+
+		// Delete slides that are no longer in the array (e.g., if user deleted slides)
+		const positions = slides.map((s, i) => s.position !== undefined ? s.position : i)
+		if (positions.length > 0) {
+			await pool.query(
+				`DELETE FROM slides WHERE project_id = $1 AND position NOT IN (${positions.map((_, i) => `$${i + 2}`).join(',')})`,
+				[projectId, ...positions]
+			)
+		} else {
+			await pool.query(`DELETE FROM slides WHERE project_id = $1`, [projectId])
+		}
+
+		res.status(201).json({ ok: true, slides: upsertedSlides })
 	} catch (err) {
 		console.error("Error saving slides:", err)
 		res.status(500).json({ message: "Internal error", detail: err instanceof Error ? err.message : String(err) })
@@ -845,6 +863,50 @@ export const getProjectVersions = async (req, res) => {
 		res.json({ ok: true, versions })
 	} catch (err) {
 		console.error("Error fetching project versions:", err)
+		res.status(500).json({ ok: false, message: "Internal error" })
+	}
+}
+
+export const restoreProjectVersion = async (req, res) => {
+	if (!pool) return res.status(500).json({ message: "Database not configured" })
+	try {
+		const { projectId, versionId } = req.params
+		const userId = req.user.sub
+
+		// Check project access
+		const { hasAccess, isViewer } = await checkProjectAccess(projectId, userId, true)
+		if (!hasAccess || isViewer) {
+			return res.status(403).json({ ok: false, message: "Access denied. Only owners and editors can restore versions." })
+		}
+
+		// Get the version content
+		const versionQuery = await pool.query(
+			`SELECT change_data FROM project_changes WHERE id = $1 AND project_id = $2`,
+			[versionId, projectId]
+		)
+
+		if (versionQuery.rowCount === 0) {
+			return res.status(404).json({ ok: false, message: "Version not found" })
+		}
+
+		const changeData = versionQuery.rows[0].change_data
+		const content = changeData.content
+
+		if (!content) {
+			return res.status(400).json({ ok: false, message: "Version has no content to restore" })
+		}
+
+		// Update the project document with the version content
+		await pool.query(
+			`UPDATE projects
+			SET document = $1, updated_at = NOW(), last_modified_by = $2, last_modified_at = NOW()
+			WHERE id = $3`,
+			[content, userId, projectId]
+		)
+
+		res.json({ ok: true, message: "Version restored successfully" })
+	} catch (err) {
+		console.error("Error restoring project version:", err)
 		res.status(500).json({ ok: false, message: "Internal error" })
 	}
 }
