@@ -25,6 +25,7 @@ type Props = {
   }>;
   currentUserId?: string;
   onShareClick?: () => void;
+  onVersionRestored?: () => void;
 };
 
 type User = {
@@ -61,7 +62,8 @@ export default function ProjectNavBar({
   onChangeMode,
   activeUsers = [],
   currentUserId,
-  onShareClick
+  onShareClick,
+  onVersionRestored
 }: Props) {
   const [user, setUser] = useState<User | null>(null);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
@@ -199,6 +201,7 @@ export default function ProjectNavBar({
         isOpen={versionHistoryOpen}
         onClose={() => setVersionHistoryOpen(false)}
         projectId={projectId || null}
+        onVersionRestored={onVersionRestored}
       />
 
       {settingsOpen && (

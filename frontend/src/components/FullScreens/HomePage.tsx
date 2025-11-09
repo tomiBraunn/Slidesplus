@@ -86,7 +86,13 @@ function HomePage() {
           Authorization: `Bearer ${token}`,
         },
       })
-      if (!res.ok) return
+      if (!res.ok) {
+        if (res.status === 401) {
+          localStorage.removeItem("token")
+          window.location.href = "/login"
+        }
+        return
+      }
       const data = await res.json()
       setUser(data.user)
     } catch {
@@ -125,6 +131,11 @@ function HomePage() {
         },
       })
       if (!res.ok) {
+        if (res.status === 401) {
+          localStorage.removeItem("token")
+          window.location.href = "/login"
+          return
+        }
         const data = await res.json().catch(() => ({}))
         setErr(data?.message || "Failed to load projects")
         return
@@ -184,6 +195,11 @@ function HomePage() {
         },
       })
       if (!res.ok) {
+        if (res.status === 401) {
+          localStorage.removeItem("token")
+          window.location.href = "/login"
+          return
+        }
         const data = await res.json().catch(() => ({}))
         alert(data?.message || "Failed to delete project")
         return
@@ -345,7 +361,7 @@ function HomePage() {
                   {!isMobile && activeTab === "my-designs" && (
                     <button
                       onClick={() => setShowCreate(true)}
-                      className="px-4 py-2 rounded-full bg-theme-primary text-theme-primary border border-theme-tertiary hover:bg-theme-hover transition-all flex items-center gap-2"
+                      className="px-4 py-2 rounded-full bg-theme-inverted text-theme-inverted border border-theme-tertiary transition-all flex items-center gap-2"
                     >
                       <span className="material-symbols-outlined text-lg">add</span>
                       <span className="text-sm font-medium">Create project</span>

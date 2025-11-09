@@ -5,10 +5,9 @@ import CodeEditorMode from "../RegularComponents/ProjectComponents/Modes/CodeEdi
 import VisualEditorMode from "../RegularComponents/ProjectComponents/Modes/VisualEditorMode"
 import LivePreview from "../RegularComponents/ProjectComponents/LivePreview"
 import GeminiChatbot from "../RegularComponents/ProjectComponents/GeminiChatbot"
-import { ActiveUsers } from "../RegularComponents/ProjectComponents/ActiveUsers"
-import { LiveCursors } from "../RegularComponents/ProjectComponents/LiveCursors"
 import { ShareModal } from "../RegularComponents/MultiuseComponents/ShareModal"
 import ProjectAccessRoute from "../RegularComponents/ProjectComponents/ProjectAccessRoute"
+import { useAutoSave } from "../../hooks/useAutoSave"
 import { useRealtimeCollaboration } from "../../useRealtimeProject"
 import { urlbackend } from "../../config.js"
 
@@ -87,6 +86,11 @@ function ProjectPageContent() {
 
   const user = getUserFromStorage()
 
+  const { isSaving, lastSaveTime, hasUnsavedChanges } = useAutoSave(
+    projectId || undefined,
+    doc
+  )
+
   const {
     activeUsers,
     lastChange,
@@ -107,45 +111,44 @@ function ProjectPageContent() {
     user?.avatar
   )
 
+  const loadProject = async (id: string) => {
+    const token = localStorage.getItem("token")
+    if (!token) return
+
+    try {
+      const projectRes = await fetch(`${urlbackend}/projects/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const projectData = await projectRes.json()
+      if (projectData?.name) setName(projectData.name)
+
+      const slidesRes = await fetch(`${urlbackend}/projects/${id}/slides`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const slidesData = await slidesRes.json()
+
+      if (slidesData.ok && slidesData.slides.length > 0) {
+        setDoc(
+          "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>" +
+          slidesData.slides.map((s: any) => s.html).join("\n") +
+          "</body></html>"
+        )
+      } else {
+        setDoc(
+          "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body><section class='slide'><h1>Slide 1</h1></section></body></html>"
+        )
+      }
+    } catch (error) {
+      console.error("Error loading project:", error)
+    }
+  }
+
   useEffect(() => {
     const parts = window.location.pathname.split("/")
     const id = parts[parts.length - 1]
     if (!id) return
     setProjectId(id)
-
-    const token = localStorage.getItem("token")
-    if (!token) return
-
-    const loadProject = async () => {
-      try {
-        const projectRes = await fetch(`${urlbackend}/projects/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        const projectData = await projectRes.json()
-        if (projectData?.name) setName(projectData.name)
-
-        const slidesRes = await fetch(`${urlbackend}/projects/${id}/slides`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        const slidesData = await slidesRes.json()
-
-        if (slidesData.ok && slidesData.slides.length > 0) {
-          setDoc(
-            "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>" +
-            slidesData.slides.map((s: any) => s.html).join("\n") +
-            "</body></html>"
-          )
-        } else {
-          setDoc(
-            "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body><section class='slide'><h1>Slide 1</h1></section></body></html>"
-          )
-        }
-      } catch (error) {
-        console.error("Error loading project:", error)
-      }
-    }
-
-    loadProject()
+    loadProject(id)
   }, [])
 
   useEffect(() => {
@@ -190,28 +193,6 @@ function ProjectPageContent() {
     }
   }, [doc, currentSlide])
 
-  useEffect(() => {
-    if (projectId && currentSlide !== undefined) {
-      updatePresence(currentSlide)
-    }
-  }, [currentSlide, projectId, updatePresence])
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (editorRef.current && projectId) {
-        const rect = editorRef.current.getBoundingClientRect()
-        const x = e.clientX - rect.left
-        const y = e.clientY - rect.top
-
-        if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
-          updateCursor(e.clientX, e.clientY, currentSlide)
-        }
-      }
-    }
-
-    window.addEventListener('mousemove', handleMouseMove)
-    return () => window.removeEventListener('mousemove', handleMouseMove)
-  }, [projectId, currentSlide, updateCursor])
 
   const onChangeDoc = (next: string) => {
     if (isApplyingRemoteChange.current) {
@@ -383,6 +364,12 @@ function ProjectPageContent() {
     setHoveredSlide(null)
   }
 
+  const handleVersionRestored = () => {
+    if (projectId) {
+      loadProject(projectId)
+    }
+  }
+
   return (
     <div className="w-screen h-screen flex flex-col">
       <ProjectNavBar
@@ -394,16 +381,12 @@ function ProjectPageContent() {
         activeUsers={activeUsers as any}
         currentUserId={user?.id}
         onShareClick={() => setShareModalOpen(true)}
+        onVersionRestored={handleVersionRestored}
       />
 
       {user && (
         <>
-          <ActiveUsers
-            users={activeUsers as any}
-            currentUserId={user.id}
-            isConnected={isConnected}
-          />
-          <LiveCursors cursors={cursors} currentSlideIndex={currentSlide} />
+          {/* Removed ActiveUsers and LiveCursors to reduce Supabase realtime usage */}
         </>
       )}
 

@@ -40,7 +40,6 @@ export default function ProjectAccessRoute({ children }: Props) {
             setProjectExists(true)
           } else {
             setHasAccess(false)
-            // Verificar explícitamente si el proyecto existe
             setProjectExists(data.exists === true)
           }
           setChecking(false)

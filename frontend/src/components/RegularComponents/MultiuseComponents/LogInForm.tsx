@@ -62,7 +62,7 @@ function LogInForm() {
                 className="w-full flex items-center justify-center gap-3 rounded-xl border border-[#2B2B2B] px-4 py-3 text-sm font-medium hover:bg-[#161616] transition cursor-pointer"
               >
                 <img
-                  src="https://img.icons8.com/?size=512&id=17949&format=png"
+                  src="/google-icon.png"
                   alt="Google icon"
                   width={24}
                   height={24}
@@ -77,7 +77,7 @@ function LogInForm() {
                 className="w-full flex items-center justify-center gap-3 rounded-xl border border-[#2B2B2B] px-4 py-3 text-sm font-medium hover:bg-[#161616] transition cursor-pointer"
               >
                 <img
-                  src="https://cdn-icons-png.flaticon.com/512/25/25231.png"
+                  src="/github-icon.png"
                   alt="GitHub icon"
                   width={24}
                   height={24}

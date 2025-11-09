@@ -1,8 +1,15 @@
 // @ts-nocheck
-import React, { useMemo, useState, useEffect, useRef } from "react"
+import React, { useMemo, useState, useEffect, useRef, useCallback } from "react"
 import { urlbackend } from "../../../config.js"
 
-type ChatMsg = { role: "user" | "assistant"; content: string; attachments?: FileAttachment[]; previewSlides?: string[] }
+type ChatMsg = {
+  role: "user" | "assistant"
+  content: string
+  attachments?: FileAttachment[]
+  previewSlides?: string[]
+  codeBlock?: { lang?: string; code: string; description: string }
+}
+
 type FileAttachment = { name: string; type: string; size: number; url: string }
 
 function extractFirstCodeBlock(s: string): { lang?: string; code: string } | null {
@@ -33,6 +40,48 @@ function classifyPrompt(msg: string): "slides" | "code" | "chat" {
   const looksCodey = /<\w+[^>]*>/.test(msg) || /function\s*\(|class\s+\w+/.test(msg)
   if (looksCodey || codeVerbs.some((v) => s.includes(v)) || langs.some((l) => s.includes(l)) || codeWords.some((w) => s.includes(w))) return "code"
   return "chat"
+}
+
+function generateCodeDescription(code: string, lang?: string): string {
+  const cleanCode = code.trim().toLowerCase()
+
+  if (lang === "html" || cleanCode.includes("<html") || cleanCode.includes("<!doctype")) {
+    if (cleanCode.includes("form")) return "I created an HTML form"
+    if (cleanCode.includes("nav")) return "I created a navigation component"
+    if (cleanCode.includes("button")) return "I created HTML with interactive buttons"
+    return "I created an HTML document"
+  }
+
+  if (lang === "css" || cleanCode.includes("@media") || cleanCode.includes("flex") || cleanCode.includes("grid")) {
+    return "I created CSS styling"
+  }
+
+  if (lang === "javascript" || lang === "js" || cleanCode.includes("function") || cleanCode.includes("const")) {
+    if (cleanCode.includes("fetch") || cleanCode.includes("axios")) return "I created an API request function"
+    if (cleanCode.includes("class")) return "I created a JavaScript class"
+    return "I created JavaScript code"
+  }
+
+  if (lang === "typescript" || lang === "ts" || lang === "tsx") {
+    if (cleanCode.includes("interface") || cleanCode.includes("type")) return "I created TypeScript types and interfaces"
+    if (cleanCode.includes("function")) return "I created a TypeScript function"
+    return "I created TypeScript code"
+  }
+
+  if (lang === "react" || lang === "jsx" || lang === "tsx") {
+    if (cleanCode.includes("usestate") || cleanCode.includes("useeffect")) return "I created a React component with hooks"
+    if (cleanCode.includes("form")) return "I created a React form component"
+    if (cleanCode.includes("button")) return "I created a React button component"
+    return "I created a React component"
+  }
+
+  if (lang === "python" || lang === "py") {
+    if (cleanCode.includes("def")) return "I created a Python function"
+    if (cleanCode.includes("class")) return "I created a Python class"
+    return "I created Python code"
+  }
+
+  return "I generated code for you"
 }
 
 const SLIDES_SYSTEM_PROMPT = `You are an elite presentation designer specializing in modern, clean, and professional visual designs. Create presentations that are clear, readable, and visually appealing using solid colors with subtle patterns, clean typography with system fonts, and high-quality Unsplash images when appropriate.
@@ -133,6 +182,388 @@ function cleanSlideHtml(html: string): string {
     .trim()
 }
 
+function CodeModal({
+  isOpen,
+  onClose,
+  codeBlock,
+  onInsert,
+  onReplace,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  codeBlock: { lang?: string; code: string; description: string }
+  onInsert: (code: string) => void
+  onReplace: (code: string) => void
+}) {
+  const [viewMode, setViewMode] = useState<"preview" | "code">("code")
+  const canPreview = codeBlock.lang === "html" || looksLikeHTML(codeBlock.code)
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
+      <div
+        className="bg-theme-primary border border-theme-tertiary rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-theme-tertiary">
+          <h3 className="text-lg font-medium text-theme-primary">Code View</h3>
+          <button
+            onClick={onClose}
+            className="p-1 text-theme-secondary hover:text-theme-primary transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {canPreview && (
+          <div className="flex items-center justify-center gap-1 px-6 py-3 border-b border-theme-tertiary">
+            <button
+              onClick={() => setViewMode("preview")}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                viewMode === "preview"
+                  ? "bg-theme-inverted text-theme-inverted"
+                  : "bg-theme-primary text-theme-secondary hover:text-theme-primary"
+              }`}
+            >
+              Preview
+            </button>
+            <button
+              onClick={() => setViewMode("code")}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                viewMode === "code"
+                  ? "bg-theme-inverted text-theme-inverted"
+                  : "bg-theme-primary text-theme-secondary hover:text-theme-primary"
+              }`}
+            >
+              Code
+            </button>
+          </div>
+        )}
+
+        <div className="flex-1 overflow-auto p-6">
+          {viewMode === "preview" && canPreview ? (
+            <div className="w-full h-full bg-white rounded-lg overflow-hidden">
+              <iframe
+                srcDoc={codeBlock.code}
+                className="w-full h-full border-none"
+                title="Code preview"
+              />
+            </div>
+          ) : (
+            <pre className="glassPanel p-4 rounded-lg text-xs text-theme-primary overflow-x-auto border border-theme-tertiary whitespace-pre-wrap">
+              {codeBlock.code}
+            </pre>
+          )}
+        </div>
+
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-theme-tertiary">
+          <button
+            onClick={() => {
+              onInsert(codeBlock.code)
+              onClose()
+            }}
+            className="px-4 py-2 text-sm font-medium bg-theme-primary hover:bg-[#52585A] text-theme-primary rounded-lg border border-theme-tertiary transition-all"
+          >
+            Insert
+          </button>
+          <button
+            onClick={() => {
+              onReplace(codeBlock.code)
+              onClose()
+            }}
+            className="px-4 py-2 text-sm font-medium bg-theme-primary hover:bg-[#52585A] text-theme-primary rounded-lg border border-theme-tertiary transition-all"
+          >
+            Replace
+          </button>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(codeBlock.code)
+            }}
+            className="px-4 py-2 text-sm font-medium bg-theme-primary hover:bg-[#52585A] text-theme-primary rounded-lg border border-theme-tertiary transition-all"
+          >
+            Copy
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SlidesPreviewModal({
+  isOpen,
+  onClose,
+  slides,
+  onInsertSlides,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  slides: string[]
+  onInsertSlides: (slides: string[]) => void
+}) {
+  const [mounted, setMounted] = useState(false)
+  const [show, setShow] = useState(false)
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [viewMode, setViewMode] = useState<"visual" | "code">("visual")
+  const [mainScale, setMainScale] = useState(1)
+  const mainPreviewRef = useRef<HTMLDivElement>(null)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const [previewsHeight, setPreviewsHeight] = useState<number>(0)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  useEffect(() => {
+    if (isOpen) {
+      setMounted(true)
+      document.documentElement.classList.add("overflow-hidden")
+      requestAnimationFrame(() => setShow(true))
+    } else {
+      setShow(false)
+      document.documentElement.classList.remove("overflow-hidden")
+    }
+  }, [isOpen])
+
+  useEffect(() => {
+    function updateScale() {
+      if (!mainPreviewRef.current) return
+      const rect = mainPreviewRef.current.getBoundingClientRect()
+      const containerWidth = rect.width
+      const containerHeight = rect.height
+      const baseWidth = 1920
+      const baseHeight = 1080
+      const scaleX = containerWidth / baseWidth
+      const scaleY = containerHeight / baseHeight
+      const newScale = Math.min(scaleX, scaleY)
+      setMainScale(newScale)
+    }
+    updateScale()
+    window.addEventListener("resize", updateScale)
+    return () => window.removeEventListener("resize", updateScale)
+  }, [slides])
+
+  useEffect(() => {
+    function updateHeight() {
+      if (mainPreviewRef.current) {
+        setPreviewsHeight(mainPreviewRef.current.offsetHeight)
+      }
+    }
+    updateHeight()
+    window.addEventListener("resize", updateHeight)
+    return () => window.removeEventListener("resize", updateHeight)
+  }, [slides])
+
+  useEffect(() => {
+    if (viewMode !== "visual") return
+    const currentSlide = slides[currentIndex]
+    if (!currentSlide) return
+    const target = iframeRef.current?.contentDocument || iframeRef.current?.contentWindow?.document
+    if (!target) return
+    target.open()
+    target.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            * { margin:0; padding:0; box-sizing:border-box; }
+            html, body { width:1920px; height:1080px; overflow:hidden; background:white; }
+            body {
+              transform: scale(${mainScale});
+              transform-origin: top left;
+              display:flex;
+              align-items:center;
+              justify-content:center;
+            }
+            section {
+              width:1920px;
+              height:1080px;
+              display:flex;
+              flex-direction:column;
+              align-items:center;
+              justify-content:center;
+              padding:4rem;
+              text-align:center;
+              background:white;
+            }
+          </style>
+        </head>
+        <body>
+          ${currentSlide}
+        </body>
+      </html>
+    `)
+    target.close()
+  }, [slides, currentIndex, mainScale, viewMode])
+
+  const handleClose = () => setShow(false)
+
+  const handleTransitionEnd = () => {
+    if (!show) {
+      setMounted(false)
+      document.documentElement.classList.remove("overflow-hidden")
+      onClose()
+    }
+  }
+
+  if (!mounted) return null
+
+  const currentSlide = slides[currentIndex]
+
+  return (
+    <div
+      className={[
+        "fixed z-50 inset-0 flex items-center justify-center",
+        "bg-black/40 transition-[backdrop-filter,opacity] duration-200 ease-out",
+        show ? "opacity-100 backdrop-blur-xl" : "opacity-0 backdrop-blur-0",
+      ].join(" ")}
+      onMouseDown={handleClose}
+      onTransitionEnd={handleTransitionEnd}
+    >
+      <div
+        onMouseDown={(e) => e.stopPropagation()}
+        className={`rounded-xl bg-[#0b0b0bcc] border border-white/10 w-[95vw] md:w-[85vw] max-w-[1400px] h-[90vh] flex flex-col overflow-hidden transform transition-all duration-200 ease-out ${show ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-theme-tertiary">
+          <div className="flex items-center gap-4">
+            <h3 className="text-lg font-medium text-theme-primary">
+              Preview ({currentIndex + 1} / {slides.length})
+            </h3>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
+                disabled={currentIndex === 0}
+                className="p-1.5 text-theme-secondary hover:text-theme-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                title="Previous slide"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setCurrentIndex(Math.min(slides.length - 1, currentIndex + 1))}
+                disabled={currentIndex === slides.length - 1}
+                className="p-1.5 text-theme-secondary hover:text-theme-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                title="Next slide"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setViewMode("visual")}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                  viewMode === "visual"
+                    ? "bg-theme-inverted text-theme-inverted"
+                    : "bg-theme-primary text-theme-secondary hover:text-theme-primary"
+                }`}
+              >
+                Visual
+              </button>
+              <button
+                onClick={() => setViewMode("code")}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                  viewMode === "code"
+                    ? "bg-theme-inverted text-theme-inverted"
+                    : "bg-theme-primary text-theme-secondary hover:text-theme-primary"
+                }`}
+              >
+                Code
+              </button>
+            </div>
+            <button
+              onClick={handleClose}
+              className="p-1 text-theme-secondary hover:text-theme-primary transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} items-start justify-start gap-2 w-full min-h-0 px-2 md:px-4 pb-1 md:pb-2`} style={{ flex: '1 1 0', overflow: 'hidden' }}>
+          {viewMode === "visual" ? (
+            <>
+              <div ref={mainPreviewRef} className={`text-white rounded-xl border bg-white ${isMobile ? 'w-full flex-1 min-h-0' : 'w-full'} ${isMobile ? '' : 'aspect-video'} p-0 overflow-hidden border-solid relative select-none`}>
+                <iframe
+                  ref={iframeRef}
+                  className="w-full h-full border-none bg-white"
+                  title="Slide preview"
+                  style={{ background: 'white' }}
+                />
+              </div>
+              <div
+                className={`rounded-xl ${isMobile ? 'w-full h-16' : 'w-1/6 min-w-[120px]'} p-1.5 md:p-2 flex ${isMobile ? 'flex-row overflow-x-auto' : 'flex-col overflow-y-auto'} gap-1.5 md:gap-2 scrollbar-custom flex-shrink-0`}
+                style={isMobile ? {} : { height: previewsHeight }}
+              >
+                {slides.map((slide, idx) => {
+                  const thumbWidth = isMobile
+                    ? 90
+                    : mainPreviewRef.current ? mainPreviewRef.current.offsetWidth * 0.2 - 16 : 100
+                  const thumbScale = thumbWidth / 1920
+
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => setCurrentIndex(idx)}
+                      className={`cursor-pointer border rounded-md overflow-hidden bg-white ${currentIndex === idx ? "border-blue-500 border-2" : "border-transparent"}`}
+                      style={{
+                        flex: "0 0 auto",
+                        aspectRatio: "16/9",
+                        ...(isMobile ? { width: '90px', height: '50px' } : {})
+                      }}
+                    >
+                      <iframe
+                        title={`slide-${idx}`}
+                        srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:1920px;height:1080px;overflow:hidden;background:white;}body{transform:scale(${thumbScale});transform-origin:top left;width:1920px;height:1080px;}section{width:1920px;height:1080px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem;text-align:center;background:white;}</style></head><body>${slide}</body></html>`}
+                        className="w-full h-full border-0 pointer-events-none bg-white"
+                        sandbox=""
+                        style={{ background: 'white' }}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="w-full p-4">
+              <pre className="p-4 rounded-lg text-xs text-theme-primary overflow-x-auto border border-theme-tertiary whitespace-pre-wrap bg-theme-primary">
+                {currentSlide}
+              </pre>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-end px-6 py-4 border-t border-theme-tertiary">
+          <button
+            onClick={() => {
+              onInsertSlides(slides)
+              handleClose()
+            }}
+            className="px-6 py-2.5 text-sm font-medium bg-[#d0d0d0] hover:bg-[#bcbcbc] text-black rounded-lg transition-all"
+          >
+            Insert {slides.length} Slide{slides.length > 1 ? 's' : ''}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function GeminiChatbot({
   setCode,
   code,
@@ -159,7 +590,11 @@ export default function GeminiChatbot({
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const [uploadingFiles, setUploadingFiles] = useState(false)
-  const [previewSlideIndex, setPreviewSlideIndex] = useState(0)
+  const [selectedCodeModal, setSelectedCodeModal] = useState<{ lang?: string; code: string; description: string } | null>(null)
+  const [selectedSlidesModal, setSelectedSlidesModal] = useState<{ slides: string[], messageIndex: number } | null>(null)
+  const [slideIndexMap, setSlideIndexMap] = useState<{ [msgIndex: number]: number }>({})
+  const [showCodeMap, setShowCodeMap] = useState<{ [msgIndex: number]: boolean }>({})
+  const [selectedModel, setSelectedModel] = useState<"gemini" | "chatgpt">("gemini")
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -193,7 +628,9 @@ export default function GeminiChatbot({
           setMessages(data.messages.map((m: any) => ({
             role: m.role,
             content: m.content,
-            attachments: m.attachments || []
+            attachments: m.attachments || [],
+            previewSlides: m.previewSlides,
+            codeBlock: m.codeBlock
           })))
         }
       })
@@ -201,7 +638,7 @@ export default function GeminiChatbot({
       .finally(() => setLoadingHistory(false))
   }, [projectId])
 
-  const saveMessage = async (role: "user" | "assistant", content: string, attachments?: FileAttachment[]) => {
+  const saveMessage = async (role: "user" | "assistant", content: string, attachments?: FileAttachment[], previewSlides?: string[], codeBlock?: { lang?: string; code: string; description: string }) => {
     if (!projectId) return
 
     const token = localStorage.getItem("token")
@@ -214,7 +651,7 @@ export default function GeminiChatbot({
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ role, content, attachments })
+        body: JSON.stringify({ role, content, attachments, previewSlides, codeBlock })
       })
     } catch (err) {
       console.error("Error saving message:", err)
@@ -255,6 +692,31 @@ export default function GeminiChatbot({
 
   const removeFile = (index: number) => {
     setAttachedFiles(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const deleteMessagesAfter = (messageIndex: number) => {
+    setMessages(prev => prev.slice(0, messageIndex + 1))
+  }
+
+  const regenerateLastMessage = async () => {
+    if (messages.length < 2) return
+
+    const lastUserMsgIndex = messages.findLastIndex(msg => msg.role === "user")
+    if (lastUserMsgIndex === -1) return
+
+    const lastUserMsg = messages[lastUserMsgIndex]
+    deleteMessagesAfter(lastUserMsgIndex - 1)
+
+    setTimeout(() => {
+      setInput(lastUserMsg.content)
+      if (lastUserMsg.attachments) {
+      }
+      sendMessage()
+    }, 100)
+  }
+
+  const goBackToMessage = (messageIndex: number) => {
+    deleteMessagesAfter(messageIndex)
   }
 
   const sendMessage = async () => {
@@ -395,52 +857,122 @@ export default function GeminiChatbot({
         content: msg.content,
       }))
 
-      const body: any = {
-        system: systemPrompt,
-        mode: "auto",
-        message,
-        context: contextToSend,
-        history: conversationHistory
+      let raw: string
+
+      if (selectedModel === "chatgpt") {
+        // ChatGPT API call
+        const chatgptMessages = [
+          { role: "system", content: systemPrompt },
+          ...conversationHistory.map(msg => ({
+            role: msg.role === "assistant" ? "assistant" : "user",
+            content: msg.content
+          })),
+          { role: "user", content: message }
+        ]
+
+        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer ***REMOVED_OPENAI_KEY***"
+          },
+          body: JSON.stringify({
+            model: "gpt-4-turbo-preview",
+            messages: chatgptMessages,
+            temperature: 0.7,
+            max_tokens: 4000
+          })
+        })
+
+        const data = await res.json()
+        if (!res.ok) {
+          setErrors({ form: data?.error?.message || "Error connecting to ChatGPT" })
+          return
+        }
+
+        raw = data.choices[0]?.message?.content || "No response"
+      } else {
+        // Gemini API call (original)
+        const body: any = {
+          system: systemPrompt,
+          mode: "auto",
+          message,
+          context: contextToSend,
+          history: conversationHistory
+        }
+
+        const res = await fetch(`${urlbackend}/gemini`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        })
+
+        const data = await res.json()
+        if (!res.ok) {
+          setErrors({ form: data?.error || "Error connecting to Gemini" })
+          return
+        }
+
+        raw = normalizeLLMText(data)
       }
-
-      const res = await fetch(`${urlbackend}/gemini`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      })
-
-      const data = await res.json()
-      if (!res.ok) {
-        setErrors({ form: data?.error || "Error connecting to Gemini" })
-        return
-      }
-
-      const raw = normalizeLLMText(data)
       const codeBlock = extractFirstCodeBlock(raw)
       const htmlOnly = !codeBlock && looksLikeHTML(raw)
       let assistantTextToShow = raw
       let snippetToApply: string | null = null
       let previewSlides: string[] | undefined = undefined
+      let codeBlockData: { lang?: string; code: string; description: string } | undefined = undefined
 
       if (codeBlock) {
-        assistantTextToShow = "```" + (codeBlock.lang || "") + "\n" + codeBlock.code + "\n```"
+        const description = generateCodeDescription(codeBlock.code, codeBlock.lang)
         snippetToApply = codeBlock.code
+
+        if (decision === "slides") {
+          previewSlides = extractSlides(codeBlock.code)
+          assistantTextToShow = `I created ${previewSlides.length} slide${previewSlides.length > 1 ? 's' : ''} for you.`
+        } else {
+          const isSingleSlideEdit = codeBlock.code.includes('<section') && decision !== "slides"
+
+          if (isSingleSlideEdit) {
+            codeBlockData = {
+              lang: codeBlock.lang || 'html',
+              code: codeBlock.code,
+              description: "I updated the slide"
+            }
+            assistantTextToShow = "I updated the slide for you. Click below to see the code."
+          } else {
+            codeBlockData = {
+              lang: codeBlock.lang,
+              code: codeBlock.code,
+              description
+            }
+            assistantTextToShow = description
+          }
+        }
       } else if (htmlOnly) {
         assistantTextToShow = raw
         snippetToApply = raw
-      }
 
-      if (snippetToApply && decision === "slides") {
-        previewSlides = extractSlides(snippetToApply)
+        if (decision === "slides") {
+          previewSlides = extractSlides(raw)
+          assistantTextToShow = `I created ${previewSlides.length} slide${previewSlides.length > 1 ? 's' : ''} for you.`
+        } else if (raw.includes('<section')) {
+          codeBlockData = {
+            lang: 'html',
+            code: raw,
+            description: "I updated the slide"
+          }
+          assistantTextToShow = "I updated the slide for you. Click below to see the code."
+        }
       }
 
       const assistantMessage: ChatMsg = {
         role: "assistant" as const,
         content: assistantTextToShow,
-        previewSlides: previewSlides
+        previewSlides: previewSlides,
+        codeBlock: codeBlockData
       }
       setMessages((prev) => [...prev, assistantMessage])
-      await saveMessage("assistant", assistantTextToShow)
+      await saveMessage("assistant", assistantTextToShow, undefined, previewSlides, codeBlockData)
 
       if (snippetToApply && slides && currentSlideIndex !== undefined && !previewSlides) {
         replaceCurrentSlide(snippetToApply)
@@ -494,46 +1026,6 @@ export default function GeminiChatbot({
     setCode(newDoc)
   }
 
-  const findLastAssistantSnippet = (): string | null => {
-    for (let i = messages.length - 1; i >= 0; i--) {
-      const m = messages[i]
-      if (m.role !== "assistant") continue
-      const block = extractFirstCodeBlock(m.content)
-      if (block) return block.code
-      if (looksLikeHTML(m.content)) return m.content
-    }
-    return null
-  }
-
-  const saveAssistantAsSlides = async () => {
-    if (!projectId) {
-      setSaveMsg("Missing project id")
-      return
-    }
-    const snippet = findLastAssistantSnippet()
-    if (!snippet) {
-      setSaveMsg("No HTML to save")
-      return
-    }
-    try {
-      setSaving(true)
-      setSaveMsg(null)
-
-      const slidesList = extractSlides(snippet)
-      const slidesToSave = slidesList.map((html) => ({ html: html.trim() }))
-
-      await createSlidesBulk(urlbackend, projectId, slidesToSave)
-      setSaveMsg(`Saved ${slidesToSave.length} slide${slidesToSave.length > 1 ? 's' : ''}`)
-
-      const cleanDoc = `<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>${slidesList.join("\n")}</body></html>`
-      replaceEditor(cleanDoc)
-    } catch (e: any) {
-      setSaveMsg(e?.message || "Failed to save slides")
-    } finally {
-      setSaving(false)
-    }
-  }
-
   const clearChat = async () => {
     if (!projectId) return
 
@@ -551,84 +1043,119 @@ export default function GeminiChatbot({
     }
   }
 
-  const renderActionsForAssistant = (msg: ChatMsg, msgIndex: number) => {
-    const block = extractFirstCodeBlock(msg.content)
-    const snippet = block ? block.code : looksLikeHTML(msg.content) ? msg.content : ""
-
-    if (msg.previewSlides && msg.previewSlides.length > 0) {
-      return (
-        <div className="mt-3 space-y-3">
-          <div className="bg-theme-primary border border-[#52585A] rounded-lg p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-theme-secondary">
-                Preview ({previewSlideIndex + 1} / {msg.previewSlides.length})
-              </span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPreviewSlideIndex(Math.max(0, previewSlideIndex - 1))}
-                  disabled={previewSlideIndex === 0}
-                  className="p-1 text-theme-secondary hover:text-theme-primary disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => setPreviewSlideIndex(Math.min(msg.previewSlides!.length - 1, previewSlideIndex + 1))}
-                  disabled={previewSlideIndex === msg.previewSlides.length - 1}
-                  className="p-1 text-theme-secondary hover:text-theme-primary disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="w-full aspect-[16/9] bg-white rounded overflow-hidden">
-              <iframe
-                srcDoc={`<!doctype html><html><head><meta charset='utf-8'><style>body{margin:0;display:flex;align-items:center;justify-center;width:100%;height:100%;overflow:hidden;}section{width:100%;height:100%;display:flex;align-items:center;justify-content:center;}</style></head><body>${msg.previewSlides[previewSlideIndex]}</body></html>`}
-                className="w-full h-full border-none"
-                title="Slide preview"
-              />
+  const InlineSlidePreview = ({ slides, msgIndex }: { slides: string[], msgIndex: number }) => {
+    return (
+      <div className="mt-4 space-y-3">
+        <div className="bg-theme-primary border border-theme-tertiary rounded-xl p-4">
+          <div className="w-full aspect-[16/9] bg-theme-primary rounded-lg overflow-hidden shadow-lg flex items-center justify-center">
+            <div className="text-center space-y-2">
+              <p className="text-theme-secondary text-sm">Preview coming soon</p>
+              <p className="text-theme-secondary text-xs">Click the button below to view slides</p>
             </div>
           </div>
+        </div>
+        <div className="flex gap-2">
           <button
             onClick={() => {
-              insertSlidesAtPosition(msg.previewSlides!)
-              setPreviewSlideIndex(0)
+              insertSlidesAtPosition(slides)
             }}
-            className="w-full px-4 py-2.5 text-sm font-medium bg-[#d0d0d0] hover:bg-[#bcbcbc] text-black rounded-lg transition-all"
+            className="flex-1 px-4 py-2.5 text-sm font-medium bg-[#d0d0d0] hover:bg-[#bcbcbc] text-black rounded-lg transition-all"
           >
-            Insert {msg.previewSlides.length} Slide{msg.previewSlides.length > 1 ? 's' : ''} After Current
+            Insert {slides.length} Slide{slides.length > 1 ? 's' : ''}
           </button>
+          <button
+            onClick={() => setSelectedSlidesModal({ slides: slides, messageIndex: msgIndex })}
+            className="p-2.5 text-theme-secondary hover:text-theme-primary bg-theme-primary hover:bg-[#52585A] rounded-lg border border-theme-tertiary transition-all"
+            title="Open in modal"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+              visibility
+            </span>
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  const renderActionsForAssistant = (msg: ChatMsg, msgIndex: number) => {
+    const showCode = showCodeMap[msgIndex] ?? false
+
+    const toggleShowCode = () => {
+      setShowCodeMap(prev => ({ ...prev, [msgIndex]: !prev[msgIndex] }))
+    }
+
+    if (msg.previewSlides && msg.previewSlides.length > 0) {
+      return <InlineSlidePreview slides={msg.previewSlides} msgIndex={msgIndex} />
+    }
+
+    if (msg.codeBlock) {
+      return (
+        <div className="mt-4">
+          <div className="bg-theme-primary border border-theme-tertiary rounded-xl overflow-hidden transition-all">
+            <div
+              className="px-4 py-3 flex items-center justify-between hover:bg-[#52585A] transition-colors cursor-pointer"
+              onClick={toggleShowCode}
+            >
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4 text-theme-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+                <span className="text-sm font-medium text-theme-primary">
+                  {msg.codeBlock.lang ? msg.codeBlock.lang.toUpperCase() : 'CODE'}
+                </span>
+              </div>
+              <svg className={`w-4 h-4 text-theme-secondary transition-transform ${showCode ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+
+            <div className="border-t border-theme-tertiary" onClick={(e) => e.stopPropagation()}>
+              <pre
+                className={`p-4 text-xs text-theme-primary overflow-x-auto whitespace-pre-wrap bg-[#0a0a0a] transition-all ${
+                  showCode ? 'max-h-96 overflow-y-auto' : 'max-h-[3rem] overflow-hidden'
+                }`}
+                style={{ lineHeight: '1.5' }}
+              >
+                {msg.codeBlock.code}
+              </pre>
+              {showCode && (
+                <div className="flex gap-2 p-3 border-t border-theme-tertiary bg-theme-primary">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      insertIntoEditor(msg.codeBlock!.code)
+                    }}
+                    className="flex-1 px-3 py-2 text-xs font-medium bg-theme-primary hover:bg-[#52585A] text-theme-primary rounded-lg border border-theme-tertiary transition-all"
+                  >
+                    Insert
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      replaceEditor(msg.codeBlock!.code)
+                    }}
+                    className="flex-1 px-3 py-2 text-xs font-medium bg-theme-primary hover:bg-[#52585A] text-theme-primary rounded-lg border border-theme-tertiary transition-all"
+                  >
+                    Replace
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      navigator.clipboard.writeText(msg.codeBlock!.code)
+                    }}
+                    className="flex-1 px-3 py-2 text-xs font-medium bg-theme-primary hover:bg-[#52585A] text-theme-primary rounded-lg border border-theme-tertiary transition-all"
+                  >
+                    Copy
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )
     }
 
-    if (!snippet) return null
-
-    return (
-      <div className="flex gap-2 mt-3 flex-wrap">
-        <button
-          onClick={() => insertIntoEditor(snippet)}
-          className="px-3 py-1.5 text-xs font-medium  rounded-lg border transition-all"
-        >
-          Insert
-        </button>
-        <button
-          onClick={() => replaceEditor(snippet)}
-          className="px-3 py-1.5 text-xs font-medium  rounded-lg border transition-all"
-        >
-          Replace
-        </button>
-        <button
-          onClick={() => navigator.clipboard.writeText(snippet)}
-          className="px-3 py-1.5 text-xs font-medium  rounded-lg border transition-all"
-        >
-          Copy
-        </button>
-      </div>
-    )
+    return null
   }
 
   return (
@@ -639,7 +1166,7 @@ export default function GeminiChatbot({
         className="absolute inset-0 bg-theme-alt"
       />
 
-      <div className="flex flex-col bg-theme-primary border border-theme-tertiary text-theme-primary rounded-xl h-full w-full p-5 overflow-hidden relative z-[1]">
+      <div className="flex flex-col bg-theme-primary border border-theme-tertiary text-theme-primary rounded-xl h-full w-full p-4 overflow-hidden relative z-[1]">
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-6">
           {loadingHistory ? (
             <div className="flex items-center justify-center gap-2 text-theme-secondary text-sm mt-12">
@@ -658,7 +1185,6 @@ export default function GeminiChatbot({
 
           {messages.map((msg, i) => {
             const isAssistant = msg.role === "assistant"
-            const looksLikeCode = msg.content.includes("```") || looksLikeHTML(msg.content)
             return (
               <div
                 key={i}
@@ -700,19 +1226,29 @@ export default function GeminiChatbot({
                   </div>
                 )}
 
-                {looksLikeCode ? (
-                  <pre className="glassPanel p-4 rounded-lg text-xs  overflow-x-auto border border whitespace-pre-wrap">
-                    {msg.content}
-                  </pre>
-                ) : (
-                  <div className="text-sm leading-relaxed  whitespace-pre-wrap">
-                    {msg.content}
-                  </div>
-                )}
+                <div className="text-sm leading-relaxed whitespace-pre-wrap">
+                  {msg.content}
+                </div>
+
                 {isAssistant && renderActionsForAssistant(msg, i)}
               </div>
             )
           })}
+
+          {messages.length > 0 && !loading && (
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={regenerateLastMessage}
+                disabled={messages.length < 2}
+                className="px-4 py-2 text-xs font-medium bg-theme-primary hover:bg-[#52585A] text-theme-primary rounded-lg border border-theme-tertiary transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Regenerate
+              </button>
+            </div>
+          )}
 
           {loading && (
             <div className="flex items-center gap-2 animate-fadeIn">
@@ -774,6 +1310,32 @@ export default function GeminiChatbot({
               ))}
             </div>
           )}
+
+          <div className="mb-2 flex items-center gap-2 hidden">
+            <span className="text-xs text-theme-secondary">Model:</span>
+            <div className="flex bg-theme-primary border border-theme-tertiary rounded-lg overflow-hidden">
+              <button
+                onClick={() => setSelectedModel("gemini")}
+                className={`px-3 py-1.5 text-xs font-medium transition-all ${
+                  selectedModel === "gemini"
+                    ? "bg-theme-inverted text-theme-inverted"
+                    : "text-theme-secondary hover:text-theme-primary"
+                }`}
+              >
+                Gemini
+              </button>
+              <button
+                onClick={() => setSelectedModel("chatgpt")}
+                className={`px-3 py-1.5 text-xs font-medium transition-all ${
+                  selectedModel === "chatgpt"
+                    ? "bg-theme-inverted text-theme-inverted"
+                    : "text-theme-secondary hover:text-theme-primary"
+                }`}
+              >
+                ChatGPT
+              </button>
+            </div>
+          </div>
 
           <div className="flex gap-2 items-end">
             <input
@@ -844,6 +1406,25 @@ export default function GeminiChatbot({
           }
         `}</style>
       </div>
+
+      {selectedCodeModal && (
+        <CodeModal
+          isOpen={true}
+          onClose={() => setSelectedCodeModal(null)}
+          codeBlock={selectedCodeModal}
+          onInsert={insertIntoEditor}
+          onReplace={replaceEditor}
+        />
+      )}
+
+      {selectedSlidesModal && (
+        <SlidesPreviewModal
+          isOpen={true}
+          onClose={() => setSelectedSlidesModal(null)}
+          slides={selectedSlidesModal.slides}
+          onInsertSlides={insertSlidesAtPosition}
+        />
+      )}
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import Editor from "@monaco-editor/react";
+import { useTheme } from "../../../contexts/ThemeContext";
 
 type Props = {
   code: string;
@@ -7,11 +8,13 @@ type Props = {
 };
 
 export default function CodeEditor({ code, setCode = () => { }, language = "html" }: Props) {
+  const { isDark } = useTheme();
+
   return (
     <Editor
       height="100%"
       width="100%"
-      theme="vs-dark"
+      theme={isDark ? "vs-dark" : "vs-light"}
       language={language}
       value={code}
       onChange={(v) => setCode(v || "")}

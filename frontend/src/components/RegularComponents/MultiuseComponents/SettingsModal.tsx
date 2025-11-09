@@ -75,7 +75,6 @@ export default function SettingsModal({ onClose }: Props) {
     document.documentElement.classList.add("overflow-hidden");
     requestAnimationFrame(() => setShow(true));
 
-    // Load default mode from cookies
     const savedMode = getCookie("defaultMode");
     if (savedMode === "code" || savedMode === "visual" || savedMode === "chat") {
       setDefaultMode(savedMode);

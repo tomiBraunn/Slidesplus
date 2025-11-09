@@ -12,16 +12,18 @@ type Version = {
     last_name?: string
     avatar?: string
     slide_count: number
-    slides?: any[]
+    content?: string | any[]
+    slides?: any[]  
 }
 
 type Props = {
     isOpen: boolean
     onClose: () => void
     projectId: string | null
+    onVersionRestored?: () => void
 }
 
-export function VersionHistoryModal({ isOpen, onClose, projectId }: Props) {
+export function VersionHistoryModal({ isOpen, onClose, projectId, onVersionRestored }: Props) {
     const [versions, setVersions] = useState<Version[]>([])
     const [selectedVersion, setSelectedVersion] = useState<Version | null>(null)
     const [selectedSlideIndex, setSelectedSlideIndex] = useState(0)
@@ -76,9 +78,12 @@ export function VersionHistoryModal({ isOpen, onClose, projectId }: Props) {
             })
             if (!res.ok) throw new Error("Failed to load versions")
             const data = await res.json()
-            setVersions(data.versions || [])
-            if (data.versions?.length > 0) {
-                loadVersionDetail(data.versions[0].id)
+            console.log('Versions data from backend:', data)
+            const versionsList = data.versions || []
+            setVersions(versionsList)
+            if (versionsList.length > 0) {
+                console.log('First version:', versionsList[0])
+                loadVersionDetailDirect(versionsList[0])
             }
         } catch (err) {
             console.error(err)
@@ -87,23 +92,46 @@ export function VersionHistoryModal({ isOpen, onClose, projectId }: Props) {
         }
     }
 
-    const loadVersionDetail = async (versionId: string) => {
-        if (!projectId) return
+    const loadVersionDetailDirect = (version: Version) => {
+        console.log('Loading version detail direct:', version)
         try {
-            const token = localStorage.getItem("token")
-            const res = await fetch(`${urlbackend}/projects/${projectId}/versions/${versionId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            })
-            if (!res.ok) throw new Error("Failed to load version detail")
-            const data = await res.json()
-            const slides = typeof data.version.slides === 'string'
-                ? JSON.parse(data.version.slides)
-                : data.version.slides
-            setSelectedVersion({ ...data.version, slides })
+            const contentData = version.content || version.slides
+            if (!contentData) {
+                console.error('No content in version:', version)
+                return
+            }
+
+            let slides
+            if (typeof contentData === 'string') {
+                const parser = new DOMParser()
+                const doc = parser.parseFromString(contentData, 'text/html')
+                const slideElements = doc.querySelectorAll('.slide')
+
+                slides = Array.from(slideElements).map(slide => ({
+                    html: slide.outerHTML
+                }))
+
+                console.log(`Extracted ${slides.length} slides from HTML`)
+            } else {
+                slides = contentData
+            }
+
+            console.log('Parsed slides:', slides)
+            setSelectedVersion({ ...version, slides })
             setSelectedSlideIndex(0)
         } catch (err) {
-            console.error(err)
+            console.error('Error parsing version content:', err)
         }
+    }
+
+    const loadVersionDetail = (versionId: string) => {
+        const version = versions.find(v => v.id === versionId)
+        console.log('Loading version detail for:', versionId, 'Found:', version)
+        if (!version) {
+            console.error('Version not found in list:', versionId)
+            return
+        }
+        loadVersionDetailDirect(version)
     }
 
     const handleRestore = async () => {
@@ -118,8 +146,12 @@ export function VersionHistoryModal({ isOpen, onClose, projectId }: Props) {
                 headers: { Authorization: `Bearer ${token}` }
             })
             if (!res.ok) throw new Error("Failed to restore version")
-            alert("Version restored successfully! Refresh the page to see changes.")
+
             onClose()
+
+            if (onVersionRestored) {
+                onVersionRestored()
+            }
         } catch (err) {
             console.error(err)
             alert("Error restoring version")
@@ -196,7 +228,7 @@ export function VersionHistoryModal({ isOpen, onClose, projectId }: Props) {
                             <div className="text-center text-gray-400 py-4">Loading...</div>
                         ) : versions.length === 0 ? (
                             <div className="text-center text-gray-400 py-4 px-2 text-sm">
-                                No versions yet. Create one to get started!
+                                No versions yet. Versions are created automatically every minute.
                             </div>
                         ) : (
                             versions.map((v) => (
@@ -226,14 +258,10 @@ export function VersionHistoryModal({ isOpen, onClose, projectId }: Props) {
                         )}
                     </div>
 
-                    <div className="p-3 border-t border-[#2B2B2B]">
-                        <button
-                            onClick={handleCreateVersion}
-                            className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                        >
-                            <span className="material-symbols-outlined text-lg">add</span>
-                            Save Current Version
-                        </button>
+                    <div className="p-3 border-t border-[#2B2B2B] bg-[#1A1A1A]">
+                        <p className="text-center text-gray-400 text-xs">
+                            Versions are automatically saved every minute when changes are made
+                        </p>
                     </div>
                 </aside>
 
@@ -301,12 +329,6 @@ export function VersionHistoryModal({ isOpen, onClose, projectId }: Props) {
                     </div>
 
                     <div className="p-4 border-t border-[#2B2B2B] flex justify-end gap-2">
-                        <button
-                            onClick={handleClose}
-                            className="px-4 py-2 border border-[#2B2B2B] hover:bg-[#1a1a1a] text-white rounded-lg transition-colors"
-                        >
-                            Close
-                        </button>
                         <button
                             onClick={handleRestore}
                             disabled={!selectedVersion || restoring}
