@@ -8,6 +8,7 @@ import authRoutes from "./routes/authRoutes.js"
 import userRoutes from "./routes/userRoutes.js"
 import projectRoutes from "./routes/projectRoutes.js"
 import geminiRoutes from "./routes/geminiRoutes.js"
+import chatgptRoutes from "./routes/chatgptRoutes.js"
 import unsplashRoutes from "./routes/unsplashRoutes.js"
 import realtimeRoutes from "./routes/realtimeRoutes.js"
 import collaborationRoutes from "./routes/collaborationRoutes.js"
@@ -53,6 +54,7 @@ app.get("/health", (_req, res) => {
 			hasDB: !!process.env.DATABASE_URL,
 			hasJWT: !!process.env.JWT_SECRET,
 			hasGeminiKey: !!process.env.GEMINI_API_KEY,
+			hasOpenAIKey: !!process.env.OPENAI_API_KEY,
 			hasSupabase: !!process.env.SUPABASE_URL && !!process.env.SUPABASE_SERVICE_KEY,
 			hasUnsplash: !!process.env.UNSPLASH_ACCESS_KEY,
 			hasSupabaseAnon: !!process.env.SUPABASE_ANON_KEY,
@@ -86,6 +88,7 @@ app.use("/", authRoutes)
 app.use("/", userRoutes)
 app.use("/", projectRoutes)
 app.use("/", geminiRoutes)
+app.use("/", chatgptRoutes)
 app.use("/", unsplashRoutes)
 app.use("/", realtimeRoutes)
 app.use("/", collaborationRoutes)
