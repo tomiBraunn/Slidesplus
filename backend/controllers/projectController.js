@@ -390,16 +390,14 @@ export const saveSlides = async (req, res) => {
 		for (const slide of slides) {
 			if (!slide.html) continue
 			const q = await pool.query(
-				`INSERT INTO slides (project_id, position, html, css, js)
-				VALUES ($1, $2, $3, $4, $5)
+				`INSERT INTO slides (project_id, position, html)
+				VALUES ($1, $2, $3)
 				ON CONFLICT (project_id, position)
 				DO UPDATE SET
 					html = EXCLUDED.html,
-					css = EXCLUDED.css,
-					js = EXCLUDED.js,
 					updated_at = NOW()
-				RETURNING id, project_id, position, html, css, js, created_at, updated_at`,
-				[projectId, slide.position || 0, slide.html, slide.css || null, slide.js || null]
+				RETURNING id, project_id, position, html, created_at, updated_at`,
+				[projectId, slide.position || 0, slide.html]
 			)
 			upsertedSlides.push(q.rows[0])
 		}
