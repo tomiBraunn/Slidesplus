@@ -36,7 +36,6 @@ export default function ProjectViewPage() {
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data.type === 'slideChange') {
-        console.log('Parent received slideChange:', event.data.slide)
         setCurrentSlide(event.data.slide)
       }
     }
@@ -47,14 +46,12 @@ export default function ProjectViewPage() {
 
   useEffect(() => {
     const handleNextSlide = () => {
-      console.log('Key: Next slide requested. Current:', currentSlideRef.current, 'Total:', totalSlidesRef.current)
       if (currentSlideRef.current < totalSlidesRef.current - 1) {
         iframeRef.current?.contentWindow?.postMessage({ type: 'nextSlide' }, '*')
       }
     }
 
     const handlePrevSlide = () => {
-      console.log('Key: Prev slide requested. Current:', currentSlideRef.current)
       if (currentSlideRef.current > 0) {
         iframeRef.current?.contentWindow?.postMessage({ type: 'prevSlide' }, '*')
       }
@@ -126,14 +123,12 @@ export default function ProjectViewPage() {
   }, [isFullscreen])
 
   const handleNextSlide = () => {
-    console.log('Button: Next slide requested. Current:', currentSlideRef.current, 'Total:', totalSlidesRef.current)
     if (currentSlideRef.current < totalSlidesRef.current - 1) {
       iframeRef.current?.contentWindow?.postMessage({ type: 'nextSlide' }, '*')
     }
   }
 
   const handlePrevSlide = () => {
-    console.log('Button: Prev slide requested. Current:', currentSlideRef.current)
     if (currentSlideRef.current > 0) {
       iframeRef.current?.contentWindow?.postMessage({ type: 'prevSlide' }, '*')
     }
@@ -200,7 +195,34 @@ export default function ProjectViewPage() {
         const data = await response.json()
 
         const project = data.ok ? data.project : data
-        const slides = project?.slides || []
+
+        // Fetch slides separately like ProjectPage does
+        const slidesResponse = await fetch(`${urlbackend}/projects/${id}/slides`, {
+          headers,
+        })
+
+        if (!slidesResponse.ok) {
+          setErrorMessage("Failed to load slides")
+          setError(true)
+          setLoading(false)
+          return
+        }
+
+        const slidesData = await slidesResponse.json()
+
+        let slides = slidesData.ok ? slidesData.slides : (slidesData.slides || [])
+
+        // If no slides found, try parsing from document field (fallback for old projects)
+        if (slides.length === 0 && project.document) {
+          const parser = new DOMParser()
+          const doc = parser.parseFromString(project.document, 'text/html')
+          const sections = doc.querySelectorAll('section')
+
+          slides = Array.from(sections).map((section, index) => ({
+            html: section.outerHTML,
+            position: index
+          }))
+        }
 
         if (!project) {
           setErrorMessage("Invalid response from server")
@@ -228,7 +250,7 @@ export default function ProjectViewPage() {
 
         const slidesHtml = slides
           .sort((a: any, b: any) => a.position - b.position)
-          .map((slide: any, index: number) => `<div class="slide" data-slide="${index}">${slide.html}</div>`)
+          .map((slide: any) => slide.html)
           .join("\n")
 
         setTotalSlides(slides.length)
@@ -258,44 +280,29 @@ html, body {
   background: black;
   transform-origin: top left;
 }
-.slide {
+section {
   width: 1920px;
   height: 1080px;
   position: absolute;
   top: 0;
   left: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   opacity: 0;
   transition: opacity 0.4s ease-in-out;
   pointer-events: none;
-  background: black;
+  overflow: hidden;
   padding: 0;
   margin: 0;
 }
-.slide > section {
-  width: 1920px !important;
-  height: 1080px !important;
-  max-width: 1920px !important;
-  max-height: 1080px !important;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-.slide > section > * {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-}
-.slide.active {
+section.active {
   opacity: 1;
   pointer-events: auto;
   z-index: 2;
 }
-.slide.fading-out {
+section.fading-out {
   opacity: 0;
   z-index: 1;
 }
@@ -308,10 +315,8 @@ ${slidesHtml}
 <script>
 let currentSlide = 0;
 let isTransitioning = false;
-const slides = document.querySelectorAll('.slide');
+const slides = document.querySelectorAll('section');
 const container = document.getElementById('slides-container');
-
-console.log('Total slides found:', slides.length);
 
 // Calculate and apply scale based on viewport
 function updateScale() {
@@ -340,39 +345,29 @@ updateScale();
 window.addEventListener('resize', updateScale);
 
 function updateSlide(index) {
-  console.log('updateSlide called with index:', index, 'current:', currentSlide, 'transitioning:', isTransitioning);
-  
-  if (index < 0 || index >= slides.length) {
-    console.log('Index out of bounds');
-    return;
-  }
-  
-  if (isTransitioning) {
-    console.log('Already transitioning');
-    return;
-  }
-  
-  if (index === currentSlide) {
-    console.log('Already on this slide');
-    return;
-  }
+  if (slides.length === 0) return;
+  if (index < 0 || index >= slides.length) return;
+  if (isTransitioning) return;
+  if (index === currentSlide) return;
 
   isTransitioning = true;
   const oldSlide = currentSlide;
-  
-  console.log('Starting transition from', oldSlide, 'to', index);
 
-  slides[oldSlide].classList.add('fading-out');
+  if (slides[oldSlide]) {
+    slides[oldSlide].classList.add('fading-out');
+  }
 
   setTimeout(() => {
-    slides[oldSlide].classList.remove('active', 'fading-out');
+    if (slides[oldSlide]) {
+      slides[oldSlide].classList.remove('active', 'fading-out');
+    }
     currentSlide = index;
-    slides[currentSlide].classList.add('active');
-    
-    console.log('Transition complete, new slide:', currentSlide);
-    
+    if (slides[currentSlide]) {
+      slides[currentSlide].classList.add('active');
+    }
+
     window.parent.postMessage({ type: 'slideChange', slide: currentSlide }, '*');
-    
+
     setTimeout(() => {
       isTransitioning = false;
     }, 100);
@@ -380,14 +375,11 @@ function updateSlide(index) {
 }
 
 if (slides.length > 0) {
-  console.log('Initializing first slide');
   slides[0].classList.add('active');
   window.parent.postMessage({ type: 'slideChange', slide: 0 }, '*');
 }
 
 window.addEventListener('message', (event) => {
-  console.log('Message received:', event.data);
-  
   if (event.data.type === 'nextSlide') {
     updateSlide(currentSlide + 1);
   } else if (event.data.type === 'prevSlide') {
@@ -396,8 +388,6 @@ window.addEventListener('message', (event) => {
     updateSlide(event.data.slide);
   }
 });
-
-console.log('Viewer initialized with', slides.length, 'slides');
 </script>
 </body>
 </html>`
