@@ -45,6 +45,46 @@
     .bg-theme-alt {
         background-color: var(--bg-alt);
     }
+
+    .searchbar-glow-subtle {
+        position: relative;
+        box-shadow:
+            0 0 15px rgba(36, 153, 49, 0.15),
+            0 0 30px rgba(113, 130, 255, 0.15);
+    }
+
+    .searchbar-glow-ai {
+        position: relative;
+        box-shadow:
+            0 0 30px rgba(36, 153, 49, 0.4),
+            0 0 60px rgba(113, 130, 255, 0.4),
+            0 0 90px rgba(36, 153, 49, 0.2);
+    }
+
+    .searchbar-glow-ai::before {
+        content: '';
+        position: absolute;
+        inset: -2px;
+        border-radius: inherit;
+        padding: 2px;
+        background: linear-gradient(90deg, #249931 0%, #7182FF 100%);
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+    }
+
+    .searchbar-glow-ai::after {
+        content: '';
+        position: absolute;
+        inset: -25px;
+        border-radius: inherit;
+        background: linear-gradient(90deg, rgba(36, 153, 49, 0.3) 0%, rgba(113, 130, 255, 0.3) 100%);
+        filter: blur(25px);
+        opacity: 0.6;
+        pointer-events: none;
+        z-index: -1;
+    }
 }
 
 * {

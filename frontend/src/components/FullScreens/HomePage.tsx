@@ -369,12 +369,17 @@ function HomePage() {
                 {showAIPanel && (
                   <button
                     onClick={handleAIPanelClose}
-                    className="absolute -top-10 right-0 text-xs flex items-center justify-center gap-1 p-4 w-5 h-5 text-theme-secondary hover:text-theme-primary transition-colors bg-theme-primary border border-theme-tertiary rounded-full"
+                    className="absolute -top-1 right-0 text-xs flex items-center justify-center gap-1 p-4 w-5 h-5 text-theme-secondary hover:text-theme-primary transition-colors bg-theme-primary border border-theme-tertiary rounded-full"
                   >
                     <span className="material-symbols-outlined text-lg">close</span>
                   </button>
                 )}
-                <div className={`relative flex w-full gap-2 bg-theme-primary border border-theme-tertiary transition-all duration-300 ${showAIPanel ? "rounded-3xl h-[120px] flex-col items-start justify-center py-4 px-4" : "rounded-full min-h-[50px] items-center justify-center px-4"}`}>
+                <div
+                  className={`relative flex w-full gap-2 bg-theme-primary border border-theme-tertiary ${showAIPanel ? "rounded-3xl h-[60vh] flex-col items-start justify-start py-4 px-4 searchbar-glow-ai mt-10" : "rounded-full min-h-[50px] items-center justify-center px-4 searchbar-glow-subtle"}`}
+                  style={{
+                    transition: 'height 0.5s cubic-bezier(0.4, 0, 0.2, 1), padding 0.5s cubic-bezier(0.4, 0, 0.2, 1), margin 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
+                  }}
+                >
                   {showAIPanel ? (
                     <input
                       key="ai-input"
@@ -399,7 +404,7 @@ function HomePage() {
                       placeholder="Search for your projects"
                       defaultValue=""
                       onChange={(e) => filterProjects(e.target.value)}
-                      className="text-theme-primary placeholder-theme-secondary focus:outline-none w-full bg-transparent pr-8"
+                      className="text-theme-primary placeholder-theme-secondary focus:outline-none w-full bg-transparent"
                     />
                   )}
                   {!showAIPanel && (
