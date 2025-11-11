@@ -383,8 +383,16 @@ export const saveSlides = async (req, res) => {
 			return res.status(400).json({ message: "Missing slides array or document to extract slides from" })
 		}
 
-		const projectCheck = await pool.query(`SELECT id FROM projects WHERE id=$1 AND owner_id=$2`, [projectId, req.user.sub])
-		if (projectCheck.rowCount === 0) return res.status(404).json({ message: "Project not found" })
+		// Check if user has edit access (owner or editor)
+		const { hasAccess, isViewer, exists } = await checkProjectAccess(projectId, req.user.sub, true)
+
+		if (!exists) {
+			return res.status(404).json({ message: "Project not found" })
+		}
+
+		if (!hasAccess || isViewer) {
+			return res.status(403).json({ message: "Access denied. Only owners and editors can save slides." })
+		}
 
 		// Use UPSERT to handle existing slides
 		const upsertedSlides = []
