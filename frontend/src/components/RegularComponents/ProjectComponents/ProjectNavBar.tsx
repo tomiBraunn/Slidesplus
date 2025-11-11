@@ -27,6 +27,8 @@ type Props = {
   currentUserId?: string;
   onShareClick?: () => void;
   onVersionRestored?: () => void;
+  useLegacyVisualEditor?: boolean;
+  onToggleLegacyEditor?: () => void;
 };
 
 type User = {
@@ -64,7 +66,9 @@ export default function ProjectNavBar({
   activeUsers = [],
   currentUserId,
   onShareClick,
-  onVersionRestored
+  onVersionRestored,
+  useLegacyVisualEditor = false,
+  onToggleLegacyEditor
 }: Props) {
   const [user, setUser] = useState<User | null>(null);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
@@ -277,24 +281,6 @@ export default function ProjectNavBar({
                 {name}
               </span>
             )}
-            <div className="flex items-center gap-1">
-              <button
-                onClick={handleUndo}
-                disabled={!projectId || versions.length === 0 || currentVersionIndex >= versions.length - 1}
-                className="flex items-center justify-center w-7 h-7 p-1 text-theme-primary hover:text-theme-secondary disabled:text-theme-quaternary disabled:cursor-not-allowed transition-colors"
-                title="Undo (Ctrl+Z)"
-              >
-                <span className="material-symbols-outlined text-lg">undo</span>
-              </button>
-              <button
-                onClick={handleRedo}
-                disabled={!projectId || versions.length === 0 || currentVersionIndex <= 0}
-                className="flex items-center justify-center w-7 h-7 p-1 text-theme-primary hover:text-theme-secondary disabled:text-theme-quaternary disabled:cursor-not-allowed transition-colors"
-                title="Redo (Ctrl+Y)"
-              >
-                <span className="material-symbols-outlined text-lg">redo</span>
-              </button>
-            </div>
             <span className="text-xs px-2 py-0.5 rounded-full border border-theme-tertiary text-theme-primary">
               {saveState === "saving"
                 ? "Saving…"
@@ -337,6 +323,17 @@ export default function ProjectNavBar({
             >
               <span className="material-symbols-outlined text-base">history</span>
             </button>
+            {mode === "visual" && onToggleLegacyEditor && (
+              <button
+                onClick={onToggleLegacyEditor}
+                className="hidden flex items-center justify-center w-8 h-8 p-1 bg-theme-inverted text-theme-inverted rounded-full transition-colors text-sm"
+                title={useLegacyVisualEditor ? "Switch to new editor" : "Switch to legacy editor"}
+              >
+                <span className="material-symbols-outlined text-base">
+                  {useLegacyVisualEditor ? "toggle_on" : "toggle_off"}
+                </span>
+              </button>
+            )}
             <SpotifyController
               onOpenSettings={() => setSettingsOpen(true)}
               refreshTrigger={spotifyRefreshTrigger}

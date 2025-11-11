@@ -1055,14 +1055,57 @@ export default function GeminiChatbot({
   }
 
   const InlineSlidePreview = ({ slides, msgIndex }: { slides: string[], msgIndex: number }) => {
+    const [currentPreviewIndex, setCurrentPreviewIndex] = React.useState(0)
+
+    const currentSlide = slides[currentPreviewIndex]
+    const slideHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <script src="https://cdn.tailwindcss.com"></script>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            html, body { width: 1920px; height: 1080px; overflow: hidden; background: white; }
+            body { transform: scale(0.26); transform-origin: top left; display: flex; align-items: center; justify-content: center; }
+            section { width: 1920px; height: 1080px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem; text-align: center; background: white; }
+          </style>
+        </head>
+        <body>${currentSlide}</body>
+      </html>
+    `
+
     return (
       <div className="mt-4 space-y-3">
         <div className="bg-theme-primary border border-theme-tertiary rounded-xl p-4">
-          <div className="w-full aspect-[16/9] bg-theme-primary rounded-lg overflow-hidden shadow-lg flex items-center justify-center">
-            <div className="text-center space-y-2">
-              <p className="text-theme-secondary text-sm">Preview coming soon</p>
-              <p className="text-theme-secondary text-xs">Click the button below to view slides</p>
-            </div>
+          <div className="w-full aspect-[16/9] bg-white rounded-lg overflow-hidden shadow-lg relative">
+            <iframe
+              srcDoc={slideHtml}
+              className="w-full h-full border-none bg-white pointer-events-none"
+              title={`Slide Preview ${currentPreviewIndex + 1}`}
+              style={{ background: 'white' }}
+            />
+            {slides.length > 1 && (
+              <div className="absolute bottom-2 right-2 flex gap-1 bg-black/50 rounded-lg p-1">
+                <button
+                  onClick={() => setCurrentPreviewIndex(Math.max(0, currentPreviewIndex - 1))}
+                  disabled={currentPreviewIndex === 0}
+                  className="p-1 text-white hover:bg-white/20 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>chevron_left</span>
+                </button>
+                <span className="text-white text-xs px-2 py-1 flex items-center">
+                  {currentPreviewIndex + 1} / {slides.length}
+                </span>
+                <button
+                  onClick={() => setCurrentPreviewIndex(Math.min(slides.length - 1, currentPreviewIndex + 1))}
+                  disabled={currentPreviewIndex === slides.length - 1}
+                  className="p-1 text-white hover:bg-white/20 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>chevron_right</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
         <div className="flex gap-2">

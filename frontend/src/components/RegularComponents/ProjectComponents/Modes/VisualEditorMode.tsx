@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { urlbackend } from "../../../../config.js"
 
 type PanelType = "design" | "text" | "elements" | "projects" | "multimedia" | null
 
@@ -14,11 +15,13 @@ type CanvasElement = {
 export default function VisualEditorMode({
   doc,
   onChange,
-  previewRef
+  previewRef,
+  projectId
 }: {
   doc: string
   onChange: (d: string) => void
   previewRef: React.RefObject<HTMLIFrameElement>
+  projectId: string | null
 }) {
   const [activePanel, setActivePanel] = useState<PanelType>("text")
   const [selectedElement, setSelectedElement] = useState<CanvasElement | null>(null)
@@ -362,13 +365,36 @@ export default function VisualEditorMode({
     addElement(html)
   }
 
-  const handleAddMedia = (file: File) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const src = e.target?.result as string
-      addElement(`<img src="${src}" class="w-64 h-auto" style="position: absolute; left: 600px; top: 400px;" />`)
+  const handleAddMedia = async (file: File) => {
+    if (!projectId) {
+      console.error('No project ID available')
+      return
     }
-    reader.readAsDataURL(file)
+
+    try {
+      const token = localStorage.getItem("token")
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const res = await fetch(`${urlbackend}/projects/${projectId}/upload`, {
+        method: "POST",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData
+      })
+
+      if (!res.ok) {
+        throw new Error("Failed to upload file")
+      }
+
+      const data = await res.json()
+      const imageUrl = data.url
+
+      addElement(`<img src="${imageUrl}" class="w-64 h-auto" style="position: absolute; left: 600px; top: 400px;" />`)
+    } catch (error) {
+      console.error('Error uploading image:', error)
+    }
   }
 
   const textStyles = [

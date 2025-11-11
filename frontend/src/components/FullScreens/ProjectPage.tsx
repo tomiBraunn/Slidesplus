@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom"
 import ProjectNavBar from "../RegularComponents/ProjectComponents/ProjectNavBar"
 import CodeEditorMode from "../RegularComponents/ProjectComponents/Modes/CodeEditorMode"
 import VisualEditorMode from "../RegularComponents/ProjectComponents/Modes/VisualEditorMode"
+import VisualEditorModeLegacy from "../RegularComponents/ProjectComponents/Modes/VisualEditorModeLegacy"
 import LivePreview from "../RegularComponents/ProjectComponents/LivePreview"
 import GeminiChatbot from "../RegularComponents/ProjectComponents/GeminiChatbot"
 import { ShareModal } from "../RegularComponents/MultiuseComponents/ShareModal"
@@ -82,6 +83,7 @@ function ProjectPageContent() {
   const [draggedSlide, setDraggedSlide] = useState<number | null>(null)
   const [hoveredSlide, setHoveredSlide] = useState<number | null>(null)
   const [initialAIPrompt, setInitialAIPrompt] = useState<string | null>(null)
+  const [useLegacyVisualEditor, setUseLegacyVisualEditor] = useState(false)
   const isDragging = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const editorRef = useRef<HTMLDivElement>(null)
@@ -403,6 +405,8 @@ function ProjectPageContent() {
         currentUserId={user?.id}
         onShareClick={() => setShareModalOpen(true)}
         onVersionRestored={handleVersionRestored}
+        useLegacyVisualEditor={useLegacyVisualEditor}
+        onToggleLegacyEditor={() => setUseLegacyVisualEditor(!useLegacyVisualEditor)}
       />
 
       {user && (
@@ -522,7 +526,8 @@ function ProjectPageContent() {
             }}
           >
             {mode === "code" && <CodeEditorMode doc={doc} onChange={onChangeDoc} />}
-            {mode === "visual" && <VisualEditorMode doc={doc} onChange={onChangeDoc} previewRef={livePreviewRef} />}
+            {mode === "visual" && !useLegacyVisualEditor && <VisualEditorMode doc={doc} onChange={onChangeDoc} previewRef={livePreviewRef} projectId={projectId} />}
+            {mode === "visual" && useLegacyVisualEditor && <VisualEditorModeLegacy doc={doc} onChange={onChangeDoc} />}
             {mode === "ai" && (
               <GeminiChatbot
                 setCode={applySetDoc}
