@@ -37,35 +37,34 @@ function SortBy({ selected, setSelected }: Props) {
 
   return (
     <div ref={containerRef} className="relative flex items-center justify-center gap-1">
-      <div
+      <button
         onClick={toggleDropdown}
-        className={`flex items-center justify-center bg-theme-primary border border-theme-tertiary text-theme-primary hover:bg-theme-hover transition-colors duration-300Hover  gap-1 px-3 h-fit cursor-pointer select-none
-                    transition-all duration-300 ease-out ${isOpen ? 'rounded-t-[20px] gap-9' : 'rounded-full gap-1'}`}
+        className="flex items-center justify-center bg-theme-primary border border-theme-tertiary text-theme-primary hover:bg-theme-hover transition-colors duration-300 rounded-full h-full p-3 cursor-pointer select-none"
+        title="Sort projects"
       >
-        <p>Sort by</p>
-        <span
-          className={`material-symbols-outlined w-[1em] h-[2em] transition-transform duration-300 ease-out ${isOpen ? 'rotate-180' : 'rotate-0'}`}
-        >
-          arrow_drop_down
+        <span className="material-symbols-outlined">
+          swap_vert
         </span>
-      </div>
+      </button>
       <div
-        className={`absolute left-0 top-13 z-10 text-theme-primary border bg-theme-primary border-theme-tertiary w-full overflow-hidden
+        className={`absolute left-0 top-full mt-2 z-10 text-theme-primary border bg-theme-primary border-theme-tertiary min-w-[150px] overflow-hidden rounded-xl
                     transition-all duration-300 ease-out
-                    ${showDropdown ? 'max-h-60 opacity-100 translate-y-0 rounded-b-xl' : 'max-h-0 opacity-0 -translate-y-5 rounded-b-none'}`}
+                    ${showDropdown ? 'max-h-60 opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-5'}`}
       >
         <ul className="flex flex-col">
           {["Recent", "Creation date", "A-Z"].map((option, index, arr) => (
-            <div
+            <li
               key={option}
-              className={`flex items-center justify-start gap-1 cursor-pointer hover:bg-theme-hover  ${index === arr.length - 1 && showDropdown ? 'rounded-b-xl' : ''}`}
+              className={`flex items-center justify-between gap-2 cursor-pointer hover:bg-theme-hover px-3 py-2 ${index === arr.length - 1 && showDropdown ? 'rounded-b-xl' : ''}`}
               onClick={() => handleClick(option)}
             >
-              <span
-                className={`rounded-sm w-5 aspect-square ml-2 ${selected === option ? 'bg-[#3CFF52]' : 'bg-[#2B2B2B]'}`}
-              ></span>
-              <li className="px-1 py-2 w-full">{option}</li>
-            </div>
+              <span>{option}</span>
+              {selected === option && (
+                <span className="material-symbols-outlined text-theme-primary text-sm">
+                  check
+                </span>
+              )}
+            </li>
           ))}
         </ul>
       </div>

@@ -248,7 +248,7 @@ export default function UserPicture({ avatar, size = 38 }: Props) {
           </div>
 
           <div className="bg-theme-primary text-theme-primary [&>button]:w-full [&>button]:flex [&>button]:items-center [&>button]:gap-3 [&>button]:px-6 [&>button]:py-3 [&>button]:transition-colors [&>button]:text-left">
-            <button className=""
+            <button className="hover:bg-theme-hover"
               onClick={() => {
                 setIsOpen(false);
                 setShowSettings(true);
@@ -258,7 +258,7 @@ export default function UserPicture({ avatar, size = 38 }: Props) {
               <span className="text-sm font-medium">Settings</span>
             </button>
 
-            <button onClick={toggleTheme} className="justify-between">
+            <button onClick={toggleTheme} className="justify-between hover:bg-theme-hover">
               <div className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-xl">{isDark ? "dark_mode" : "light_mode"}</span>
                 <span className="text-sm font-medium">{isDark ? "Dark" : "Light"}</span>
@@ -268,7 +268,7 @@ export default function UserPicture({ avatar, size = 38 }: Props) {
               </div>
             </button>
 
-            <button onClick={handleLogout} className="!text-red-400">
+            <button onClick={handleLogout} className="!text-red-400 hover:bg-theme-hover">
               <span className="material-symbols-outlined text-xl">logout</span>
               <span className="text-sm font-medium">Log Out</span>
             </button>

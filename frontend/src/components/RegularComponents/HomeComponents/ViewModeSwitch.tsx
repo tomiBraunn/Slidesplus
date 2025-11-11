@@ -4,26 +4,23 @@ type Props = {
 };
 
 function ViewModeSwitch({ viewMode, setViewMode }: Props) {
+    const handleToggle = () => {
+        const newMode = viewMode === "grid" ? "list" : "grid";
+        setViewMode(newMode);
+        // Save to cookies
+        document.cookie = `viewMode=${newMode}; path=/; max-age=31536000`; // 1 year
+    };
+
     return (
-        <div className="flex items-center justify-center bg-theme-primary border border-theme-tertiary text-theme-primary hover:bg-theme-hover hover:bg-theme-hover transition-colors duration-300 bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300Hover rounded-full gap-0 h-fit">
-            <span
-                className={`material-symbols-outlined cursor-pointer select-none w-[2em] aspect-square ${
-                    viewMode === "grid" ? "text-[#3CFF52]" : ""
-                }`}
-                onClick={() => setViewMode("grid")}
-            >
-                view_comfy_alt
+        <button
+            onClick={handleToggle}
+            className="flex items-center justify-center bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300 rounded-full h-full p-3"
+            title={viewMode === "grid" ? "Switch to list view" : "Switch to grid view"}
+        >
+            <span className="material-symbols-outlined cursor-pointer select-none">
+                {viewMode === "grid" ? "view_comfy_alt" : "dehaze"}
             </span>
-            <span className="w-[1px] h-7 bg-[#999999]"></span>
-            <span
-                className={`material-symbols-outlined cursor-pointer select-none w-[2em] aspect-square ${
-                    viewMode === "list" ? "text-[#3CFF52]" : ""
-                }`}
-                onClick={() => setViewMode("list")}
-            >
-                dehaze
-            </span>
-        </div>
+        </button>
     );
 }
 

@@ -572,6 +572,7 @@ export default function GeminiChatbot({
   slides,
   onDeleteSlide,
   onDeleteAllSlides,
+  initialPrompt,
 }: {
   setCode: (val: string | ((v: string) => string)) => void
   code?: string
@@ -580,6 +581,7 @@ export default function GeminiChatbot({
   slides?: string[]
   onDeleteSlide?: (index: number) => void
   onDeleteAllSlides?: () => void
+  initialPrompt?: string | null
 }) {
   const [messages, setMessages] = useState<ChatMsg[]>([])
   const [input, setInput] = useState("")
@@ -637,6 +639,15 @@ export default function GeminiChatbot({
       .catch(err => console.error("Error loading chat history:", err))
       .finally(() => setLoadingHistory(false))
   }, [projectId])
+
+  useEffect(() => {
+    if (initialPrompt && !loadingHistory && messages.length === 0 && projectId) {
+      setInput(initialPrompt)
+      setTimeout(() => {
+        sendMessage()
+      }, 500)
+    }
+  }, [initialPrompt, loadingHistory, messages.length, projectId])
 
   const saveMessage = async (role: "user" | "assistant", content: string, attachments?: FileAttachment[], previewSlides?: string[], codeBlock?: { lang?: string; code: string; description: string }) => {
     if (!projectId) return

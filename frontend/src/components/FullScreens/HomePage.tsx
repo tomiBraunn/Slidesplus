@@ -7,6 +7,7 @@ import ProjectPreview from "../RegularComponents/HomeComponents/Modals/ProjectPr
 import SortBy from "../RegularComponents/HomeComponents/SortBy"
 import ViewModeSwitch from "../RegularComponents/HomeComponents/ViewModeSwitch"
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { urlbackend } from "../../config.js"
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -44,10 +45,23 @@ type User = {
 }
 
 function HomePage() {
+  const navigate = useNavigate()
+
+  // Read viewMode from cookies
+  const getViewModeFromCookie = (): "grid" | "list" => {
+    const cookies = document.cookie.split(';');
+    const viewModeCookie = cookies.find(c => c.trim().startsWith('viewMode='));
+    if (viewModeCookie) {
+      const value = viewModeCookie.split('=')[1];
+      return value === "list" ? "list" : "grid";
+    }
+    return "grid";
+  };
+
   const [showCreate, setShowCreate] = useState(false)
   const [selected, setSelected] = useState<Project | null>(null)
   const [showPreview, setShowPreview] = useState(false)
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [viewMode, setViewMode] = useState<"grid" | "list">(getViewModeFromCookie())
   const [projects, setProjects] = useState<Project[]>([])
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
@@ -181,6 +195,7 @@ function HomePage() {
     setProjects((prev) => [p, ...prev])
     setFilteredProjects((prev) => [p, ...prev])
     setShowCreate(false)
+    navigate(`/p/${p.id}`)
   }
 
   const onDeleteProject = async () => {
@@ -256,6 +271,90 @@ function HomePage() {
   }, [sortOption])
 
   const [activeTab, setActiveTab] = useState<"my-designs" | "ai-tryout" | "templates">("my-designs")
+  const [aiTitle, setAiTitle] = useState("")
+  const [aiCreating, setAiCreating] = useState(false)
+  const [aiError, setAiError] = useState("")
+  const [aiFiles, setAiFiles] = useState<File[]>([])
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setAiFiles(Array.from(e.target.files))
+    }
+  }
+
+  const handleAICreate = async () => {
+    setAiError("")
+    const title = aiTitle.trim()
+    if (!title) {
+      setAiError("No title.")
+      return
+    }
+    if (title.length > 120) {
+      setAiError("Title can't be longer than 120 characters.")
+      return
+    }
+
+    setAiCreating(true)
+    try {
+      const token = localStorage.getItem("token")
+      const formData = new FormData()
+      formData.append("title", title)
+
+      aiFiles.forEach((file) => {
+        formData.append("files", file)
+      })
+
+      const res = await fetch(`${urlbackend}/projects/ai/generate`, {
+        method: "POST",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData,
+      })
+
+      let data
+      try {
+        data = await res.json()
+      } catch (e) {
+        setAiError(`Server error (${res.status}). Check backend logs.`)
+        setAiCreating(false)
+        return
+      }
+
+      if (!res.ok) {
+        setAiError(data?.message || data?.detail || `Failed to create project (${res.status}).`)
+        setAiCreating(false)
+        return
+      }
+
+      const project = data.ok ? { id: data.id, name: data.name, created_at: data.created_at } : data
+
+      setProjects((prev) => [project, ...prev])
+      setFilteredProjects((prev) => [project, ...prev])
+      setAiTitle("")
+      setAiFiles([])
+      setShowAIPanel(false)
+      setActiveTab("my-designs")
+
+      navigate(`/p/${project.id}`, { state: { openAIChat: true, aiPrompt: title } })
+    } catch (e) {
+      setAiCreating(false)
+      setAiError("Error connecting to the server.")
+    }
+  }
+
+  const handleAIPanelOpen = () => {
+    setShowAIPanel(true)
+    setActiveTab("ai-tryout")
+  }
+
+  const handleAIPanelClose = () => {
+    setShowAIPanel(false)
+    setActiveTab("my-designs")
+    setAiTitle("")
+    setAiFiles([])
+    setAiError("")
+  }
 
   return (
     <>
@@ -265,25 +364,103 @@ function HomePage() {
           <div className="flex flex-col items-center justify-start text-white w-full max-w-[90vw] md:max-w-[70vw] px-4 md:px-0">
             <div className="searchbar flex flex-col items-center justify-start w-full gap-6">
               <AppTextLogo size={isMobile ? 60 : 100} />
-              <div className="flex w-full md:w-[50vw] items-center justify-center gap-2 rounded-full bg-theme-primary border border-theme-tertiary hover:bg-theme-hover transition-colors px-1 min-h-[50px]">
-                <input
-                  type="text"
-                  placeholder="Search for your projects"
-                  onChange={(e) => filterProjects(e.target.value)}
-                  className="text-theme-primary placeholder-theme-secondary px-5 rounded-full focus:outline-none w-full bg-transparent"
-                />
-                <span className="material-symbols-outlined text-theme-secondary select-none flex w-[2em] aspect-square items-center justify-center">
-                  search
-                </span>
+
+              <div className="relative w-full md:w-[70vw] flex items-center justify-center">
+                {showAIPanel && (
+                  <button
+                    onClick={handleAIPanelClose}
+                    className="absolute -top-10 right-0 text-xs flex items-center justify-center gap-1 p-4 w-5 h-5 text-theme-secondary hover:text-theme-primary transition-colors bg-theme-primary border border-theme-tertiary rounded-full"
+                  >
+                    <span className="material-symbols-outlined text-lg">close</span>
+                  </button>
+                )}
+                <div className={`relative flex w-full gap-2 bg-theme-primary border border-theme-tertiary transition-all duration-300 ${showAIPanel ? "rounded-3xl h-[120px] flex-col items-start justify-center py-4 px-4" : "rounded-full min-h-[50px] items-center justify-center px-4"}`}>
+                  {showAIPanel ? (
+                    <input
+                      key="ai-input"
+                      type="text"
+                      placeholder="Let's slide together"
+                      value={aiTitle}
+                      onChange={(e) => setAiTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !aiCreating) {
+                          e.preventDefault()
+                          handleAICreate()
+                        }
+                      }}
+                      disabled={aiCreating}
+                      autoFocus
+                      className="text-theme-primary placeholder-theme-secondary focus:outline-none w-full bg-transparent disabled:opacity-60 text-left"
+                    />
+                  ) : (
+                    <input
+                      key="search-input"
+                      type="text"
+                      placeholder="Search for your projects"
+                      defaultValue=""
+                      onChange={(e) => filterProjects(e.target.value)}
+                      className="text-theme-primary placeholder-theme-secondary focus:outline-none w-full bg-transparent pr-8"
+                    />
+                  )}
+                  {!showAIPanel && (
+                    <span className="material-symbols-outlined text-theme-secondary select-none">
+                      search
+                    </span>
+                  )}
+                  {showAIPanel && (
+                    <div className="absolute bottom-4 right-4 flex items-center gap-2">
+                      <input
+                        type="file"
+                        id="ai-file-upload"
+                        className="hidden"
+                        accept="image/*,.pdf,.txt,.md"
+                        multiple
+                        onChange={handleFileChange}
+                      />
+                      <label
+                        htmlFor="ai-file-upload"
+                        className="flex items-center justify-center p-3 text-theme-secondary hover:text-theme-primary transition-colors cursor-pointer relative"
+                      >
+                        <span className="material-symbols-outlined">attach_file</span>
+                        {aiFiles.length > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-theme-inverted text-theme-inverted text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                            {aiFiles.length}
+                          </span>
+                        )}
+                      </label>
+                      <button
+                        onClick={handleAICreate}
+                        disabled={aiCreating}
+                        className="flex items-center justify-center p-3 text-theme-inverted bg-theme-inverted rounded-full hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        <span className="material-symbols-outlined">arrow_forward</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {aiError && showAIPanel && (
+                <p className="text-red-500 text-xs">{aiError}</p>
+              )}
 
               <div className="flex items-center gap-3">
                 <button
+                  onClick={() => { setActiveTab("my-designs"); setShowAIPanel(false) }}
+                  className={`px-6 py-2 rounded-full transition-all ${activeTab === "my-designs"
+                    ? "bg-theme-inverted text-theme-inverted"
+                    : "bg-transparent text-theme-secondary hover:text-theme-primary"
+                    }`}
+                >
+                  My designs
+                </button>
+                <button
                   type="button"
-                  onClick={() => setShowAIPanel(true)}
-                  className={`relative flex items-center justify-center gap-2 rounded-full border border-theme-tertiary hover:bg-theme-hover transition-colors cursor-pointer overflow-hidden ${
-                    isMobile ? "p-2" : "px-4 py-2"
-                  }`}
+                  onClick={handleAIPanelOpen}
+                  className={`relative flex items-center justify-center gap-2 rounded-full transition-all duration-300 overflow-hidden ${showAIPanel
+                    ? "bg-transparent text-theme-primary border border-theme-tertiary"
+                    : "border border-theme-tertiary hover:bg-theme-hover"
+                    } ${isMobile ? "p-2" : "px-4 py-2"}`}
                 >
                   <div className="absolute inset-0 pointer-events-none">
                     <svg
@@ -321,18 +498,9 @@ function HomePage() {
                   <span className="relative z-10 material-symbols-outlined text-lg text-theme-primary">auto_awesome</span>
                 </button>
                 <button
-                  onClick={() => setActiveTab("my-designs")}
-                  className={`px-6 py-2 rounded-full transition-all ${activeTab === "my-designs"
-                    ? "bg-white text-black"
-                    : "bg-transparent text-theme-secondary hover:text-theme-primary"
-                    }`}
-                >
-                  My designs
-                </button>
-                <button
-                  onClick={() => setActiveTab("templates")}
+                  onClick={() => { setActiveTab("templates"); setShowAIPanel(false) }}
                   className={`px-6 py-2 rounded-full transition-all ${activeTab === "templates"
-                    ? "bg-white text-black"
+                    ? "bg-theme-inverted text-theme-inverted"
                     : "bg-transparent text-theme-secondary hover:text-theme-primary"
                     }`}
                 >
@@ -345,14 +513,15 @@ function HomePage() {
 
         <main className="flex justify-center w-full overflow-x-hidden px-4 flex-1 overflow-y-auto relative">
           <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ x: activeTab === "my-designs" ? -50 : 50, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: activeTab === "my-designs" ? -50 : 50, opacity: 0 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="w-full md:max-w-7xl h-full flex flex-col"
-            >
+            {activeTab !== "ai-tryout" && (
+              <motion.div
+                key={activeTab}
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 20, opacity: 0 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className="w-full md:max-w-7xl h-full flex flex-col"
+              >
               <div className="flex items-center justify-between py-2 w-full flex-shrink-0">
                 <h2 className="text-2xl font-semibold text-theme-primary">
                   {activeTab === "my-designs" ? sortOption : "Templates"}
@@ -378,114 +547,152 @@ function HomePage() {
 
               {activeTab === "my-designs" ? (
                 <div
-                  className={`gap-4 flex-1 overflow-y-auto pb-8 ${isMobile ? "flex flex-col" : viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 transition-all duration-300" : "flex flex-col"
+                  className={`gap-4 flex-1 overflow-y-auto overflow-x-hidden pb-8 ${isMobile ? "flex flex-col" : viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 transition-all duration-300" : "flex flex-col"
                     }`}
                 >
-              {(() => {
-                if (loading)
-                  return (
-                    <div className="text-white/70 col-span-full">Loading projects…</div>
-                  )
-                if (err) return <div className="text-red-400 col-span-full">{err}</div>
-                if (projects.length === 0)
-                  return (
-                    <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-full">
-                      <span
-                        className="material-symbols-outlined mb-2 opacity-70"
-                        style={{ fontSize: "40px" }}
+                  {(() => {
+                    if (loading)
+                      return (
+                        <div className="text-white/70 col-span-full">Loading projects…</div>
+                      )
+                    if (err) return <div className="text-red-400 col-span-full">{err}</div>
+                    if (projects.length === 0)
+                      return (
+                        <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-full">
+                          <span
+                            className="material-symbols-outlined mb-2 opacity-70"
+                            style={{ fontSize: "40px" }}
+                          >
+                            scan_delete
+                          </span>
+                          <p className="text-center text-sm max-w-xs">
+                            No projects available.
+                            <br /> Try creating one.
+                          </p>
+                        </div>
+                      )
+                    if (projects.length > 0 && filteredProjects.length === 0) {
+                      return (
+                        <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-full">
+                          <span className="material-symbols-outlined">block</span>
+                          <p className="text-center text-sm max-w-xs">
+                            No projects match your search.
+                          </p>
+                        </div>
+                      )
+                    }
+                    return filteredProjects.map((p) => (
+                      <motion.div
+                        key={p.id}
+                        className="h-auto"
+                        layout
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{
+                          layout: { type: "spring", stiffness: 300, damping: 30 },
+                          opacity: { duration: 0.2 },
+                          scale: { duration: 0.2 }
+                        }}
                       >
-                        scan_delete
-                      </span>
-                      <p className="text-center text-sm max-w-xs">
-                        No projects available.
-                        <br /> Try creating one.
-                      </p>
-                    </div>
-                  )
-                if (projects.length > 0 && filteredProjects.length === 0) {
-                  return (
-                    <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-full">
-                      <span className="material-symbols-outlined">block</span>
-                      <p className="text-center text-sm max-w-xs">
-                        No projects match your search.
-                      </p>
-                    </div>
-                  )
-                }
-                return filteredProjects.map((p) => (
-                  <motion.div
-                    key={p.id}
-                    className="h-auto"
-                    layout
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    transition={{
-                      layout: { type: "spring", stiffness: 300, damping: 30 },
-                      opacity: { duration: 0.2 },
-                      scale: { duration: 0.2 }
-                    }}
-                  >
-                    <ProjectTile
-                      name={p.name}
-                      description={p.description ?? ""}
-                      onClick={() => openPreview(p)}
-                      listMode={isMobile || viewMode === "list"}
-                      owner={p.owner}
-                      collaborators={p.collaborators}
-                      previewUrl={p.preview_url}
-                      projectId={p.id}
-                    />
-                  </motion.div>
-                ))
-              })()}
+                        <ProjectTile
+                          name={p.name}
+                          description={p.description ?? ""}
+                          onClick={() => openPreview(p)}
+                          listMode={isMobile || viewMode === "list"}
+                          owner={p.owner}
+                          collaborators={p.collaborators}
+                          previewUrl={p.preview_url}
+                          projectId={p.id}
+                        />
+                      </motion.div>
+                    ))
+                  })()}
                 </div>
               ) : (
-                <div className="flex-1 overflow-y-auto pb-8 flex items-center justify-center">
+                <div className="flex-1 overflow-y-auto m-8 flex items-center justify-center relative border border-theme-tertiary rounded-[20px]">
+                  <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                    <svg
+                      style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)", minWidth: "100%", minHeight: "100%" }}
+                      preserveAspectRatio="xMidYMid slice"
+                      width="1738"
+                      height="421"
+                      viewBox="0 0 1738 421"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <g filter="url(#filter0_f_3378_1076)">
+                        <path d="M60.1211 -469L142.378 19.1523L-26.9893 147.364L-246.28 42.8938L60.1211 -469Z" fill="#7182FF"/>
+                      </g>
+                      <g filter="url(#filter1_f_3378_1076)">
+                        <path d="M1887.2 -362L1969.45 126.152L1800.09 254.364L1580.8 149.894L1887.2 -362Z" fill="#7182FF"/>
+                      </g>
+                      <g filter="url(#filter2_f_3378_1076)">
+                        <path d="M1060.06 450.832L643.802 782.665L434.922 690.198L418.871 429.482L1060.06 450.832Z" fill="#7182FF"/>
+                      </g>
+                      <g opacity="0.4">
+                        <g filter="url(#filter3_f_3378_1076)">
+                          <path d="M7.59824 13.9287L175.828 101.85L-28.3075 283.6L-86.5945 85.2329L7.59824 13.9287Z" fill="#249931" fillOpacity="0.71"/>
+                          <path d="M7.59824 13.9287L175.828 101.85L-28.3075 283.6L-86.5945 85.2329L7.59824 13.9287Z" stroke="black"/>
+                        </g>
+                      </g>
+                      <g opacity="0.4">
+                        <g filter="url(#filter4_f_3378_1076)">
+                          <path d="M1834.67 120.929L2002.9 208.85L1798.77 390.6L1740.48 192.233L1834.67 120.929Z" fill="#249931" fillOpacity="0.71"/>
+                          <path d="M1834.67 120.929L2002.9 208.85L1798.77 390.6L1740.48 192.233L1834.67 120.929Z" stroke="black"/>
+                        </g>
+                      </g>
+                      <g filter="url(#filter5_f_3378_1076)">
+                        <path d="M1263.63 -89.7244L1472.44 61.0165L692.999 -102.015L926.885 -165.817L1263.63 -89.7244Z" fill="#249966" fillOpacity="0.33"/>
+                        <path d="M1263.63 -89.7244L1472.44 61.0165L692.999 -102.015L926.885 -165.817L1263.63 -89.7244Z" stroke="black"/>
+                      </g>
+                      <defs>
+                        <filter id="filter0_f_3378_1076" x="-646.279" y="-869" width="1188.66" height="1416.36" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+                          <feFlood floodOpacity="0" result="BackgroundImageFix"/>
+                          <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+                          <feGaussianBlur stdDeviation="200" result="effect1_foregroundBlur_3378_1076"/>
+                        </filter>
+                        <filter id="filter1_f_3378_1076" x="1180.8" y="-762" width="1188.66" height="1416.36" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+                          <feFlood floodOpacity="0" result="BackgroundImageFix"/>
+                          <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+                          <feGaussianBlur stdDeviation="200" result="effect1_foregroundBlur_3378_1076"/>
+                        </filter>
+                        <filter id="filter2_f_3378_1076" x="18.8711" y="29.4819" width="1441.19" height="1153.18" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+                          <feFlood floodOpacity="0" result="BackgroundImageFix"/>
+                          <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+                          <feGaussianBlur stdDeviation="200" result="effect1_foregroundBlur_3378_1076"/>
+                        </filter>
+                        <filter id="filter3_f_3378_1076" x="-287.172" y="-186.661" width="663.873" height="671.159" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+                          <feFlood floodOpacity="0" result="BackgroundImageFix"/>
+                          <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+                          <feGaussianBlur stdDeviation="100" result="effect1_foregroundBlur_3378_1076"/>
+                        </filter>
+                        <filter id="filter4_f_3378_1076" x="1539.9" y="-79.6613" width="663.873" height="671.159" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+                          <feFlood floodOpacity="0" result="BackgroundImageFix"/>
+                          <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+                          <feGaussianBlur stdDeviation="100" result="effect1_foregroundBlur_3378_1076"/>
+                        </filter>
+                        <filter id="filter5_f_3378_1076" x="492.867" y="-366.332" width="1179.86" height="627.838" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+                          <feFlood floodOpacity="0" result="BackgroundImageFix"/>
+                          <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+                          <feGaussianBlur stdDeviation="100" result="effect1_foregroundBlur_3378_1076"/>
+                        </filter>
+                      </defs>
+                    </svg>
+                  </div>
+                  <div className="relative z-10 text-center text-theme-primary flex flex-col items-center justify-center gap-2 p-8 text-md">
+                    <p>We're still</p>
+                    <p className="text-4xl font-bold">Cooking our website</p>
+                    <p>New feature coming soon.</p>
+                    <p>Stay tuned.</p>
+                  </div>
                 </div>
               )}
-            </motion.div>
+              </motion.div>
+            )}
           </AnimatePresence>
         </main>
 
-        {/* AI Panel */}
-        <AnimatePresence>
-          {showAIPanel && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
-                onClick={() => setShowAIPanel(false)}
-              />
-              <motion.div
-                initial={{ x: "100%" }}
-                animate={{ x: 0 }}
-                exit={{ x: "100%" }}
-                transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                className="fixed right-0 top-0 h-full w-full md:w-[500px] bg-theme-primary border-l border-theme-tertiary z-50 flex flex-col"
-              >
-                <div className="flex items-center justify-between p-4 border-b border-theme-tertiary">
-                  <h2 className="text-xl font-semibold text-theme-primary flex items-center gap-2">
-                    <span className="material-symbols-outlined">auto_awesome</span>
-                    Create with AI
-                  </h2>
-                  <button
-                    onClick={() => setShowAIPanel(false)}
-                    className="p-2 rounded-full hover:bg-theme-hover text-theme-primary"
-                  >
-                    <span className="material-symbols-outlined">close</span>
-                  </button>
-                </div>
-                <div className="flex-1 p-4 overflow-y-auto">
-                  <p className="text-theme-secondary">AI creation panel coming soon...</p>
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
 
         {isMobile && (
           <button

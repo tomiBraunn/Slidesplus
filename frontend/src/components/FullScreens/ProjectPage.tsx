@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React, { useEffect, useState, useRef } from "react"
+import { useLocation } from "react-router-dom"
 import ProjectNavBar from "../RegularComponents/ProjectComponents/ProjectNavBar"
 import CodeEditorMode from "../RegularComponents/ProjectComponents/Modes/CodeEditorMode"
 import VisualEditorMode from "../RegularComponents/ProjectComponents/Modes/VisualEditorMode"
@@ -68,6 +69,7 @@ function getUserFromStorage(): User | null {
 }
 
 function ProjectPageContent() {
+  const location = useLocation()
   const [mode, setMode] = useState<ProjectMode>(getDefaultMode())
   const [projectId, setProjectId] = useState<string | null>(null)
   const [name, setName] = useState<string>("Untitled")
@@ -79,6 +81,7 @@ function ProjectPageContent() {
   const [shareModalOpen, setShareModalOpen] = useState(false)
   const [draggedSlide, setDraggedSlide] = useState<number | null>(null)
   const [hoveredSlide, setHoveredSlide] = useState<number | null>(null)
+  const [initialAIPrompt, setInitialAIPrompt] = useState<string | null>(null)
   const isDragging = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const editorRef = useRef<HTMLDivElement>(null)
@@ -149,6 +152,13 @@ function ProjectPageContent() {
     if (!id) return
     setProjectId(id)
     loadProject(id)
+
+    if (location.state?.openAIChat) {
+      setMode("ai")
+      if (location.state?.aiPrompt) {
+        setInitialAIPrompt(location.state.aiPrompt)
+      }
+    }
   }, [])
 
   useEffect(() => {
@@ -225,8 +235,9 @@ function ProjectPageContent() {
             .map((s, i) => ({
               html: s,
               position: i,
+              css: "", // Backend expects this field
             }))
-          await fetch(`${urlbackend}/projects/${projectId}/slides`, {
+          const response = await fetch(`${urlbackend}/projects/${projectId}/slides`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -234,9 +245,18 @@ function ProjectPageContent() {
             },
             body: JSON.stringify({ slides }),
           })
+
+          if (!response.ok) {
+            const errorText = await response.text()
+            console.error('Failed to save slides:', response.status, errorText)
+            setSaveState("error")
+            return
+          }
+
           setSaveState("saved")
           window.setTimeout(() => setSaveState("idle"), 800)
-        } catch {
+        } catch (error) {
+          console.error('Error saving slides:', error)
           setSaveState("error")
         }
       }, 500)
@@ -509,6 +529,7 @@ function ProjectPageContent() {
                 slides={slides}
                 onDeleteSlide={deleteSlide}
                 onDeleteAllSlides={deleteAllSlides}
+                initialPrompt={initialAIPrompt}
               />
             )}
           </div>

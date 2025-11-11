@@ -24,6 +24,9 @@
     .text-theme-inverted {
         color: var(--text-inverted);
     }
+    .text-bg-inverted {
+        color: var(--bg-inverted);
+    }
     .bg-theme-quaternary {
         background-color: var(--bg-quaternary);
     }
