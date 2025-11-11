@@ -5,6 +5,9 @@ import * as ctrl from "../controllers/projectController.js"
 
 const router = express.Router()
 
+// AI generation (with file uploads)
+router.post("/projects/ai/generate", auth, upload.array("files", 10), ctrl.generateProjectWithAI)
+
 router.get("/projects", auth, ctrl.listProjects)
 router.post("/projects", auth, ctrl.createProject)
 router.get("/v/:id", optionalAuth, ctrl.getPublicProject)

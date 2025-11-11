@@ -1,5 +1,6 @@
 import { pool } from "../config/database.js"
 import { supabase } from "../services/supabaseService.js"
+import { generateWithGemini } from "../services/geminiService.js"
 
 const checkProjectAccess = async (projectId, userId, requireEdit = false) => {
 	const query = `
@@ -906,5 +907,196 @@ export const restoreProjectVersion = async (req, res) => {
 	} catch (err) {
 		console.error("Error restoring project version:", err)
 		res.status(500).json({ ok: false, message: "Internal error" })
+	}
+}
+
+export const generateProjectWithAI = async (req, res) => {
+	if (!pool) return res.status(500).json({ message: "Database not configured" })
+	try {
+		const { prompt } = req.body
+		const userId = req.user.sub
+		const files = req.files || []
+
+		if (!prompt || !String(prompt).trim()) {
+			return res.status(400).json({ ok: false, message: "Prompt is required" })
+		}
+
+		console.log("[AI Generate] Starting generation for prompt:", prompt)
+		console.log("[AI Generate] Received", files.length, "files")
+
+		// Step 1: Generate a title with AI
+		console.log("[AI Generate] Generating title with AI...")
+		const titlePrompt = `Generate a short, catchy title (max 50 characters) for a presentation about: ${prompt}. Only return the title, nothing else. Do not use quotes.`
+
+		const titleResponse = await generateWithGemini({
+			message: titlePrompt,
+			model: "gemini-2.5-flash"
+		})
+
+		if (!titleResponse.ok) {
+			console.error("[AI Generate] Failed to generate title")
+			return res.status(502).json({
+				ok: false,
+				message: "Failed to generate title with AI"
+			})
+		}
+
+		let titleData
+		try {
+			titleData = JSON.parse(titleResponse.raw)
+		} catch (err) {
+			console.error("[AI Generate] Failed to parse title response")
+			return res.status(500).json({ ok: false, message: "Invalid AI title response" })
+		}
+
+		let generatedTitle = titleData.candidates?.[0]?.content?.parts?.[0]?.text || prompt.slice(0, 50)
+
+		// Clean up the title (remove quotes, extra whitespace)
+		generatedTitle = generatedTitle.trim().replace(/^["']|["']$/g, '').trim()
+
+		// Ensure title is not too long
+		if (generatedTitle.length > 50) {
+			generatedTitle = generatedTitle.slice(0, 47) + "..."
+		}
+
+		console.log("[AI Generate] Generated title:", generatedTitle)
+
+		// Process uploaded files if any
+		let filesContext = ""
+		if (files.length > 0) {
+			filesContext = "\n\nAttached files context:\n"
+			for (const file of files) {
+				// If it's a text file, include its content
+				if (file.mimetype.startsWith('text/') ||
+				    file.mimetype === 'application/json' ||
+				    file.mimetype === 'application/javascript') {
+					try {
+						const content = file.buffer.toString('utf-8')
+						filesContext += `\nFile: ${file.originalname}\nContent:\n${content.slice(0, 2000)}\n`
+					} catch (err) {
+						filesContext += `\nFile: ${file.originalname} (binary file, ${file.size} bytes)\n`
+					}
+				} else {
+					filesContext += `\nFile: ${file.originalname} (${file.mimetype}, ${file.size} bytes)\n`
+				}
+			}
+		}
+
+		// Step 2: Generate slides with AI using the original user prompt
+		console.log("[AI Generate] Generating slides with AI...")
+		const slidesPrompt = `Generate 4-5 professional presentation slides in HTML format about: "${prompt}"
+${filesContext}
+
+Requirements:
+- Each slide MUST be a complete <section> tag with inline styles
+- Dimensions: 1920x1080 (use style="width: 1920px; height: 1080px;")
+- Center all content vertically and horizontally
+- Use modern, attractive styling with gradients, good typography, and visual hierarchy
+- First slide should be a title slide with the topic name
+- Following slides should cover key points about the topic${files.length > 0 ? ', incorporating relevant information from the attached files' : ''}
+- Use inline CSS only (no external stylesheets)
+- Make it visually appealing with colors, spacing, and good design
+- DO NOT include any markdown code blocks or explanations
+- Return ONLY the raw HTML <section> tags, nothing else
+
+Example format:
+<section style="width: 1920px; height: 1080px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+  <div style="text-align: center;">
+    <h1 style="font-size: 72px; margin: 0;">Title</h1>
+  </div>
+</section>`
+
+		// Call Gemini API to generate slides
+		const aiResponse = await generateWithGemini({
+			message: slidesPrompt,
+			model: "gemini-2.5-flash"
+		})
+
+		if (!aiResponse.ok) {
+			console.error("[AI Generate] AI generation failed. Status:", aiResponse.status)
+			console.error("[AI Generate] Response:", aiResponse.raw)
+			return res.status(502).json({
+				ok: false,
+				message: "Failed to generate slides with AI",
+				detail: aiResponse.raw
+			})
+		}
+
+		console.log("[AI Generate] AI responded successfully")
+
+		// Parse AI response
+		let aiData
+		try {
+			aiData = JSON.parse(aiResponse.raw)
+		} catch (err) {
+			console.error("Failed to parse AI response:", err)
+			return res.status(500).json({ ok: false, message: "Invalid AI response format" })
+		}
+
+		const generatedText = aiData.candidates?.[0]?.content?.parts?.[0]?.text || ""
+
+		if (!generatedText) {
+			return res.status(500).json({ ok: false, message: "AI returned empty response" })
+		}
+
+		// Extract <section> tags from the response
+		console.log("[AI Generate] Extracting sections from response...")
+		const sectionMatches = generatedText.match(/<section[\s\S]*?<\/section>/gi) || []
+
+		if (sectionMatches.length === 0) {
+			console.error("[AI Generate] No sections found in AI response")
+			console.error("[AI Generate] Response preview:", generatedText.slice(0, 500))
+			return res.status(500).json({
+				ok: false,
+				message: "AI did not generate valid slides",
+				detail: "No <section> tags found in response"
+			})
+		}
+
+		console.log(`[AI Generate] Found ${sectionMatches.length} slides`)
+
+		// Step 3: Create the project with the AI-generated title
+		console.log("[AI Generate] Creating project in database with title:", generatedTitle)
+		const projectQuery = await pool.query(
+			`INSERT INTO projects (owner_id, name, document, created_at, updated_at)
+			VALUES ($1, $2, $3, NOW(), NOW())
+			RETURNING id, owner_id, name, document, created_at, updated_at`,
+			[userId, generatedTitle, sectionMatches.join('\n')]
+		)
+
+		const project = projectQuery.rows[0]
+		console.log("[AI Generate] Project created with ID:", project.id)
+
+		// Save slides to database
+		console.log("[AI Generate] Saving slides to database...")
+		const slides = []
+		for (let i = 0; i < sectionMatches.length; i++) {
+			const slideQuery = await pool.query(
+				`INSERT INTO slides (project_id, position, html)
+				VALUES ($1, $2, $3)
+				RETURNING id, project_id, position, html, created_at, updated_at`,
+				[project.id, i, sectionMatches[i]]
+			)
+			slides.push({
+				html: slideQuery.rows[0].html,
+				position: slideQuery.rows[0].position,
+				css: ""
+			})
+		}
+
+		console.log("[AI Generate] Successfully created project with", slides.length, "slides")
+
+		// Return the project with slides
+		res.status(201).json({
+			ok: true,
+			id: project.id,
+			name: project.name,
+			created_at: project.created_at,
+			slides
+		})
+
+	} catch (err) {
+		console.error("Error generating project with AI:", err)
+		res.status(500).json({ ok: false, message: "Internal error", detail: err instanceof Error ? err.message : String(err) })
 	}
 }
