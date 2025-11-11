@@ -286,25 +286,16 @@ section {
   position: absolute;
   top: 0;
   left: 0;
-  display: flex;
+  display: none !important;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  opacity: 0;
-  transition: opacity 0.4s ease-in-out;
-  pointer-events: none;
   overflow: hidden;
   padding: 0;
   margin: 0;
 }
 section.active {
-  opacity: 1;
-  pointer-events: auto;
-  z-index: 2;
-}
-section.fading-out {
-  opacity: 0;
-  z-index: 1;
+  display: flex !important;
 }
 </style>
 </head>
@@ -351,29 +342,28 @@ function updateSlide(index) {
   if (index === currentSlide) return;
 
   isTransitioning = true;
-  const oldSlide = currentSlide;
 
-  if (slides[oldSlide]) {
-    slides[oldSlide].classList.add('fading-out');
+  // Remove active from old slide
+  if (slides[currentSlide]) {
+    slides[currentSlide].classList.remove('active');
   }
 
-  setTimeout(() => {
-    if (slides[oldSlide]) {
-      slides[oldSlide].classList.remove('active', 'fading-out');
-    }
-    currentSlide = index;
-    if (slides[currentSlide]) {
-      slides[currentSlide].classList.add('active');
-    }
+  // Update current slide index
+  currentSlide = index;
 
-    window.parent.postMessage({ type: 'slideChange', slide: currentSlide }, '*');
+  // Add active to new slide
+  if (slides[currentSlide]) {
+    slides[currentSlide].classList.add('active');
+  }
 
-    setTimeout(() => {
-      isTransitioning = false;
-    }, 100);
-  }, 100);
+  // Send message to parent
+  window.parent.postMessage({ type: 'slideChange', slide: currentSlide }, '*');
+
+  // Allow next transition immediately since there's no CSS transition
+  isTransitioning = false;
 }
 
+// Initialize first slide
 if (slides.length > 0) {
   slides[0].classList.add('active');
   window.parent.postMessage({ type: 'slideChange', slide: 0 }, '*');

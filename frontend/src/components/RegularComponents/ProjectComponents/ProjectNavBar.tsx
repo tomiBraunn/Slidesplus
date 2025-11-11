@@ -326,11 +326,11 @@ export default function ProjectNavBar({
             {mode === "visual" && onToggleLegacyEditor && (
               <button
                 onClick={onToggleLegacyEditor}
-                className="hidden flex items-center justify-center w-8 h-8 p-1 bg-theme-inverted text-theme-inverted rounded-full transition-colors text-sm"
+                className="flex items-center justify-center w-8 h-8 p-1 bg-theme-inverted text-theme-inverted rounded-full transition-colors text-sm"
                 title={useLegacyVisualEditor ? "Switch to new editor" : "Switch to legacy editor"}
               >
                 <span className="material-symbols-outlined text-base">
-                  {useLegacyVisualEditor ? "toggle_on" : "toggle_off"}
+                  {useLegacyVisualEditor ? "layers" : "grid_view"}
                 </span>
               </button>
             )}
