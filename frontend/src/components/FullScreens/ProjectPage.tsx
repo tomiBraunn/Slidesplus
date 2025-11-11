@@ -86,6 +86,7 @@ function ProjectPageContent() {
   const containerRef = useRef<HTMLDivElement>(null)
   const editorRef = useRef<HTMLDivElement>(null)
   const isApplyingRemoteChange = useRef(false)
+  const livePreviewRef = useRef<HTMLIFrameElement>(null)
 
   const user = getUserFromStorage()
 
@@ -426,10 +427,12 @@ function ProjectPageContent() {
               <div className="flex-1 flex items-center justify-center">
                 <div className="w-full h-full">
                   <LivePreview
+                    ref={livePreviewRef}
                     document={getCurrentSlideDoc()}
                     currentSlide={currentSlide}
                     totalSlides={slides.length}
                     onSlideChange={setCurrentSlide}
+                    visualMode={mode === "visual"}
                   />
                 </div>
               </div>
@@ -443,12 +446,12 @@ function ProjectPageContent() {
                 <div className="flex gap-2 overflow-x-auto overflow-y-auto p-4 scrollbar-custom">
                   <div
                     onClick={addNewSlide}
-                    className="flex-shrink-0 cursor-pointer rounded-lg border-2 border-dashed border-theme-tertiary hover:border-blue-500 transition-all flex items-center justify-center bg-theme-quaternary"
+                    className="flex-shrink-0 cursor-pointer rounded-lg border-2 border border-theme-tertiary bg-theme-inverted hover:border-blue-500 transition-all flex items-center justify-center"
                     style={{ width: "100px", height: "56.25px" }}
                   >
-                    <svg className="w-8 h-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
+                    <span className="material-symbols-outlined text-4xl text-theme-inverted">
+                      add_2
+                    </span>
                   </div>
 
                   {slides.map((slide, index) => (
@@ -519,7 +522,7 @@ function ProjectPageContent() {
             }}
           >
             {mode === "code" && <CodeEditorMode doc={doc} onChange={onChangeDoc} />}
-            {mode === "visual" && <VisualEditorMode doc={doc} onChange={onChangeDoc} />}
+            {mode === "visual" && <VisualEditorMode doc={doc} onChange={onChangeDoc} previewRef={livePreviewRef} />}
             {mode === "ai" && (
               <GeminiChatbot
                 setCode={applySetDoc}

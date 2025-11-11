@@ -62,6 +62,8 @@ const LivePreview = forwardRef<HTMLIFrameElement, Props>(({
       const doc = iframeRef.current?.contentDocument || iframeRef.current?.contentWindow?.document
       if (!doc) return
 
+      const existingScript = doc.getElementById('visual-editor-script')
+
       doc.open()
       doc.write(`
         <!DOCTYPE html>
@@ -69,6 +71,7 @@ const LivePreview = forwardRef<HTMLIFrameElement, Props>(({
           <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
+            <script src="https://cdn.tailwindcss.com"></script>
             <style>
               * {
                 margin: 0;
@@ -114,10 +117,16 @@ const LivePreview = forwardRef<HTMLIFrameElement, Props>(({
       if (doc.body) {
         doc.body.innerHTML = bodyContent
       }
+
+      if (existingScript && visualMode) {
+        if (doc.body && !doc.getElementById('visual-editor-script')) {
+          doc.body.appendChild(existingScript)
+        }
+      }
     }
 
     writeContent()
-  }, [document, scale])
+  }, [document, scale, visualMode])
 
   const handleNext = () => {
     if (currentSlide < totalSlides - 1) onSlideChange(currentSlide + 1)

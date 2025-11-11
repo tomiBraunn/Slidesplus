@@ -6,6 +6,7 @@ import { ActiveUsersAvatars } from "./ActiveUsers";
 import { VersionHistoryModal } from "./VersionHistoryModal";
 import { SpotifyController } from "./SpotifyController";
 import SettingsModal from "../MultiuseComponents/SettingsModal";
+import { urlbackend } from "../../../config.js";
 
 export type ProjectMode = "code" | "visual" | "ai";
 
@@ -70,6 +71,11 @@ export default function ProjectNavBar({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [spotifyRefreshTrigger, setSpotifyRefreshTrigger] = useState(0);
   const [spotifyColor, setSpotifyColor] = useState<string>('');
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState(name);
+  const [versions, setVersions] = useState<any[]>([]);
+  const [currentVersionIndex, setCurrentVersionIndex] = useState(0);
+  const nameInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     try {
@@ -89,6 +95,145 @@ export default function ProjectNavBar({
       setUser(null);
     }
   }, []);
+
+  useEffect(() => {
+    setEditedName(name);
+  }, [name]);
+
+  useEffect(() => {
+    if (isEditingName && nameInputRef.current) {
+      nameInputRef.current.focus();
+      nameInputRef.current.select();
+    }
+  }, [isEditingName]);
+
+  useEffect(() => {
+    if (projectId) {
+      loadVersions();
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      } else if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'z')) {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [projectId, versions, currentVersionIndex]);
+
+  const loadVersions = async () => {
+    if (!projectId) return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${urlbackend}/projects/${projectId}/versions`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const versionsList = data.versions || [];
+      setVersions(versionsList);
+      setCurrentVersionIndex(0);
+    } catch (err) {
+      console.error("Error loading versions:", err);
+    }
+  };
+
+  const handleUndo = async () => {
+    if (!projectId || versions.length === 0 || currentVersionIndex >= versions.length - 1) return;
+
+    const nextIndex = currentVersionIndex + 1;
+    const versionToRestore = versions[nextIndex];
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${urlbackend}/projects/${projectId}/versions/${versionToRestore.id}/restore`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error("Failed to restore version");
+
+      setCurrentVersionIndex(nextIndex);
+      if (onVersionRestored) {
+        onVersionRestored();
+      }
+    } catch (err) {
+      console.error("Error restoring version:", err);
+    }
+  };
+
+  const handleRedo = async () => {
+    if (!projectId || versions.length === 0 || currentVersionIndex <= 0) return;
+
+    const nextIndex = currentVersionIndex - 1;
+    const versionToRestore = versions[nextIndex];
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${urlbackend}/projects/${projectId}/versions/${versionToRestore.id}/restore`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error("Failed to restore version");
+
+      setCurrentVersionIndex(nextIndex);
+      if (onVersionRestored) {
+        onVersionRestored();
+      }
+    } catch (err) {
+      console.error("Error restoring version:", err);
+    }
+  };
+
+  const handleNameDoubleClick = () => {
+    setIsEditingName(true);
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditedName(e.target.value);
+  };
+
+  const handleNameBlur = async () => {
+    setIsEditingName(false);
+    if (editedName.trim() === "" || editedName === name) {
+      setEditedName(name);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${urlbackend}/projects/${projectId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ name: editedName.trim() })
+      });
+      if (!res.ok) {
+        setEditedName(name);
+        console.error("Failed to update project name");
+      }
+    } catch (err) {
+      console.error("Error updating project name:", err);
+      setEditedName(name);
+    }
+  };
+
+  const handleNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleNameBlur();
+    } else if (e.key === "Escape") {
+      setIsEditingName(false);
+      setEditedName(name);
+    }
+  };
 
   const navbarBgStyle = spotifyColor && spotifyColor !== ''
     ? {
@@ -112,7 +257,44 @@ export default function ProjectNavBar({
         <div className="relative flex items-center justify-between p-3 h-full" style={{ zIndex: 20 }}>
           <div className="flex items-center gap-3">
             <AppIcon />
-            <span className="text-theme-primary text-md truncate w-max-50">{name}</span>
+            {isEditingName ? (
+              <input
+                ref={nameInputRef}
+                type="text"
+                value={editedName}
+                onChange={handleNameChange}
+                onBlur={handleNameBlur}
+                onKeyDown={handleNameKeyDown}
+                className="text-theme-primary text-md bg-theme-secondary border border-theme-tertiary rounded px-2 py-0.5 outline-none focus:border-blue-500"
+                style={{ maxWidth: '300px' }}
+              />
+            ) : (
+              <span
+                onDoubleClick={handleNameDoubleClick}
+                className="text-theme-primary text-md truncate w-max-50 cursor-text"
+                title="Double-click to rename"
+              >
+                {name}
+              </span>
+            )}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleUndo}
+                disabled={!projectId || versions.length === 0 || currentVersionIndex >= versions.length - 1}
+                className="flex items-center justify-center w-7 h-7 p-1 text-theme-primary hover:text-theme-secondary disabled:text-theme-quaternary disabled:cursor-not-allowed transition-colors"
+                title="Undo (Ctrl+Z)"
+              >
+                <span className="material-symbols-outlined text-lg">undo</span>
+              </button>
+              <button
+                onClick={handleRedo}
+                disabled={!projectId || versions.length === 0 || currentVersionIndex <= 0}
+                className="flex items-center justify-center w-7 h-7 p-1 text-theme-primary hover:text-theme-secondary disabled:text-theme-quaternary disabled:cursor-not-allowed transition-colors"
+                title="Redo (Ctrl+Y)"
+              >
+                <span className="material-symbols-outlined text-lg">redo</span>
+              </button>
+            </div>
             <span className="text-xs px-2 py-0.5 rounded-full border border-theme-tertiary text-theme-primary">
               {saveState === "saving"
                 ? "Saving…"

@@ -15,7 +15,8 @@
       "Bash(done)",
       "Bash(git checkout:*)",
       "Bash(dir /s /b *.tsx 2)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(dir \"C:\\Users\\tomas\\Documents\\GitHub\\CodeSlides\\src\\components\\RegularComponents\\ProjectComponents\\Modes\\CanvaEditor\" 2)"
     ],
     "deny": [],
     "ask": []
