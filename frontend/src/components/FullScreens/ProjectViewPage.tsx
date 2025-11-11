@@ -85,33 +85,29 @@ export default function ProjectViewPage() {
   }, [])
 
   useEffect(() => {
-    if (!isFullscreen) {
-      setShowControls(true)
+    // Hide controls after 3 seconds of inactivity
+    const hideAfterDelay = () => {
       if (hideControlsTimeout.current) {
         clearTimeout(hideControlsTimeout.current)
       }
-      return
+      hideControlsTimeout.current = setTimeout(() => {
+        setShowControls(false)
+      }, 3000)
     }
 
     const handleMouseMove = (e: MouseEvent) => {
       const windowHeight = window.innerHeight
       const mouseY = e.clientY
 
-      if (mouseY > windowHeight - 100) {
+      // Show controls if mouse is near bottom of screen
+      if (mouseY > windowHeight - 150) {
         setShowControls(true)
-        if (hideControlsTimeout.current) {
-          clearTimeout(hideControlsTimeout.current)
-        }
-        hideControlsTimeout.current = setTimeout(() => {
-          setShowControls(false)
-        }, 3000)
-      } else {
-        if (hideControlsTimeout.current) {
-          clearTimeout(hideControlsTimeout.current)
-        }
-        setShowControls(false)
+        hideAfterDelay()
       }
     }
+
+    // Start with controls visible
+    setShowControls(true)
 
     window.addEventListener('mousemove', handleMouseMove)
     return () => {
@@ -120,7 +116,7 @@ export default function ProjectViewPage() {
         clearTimeout(hideControlsTimeout.current)
       }
     }
-  }, [isFullscreen])
+  }, [])
 
   const handleNextSlide = () => {
     if (currentSlideRef.current < totalSlidesRef.current - 1) {
@@ -378,6 +374,17 @@ window.addEventListener('message', (event) => {
     updateSlide(event.data.slide);
   }
 });
+
+// Handle keyboard navigation inside iframe
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+    e.preventDefault();
+    updateSlide(currentSlide + 1);
+  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    updateSlide(currentSlide - 1);
+  }
+});
 </script>
 </body>
 </html>`
@@ -451,7 +458,7 @@ window.addEventListener('message', (event) => {
         )}
 
         <div
-          className={`fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-sm flex items-center justify-between px-4 py-2 z-50 transition-all duration-300 ${isFullscreen && !showControls ? 'translate-y-full opacity-0' : 'translate-y-0 opacity-100'
+          className={`fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-sm flex items-center justify-between px-4 py-2 z-50 transition-all duration-300 ${!showControls ? 'translate-y-full opacity-0' : 'translate-y-0 opacity-100'
             }`}
         >
           <div className="flex items-center gap-3">
