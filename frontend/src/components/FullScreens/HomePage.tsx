@@ -284,13 +284,13 @@ function HomePage() {
 
   const handleAICreate = async () => {
     setAiError("")
-    const title = aiTitle.trim()
-    if (!title) {
-      setAiError("No title.")
+    const prompt = aiTitle.trim()
+    if (!prompt) {
+      setAiError("No prompt.")
       return
     }
-    if (title.length > 120) {
-      setAiError("Title can't be longer than 120 characters.")
+    if (prompt.length > 500) {
+      setAiError("Prompt can't be longer than 500 characters.")
       return
     }
 
@@ -298,7 +298,7 @@ function HomePage() {
     try {
       const token = localStorage.getItem("token")
       const formData = new FormData()
-      formData.append("title", title)
+      formData.append("prompt", prompt)
 
       aiFiles.forEach((file) => {
         formData.append("files", file)
@@ -336,7 +336,7 @@ function HomePage() {
       setShowAIPanel(false)
       setActiveTab("my-designs")
 
-      navigate(`/p/${project.id}`, { state: { openAIChat: true, aiPrompt: title } })
+      navigate(`/p/${project.id}`, { state: { openAIChat: true, aiPrompt: prompt } })
     } catch (e) {
       setAiCreating(false)
       setAiError("Error connecting to the server.")
@@ -381,22 +381,26 @@ function HomePage() {
                   }}
                 >
                   {showAIPanel ? (
-                    <input
-                      key="ai-input"
-                      type="text"
-                      placeholder="Let's slide together"
-                      value={aiTitle}
-                      onChange={(e) => setAiTitle(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !aiCreating) {
-                          e.preventDefault()
-                          handleAICreate()
-                        }
-                      }}
-                      disabled={aiCreating}
-                      autoFocus
-                      className="text-theme-primary placeholder-theme-secondary focus:outline-none w-full bg-transparent disabled:opacity-60 text-left"
-                    />
+                    <>
+                      <textarea
+                        key="ai-input"
+                        placeholder="Describe your presentation idea..."
+                        value={aiTitle}
+                        onChange={(e) => setAiTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey && !aiCreating) {
+                            e.preventDefault()
+                            handleAICreate()
+                          }
+                        }}
+                        disabled={aiCreating}
+                        autoFocus
+                        className="text-theme-primary placeholder-theme-secondary focus:outline-none w-full h-full bg-transparent disabled:opacity-60 text-left resize-none"
+                      />
+                      {aiCreating && (
+                        <div className="absolute inset-0 animated-gradient-bg rounded-3xl"></div>
+                      )}
+                    </>
                   ) : (
                     <input
                       key="search-input"
@@ -438,7 +442,7 @@ function HomePage() {
                         disabled={aiCreating}
                         className="flex items-center justify-center p-3 text-theme-inverted bg-theme-inverted rounded-full hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed"
                       >
-                        <span className="material-symbols-outlined">arrow_forward</span>
+                        <span className="material-symbols-outlined">auto_awesome</span>
                       </button>
                     </div>
                   )}
