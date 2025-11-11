@@ -7,6 +7,7 @@ import LogoLoop from "../ThirdPartyComponents/TextType/LogoLoop";
 import homePageImage from "../../assets/homePage.png";
 import {SiReact,SiTypescript,SiTailwindcss,SiVercel,SiSupabase,SiGithub,SiGoogle,} from "react-icons/si";
 import React, { useEffect, useState, useRef } from "react";
+import SEO from "../SEO";
 
 const MetallicPaint: React.FC<{ text: string; className?: string }> = ({ 
   text, 
@@ -135,6 +136,12 @@ export default function LandingPage() {
 
   return (
     <>
+      <SEO
+        title="Slides+ - Create Beautiful Presentations with Code & AI"
+        description="Build stunning presentations using code, visual editor, or AI assistance. Collaborate in real-time with your team. Free online presentation tool."
+        keywords="presentations, slides, code editor, AI presentation, collaborative editing, online presentations, visual editor, slide maker, free presentation software"
+        canonicalUrl="https://slidesplus.com/"
+      />
       <div className="min-h-screen w-full bg-[#121212] text-white overflow-x-hidden cursor-default relative">
         <header className="sticky top-0 w-full px-3 sm:px-4 md:px-6 py-3 md:py-4 flex justify-between items-center z-50 bg-[#121212]/80 backdrop-blur-md">
           <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-wide">

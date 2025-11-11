@@ -1,0 +1,13 @@
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Disallow private/protected routes
+Disallow: /p/
+Disallow: /home
+
+# Allow public presentation views
+Allow: /v/
+
+# Sitemap location
+Sitemap: https://slidesplus.com/sitemap.xml

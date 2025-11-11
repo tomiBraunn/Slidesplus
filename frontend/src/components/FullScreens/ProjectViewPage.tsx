@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom"
 import { urlbackend } from "../../config.js"
 import { ShareModal } from "../RegularComponents/MultiuseComponents/ShareModal"
 import AppIconWithoutLink from "../RegularComponents/MultiuseComponents/AppIconWithoutLink"
+import SEO from "../SEO"
 
 export default function ProjectViewPage() {
   const { id } = useParams<{ id: string }>()
@@ -438,6 +439,13 @@ window.addEventListener('keydown', (e) => {
 
   return (
     <>
+      <SEO
+        title={`${projectName} - Presentation on Slides+`}
+        description={`View this presentation: ${projectName}. Created with Slides+ - the collaborative presentation tool.`}
+        keywords="presentation, slides, view presentation, online presentation"
+        ogType="article"
+        canonicalUrl={`https://slidesplus.com/v/${id}`}
+      />
       <div ref={containerRef} className="relative w-screen h-screen user-select-none">
         <iframe
           ref={iframeRef}
