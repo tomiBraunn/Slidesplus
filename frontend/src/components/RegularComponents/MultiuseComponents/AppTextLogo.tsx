@@ -3,7 +3,7 @@ type AppTextLogoProps = {
 }
 
 function AppTextLogo({ size = 100 }: AppTextLogoProps) {
-    const projectName: string = "Slides+";
+    const projectName: string = "slides+";
     return (
         <p
             className="appColorFadeText select-none flex items-center justify-center m-0 p-0 leading-none"

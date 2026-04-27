@@ -11,7 +11,7 @@ interface SEOProps {
 }
 
 export default function SEO({
-  title = 'Slides+ - Create Beautiful Presentations with Code & AI',
+  title = 'Slides+',
   description = 'Build stunning presentations using code, visual editor, or AI assistance. Collaborate in real-time with your team. Create, edit, and present slides effortlessly.',
   keywords = 'presentations, slides, code editor, AI presentation, collaborative editing, online presentations, visual editor, slide maker',
   ogImage = 'https://slidesplus.com/og-image.png',

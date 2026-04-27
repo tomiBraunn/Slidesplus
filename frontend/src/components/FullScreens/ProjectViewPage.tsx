@@ -440,8 +440,8 @@ window.addEventListener('keydown', (e) => {
   return (
     <>
       <SEO
-        title={`${projectName} - Presentation on Slides+`}
-        description={`View this presentation: ${projectName}. Created with Slides+ - the collaborative presentation tool.`}
+        title={`${projectName} - Presentation on slides+`}
+        description={`View this presentation: ${projectName}. Created with slides+ - the collaborative presentation tool.`}
         keywords="presentation, slides, view presentation, online presentation"
         ogType="article"
         canonicalUrl={`https://slidesplus.com/v/${id}`}

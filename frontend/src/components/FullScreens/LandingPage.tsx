@@ -137,7 +137,7 @@ export default function LandingPage() {
   return (
     <>
       <SEO
-        title="Slides+ - Create Beautiful Presentations with Code & AI"
+        title="slides+"
         description="Build stunning presentations using code, visual editor, or AI assistance. Collaborate in real-time with your team. Free online presentation tool."
         keywords="presentations, slides, code editor, AI presentation, collaborative editing, online presentations, visual editor, slide maker, free presentation software"
         canonicalUrl="https://slidesplus.com/"
@@ -145,7 +145,7 @@ export default function LandingPage() {
       <div className="min-h-screen w-full bg-[#121212] text-white overflow-x-hidden cursor-default relative">
         <header className="sticky top-0 w-full px-3 sm:px-4 md:px-6 py-3 md:py-4 flex justify-between items-center z-50 bg-[#121212]/80 backdrop-blur-md">
           <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-wide">
-            <MetallicPaint text="Slides+" className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-wide" />
+            <MetallicPaint text="slides+" className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-wide" />
           </h1>
           <div className="flex gap-2 sm:gap-3 md:gap-4">
             <button

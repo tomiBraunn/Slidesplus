@@ -1,6 +1,6 @@
 {
-  "name": "Slides+ - Create Beautiful Presentations",
-  "short_name": "Slides+",
+  "name": "slides+",
+  "short_name": "slides+",
   "description": "Build stunning presentations using code, visual editor, or AI assistance",
   "start_url": "/",
   "display": "standalone",
