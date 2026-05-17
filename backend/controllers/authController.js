@@ -70,6 +70,28 @@ export const registerUser = async (req, res) => {
 	}
 }
 
+export const syncPassword = async (req, res) => {
+	if (!pool) return res.status(500).json({ message: "Database not configured" })
+	try {
+		const { new_password } = req.body ?? {}
+		if (!new_password || String(new_password).trim().length < 6) {
+			return res.status(400).json({ message: "New password must be at least 6 characters" })
+		}
+
+		const hashed = await bcrypt.hash(new_password, 10)
+		const result = await pool.query(
+			`UPDATE users SET password=$1, updated_at=NOW() WHERE id=$2 RETURNING id`,
+			[hashed, req.user.sub]
+		)
+
+		if (result.rowCount === 0) return res.status(404).json({ message: "User not found" })
+		return res.json({ ok: true, message: "Password synced" })
+	} catch (err) {
+		console.error("ERROR SYNCING PASSWORD:", err)
+		return res.status(500).json({ message: "Internal error" })
+	}
+}
+
 export const login = async (req, res) => {
 	if (!pool) return res.status(500).json({ message: "Database not configured" })
 	try {
