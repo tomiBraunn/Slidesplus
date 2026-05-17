@@ -1,27 +1,60 @@
 import jwt from "jsonwebtoken"
 import { pool } from "../config/database.js"
+import { supabase } from "../services/supabaseService.js"
 
-export function auth(req, res, next) {
+export async function auth(req, res, next) {
 	const h = req.headers.authorization || ""
 	const token = h.startsWith("Bearer ") ? h.slice(7) : null
 	if (!token) return res.status(401).json({ message: "Missing token" })
+
+	// Try backend JWT first
 	try {
 		const payload = jwt.verify(token, process.env.JWT_SECRET)
 		if (!pool) return res.status(500).json({ message: "Database not configured" })
-		pool
-			.query("SELECT id FROM users WHERE id=$1", [payload.sub])
-			.then((r) => {
-				if (r.rowCount === 0) return res.status(401).json({ message: "User deleted" })
-				req.user = payload
-				next()
-			})
-			.catch(() => res.status(500).json({ message: "Error validating user" }))
-	} catch {
+		const r = await pool.query("SELECT id FROM users WHERE id=$1", [payload.sub])
+		if (r.rowCount === 0) return res.status(401).json({ message: "User deleted" })
+		req.user = payload
+		return next()
+	} catch (jwtErr) {
+		// Not a backend JWT or verification failed; fall through to Supabase check
+	}
+
+	// Try Supabase token
+	try {
+		const { data, error } = await supabase.auth.getUser(token)
+		if (error || !data?.user) {
+			console.error("[Auth] Invalid Supabase token:", error && error.message)
+			return res.status(401).json({ message: "Invalid token" })
+		}
+
+		const user = data.user
+		if (!pool) return res.status(500).json({ message: "Database not configured" })
+
+		// Ensure user exists in public.users; create if missing
+		const userRes = await pool.query("SELECT id FROM users WHERE id=$1", [user.id])
+		if (userRes.rowCount === 0) {
+			const metadata = user.user_metadata || {}
+			try {
+				await pool.query(
+					`INSERT INTO users (id, username, email, first_name, last_name)
+					VALUES ($1, $2, $3, $4, $5)
+					ON CONFLICT (id) DO NOTHING`,
+					[user.id, metadata.username || "", user.email || "", metadata.first_name || "", metadata.last_name || ""]
+				)
+			} catch (insertErr) {
+				console.error("[Auth] Error inserting user from Supabase:", insertErr)
+			}
+		}
+
+		req.user = { sub: user.id, email: user.email }
+		return next()
+	} catch (err) {
+		console.error("[Auth] Error validating Supabase token:", err)
 		return res.status(401).json({ message: "Invalid token" })
 	}
 }
 
-export function optionalAuth(req, res, next) {
+export async function optionalAuth(req, res, next) {
 	const h = req.headers.authorization || ""
 	const token = h.startsWith("Bearer ") ? h.slice(7) : null
 
@@ -30,26 +63,32 @@ export function optionalAuth(req, res, next) {
 		return next()
 	}
 
+	// Try backend JWT first
 	try {
 		const payload = jwt.verify(token, process.env.JWT_SECRET)
 		if (!pool) {
 			req.user = null
 			return next()
 		}
+		const r = await pool.query("SELECT id FROM users WHERE id=$1", [payload.sub])
+		req.user = r.rowCount > 0 ? payload : null
+		return next()
+	} catch (jwtErr) {
+		// Fall back to Supabase
+	}
 
-		pool
-			.query("SELECT id FROM users WHERE id=$1", [payload.sub])
-			.then((r) => {
-				req.user = r.rowCount > 0 ? payload : null
-				next()
-			})
-			.catch(() => {
-				req.user = null
-				next()
-			})
-	} catch {
+	try {
+		const { data, error } = await supabase.auth.getUser(token)
+		if (error || !data?.user) {
+			req.user = null
+			return next()
+		}
+		req.user = { sub: data.user.id, email: data.user.email }
+		return next()
+	} catch (err) {
+		console.error("[optionalAuth] Error validating Supabase token:", err)
 		req.user = null
-		next()
+		return next()
 	}
 }
 

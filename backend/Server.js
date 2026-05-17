@@ -8,7 +8,8 @@ import authRoutes from "./routes/authRoutes.js"
 import userRoutes from "./routes/userRoutes.js"
 import projectRoutes from "./routes/projectRoutes.js"
 import geminiRoutes from "./routes/geminiRoutes.js"
-import chatgptRoutes from "./routes/chatgptRoutes.js"
+// ChatGPT routes currently disabled per request (Option A).
+// import chatgptRoutes from "./routes/chatgptRoutes.js"
 import unsplashRoutes from "./routes/unsplashRoutes.js"
 import realtimeRoutes from "./routes/realtimeRoutes.js"
 import collaborationRoutes from "./routes/collaborationRoutes.js"
@@ -88,7 +89,7 @@ app.use("/", authRoutes)
 app.use("/", userRoutes)
 app.use("/", projectRoutes)
 app.use("/", geminiRoutes)
-app.use("/", chatgptRoutes)
+// app.use("/", chatgptRoutes)
 app.use("/", unsplashRoutes)
 app.use("/", realtimeRoutes)
 app.use("/", collaborationRoutes)
