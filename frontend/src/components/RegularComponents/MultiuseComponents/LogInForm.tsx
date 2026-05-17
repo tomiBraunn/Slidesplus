@@ -120,7 +120,7 @@ function LogInForm() {
               <span className="bg-[#0f0f0f]/90 relative z-10 px-3 text-gray-400">
                 Or continue with
               </span>
-              <div className="absolute inset-0 top-1/4 -translate-y-1/4 border-t border-[#2B2B2B]" />
+              {/* <div className="absolute inset-0 top-1/4 -translate-y-1/4 border-t border-[#2B2B2B]" /> */}
             </div>
 
             <div className="grid gap-2 sm:gap-3">
