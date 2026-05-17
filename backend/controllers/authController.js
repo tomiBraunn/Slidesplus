@@ -35,6 +35,41 @@ export const createUser = async (req, res) => {
 	}
 }
 
+export const registerUser = async (req, res) => {
+	if (!pool) return res.status(500).json({ message: "Database not configured" })
+	try {
+		const { id, email, username, password, first_name, last_name } = req.body ?? {}
+		if (!id || !email || !password) return res.status(400).json({ message: "Missing required fields: id, email, password" })
+
+		const hashed = await bcrypt.hash(password, 10)
+
+		// Upsert: insert new user or update if already exists (from Supabase email verification)
+		const q = await pool.query(
+			`INSERT INTO users (id, email, username, password, first_name, last_name)
+			 VALUES ($1, $2, $3, $4, $5, $6)
+			 ON CONFLICT(id) DO UPDATE SET
+			   password = EXCLUDED.password,
+			   email = EXCLUDED.email,
+			   username = EXCLUDED.username,
+			   first_name = EXCLUDED.first_name,
+			   last_name = EXCLUDED.last_name,
+			   updated_at = NOW()
+			 RETURNING id, username, email, first_name, last_name`,
+			[id, email, username, hashed, first_name, last_name]
+		)
+
+		res.json({
+			ok: true,
+			user: q.rows[0],
+			message: "Password saved. Please verify your email to complete registration."
+		})
+	} catch (err) {
+		console.error("ERROR REGISTERING USER:", err)
+		if (err.code === "23505") return res.status(409).json({ message: "Email already exists" })
+		res.status(500).json({ message: "Internal error", detail: err.message })
+	}
+}
+
 export const login = async (req, res) => {
 	if (!pool) return res.status(500).json({ message: "Database not configured" })
 	try {
