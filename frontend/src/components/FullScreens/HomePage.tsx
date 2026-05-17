@@ -9,6 +9,7 @@ import ViewModeSwitch from "../RegularComponents/HomeComponents/ViewModeSwitch"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { urlbackend } from "../../config.js"
+import { getAuthToken } from "../../utils/getAuthToken"
 import { motion, AnimatePresence } from "framer-motion"
 
 type Project = {
@@ -93,7 +94,7 @@ function HomePage() {
 
   const fetchUser = async () => {
     try {
-      const token = localStorage.getItem("token")
+      const token = await getAuthToken()
       if (!token) return
       const res = await fetch(`${urlbackend}/me`, {
         headers: {
@@ -118,7 +119,7 @@ function HomePage() {
     setErr("")
     setLoading(true)
     try {
-      const token = localStorage.getItem("token")
+      const token = await getAuthToken()
 
       let currentUser = user
       if (!currentUser && token) {
@@ -201,7 +202,7 @@ function HomePage() {
   const onDeleteProject = async () => {
     if (!selected) return
     try {
-      const token = localStorage.getItem("token")
+      const token = await getAuthToken()
       const res = await fetch(`${urlbackend}/projects/${selected.id}`, {
         method: "DELETE",
         headers: {

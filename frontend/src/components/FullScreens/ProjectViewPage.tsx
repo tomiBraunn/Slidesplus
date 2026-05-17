@@ -5,6 +5,7 @@ import { urlbackend } from "../../config.js"
 import { ShareModal } from "../RegularComponents/MultiuseComponents/ShareModal"
 import AppIconWithoutLink from "../RegularComponents/MultiuseComponents/AppIconWithoutLink"
 import SEO from "../SEO"
+import { getAuthToken } from "../../utils/getAuthToken"
 
 export default function ProjectViewPage() {
   const { id } = useParams<{ id: string }>()
@@ -163,7 +164,7 @@ export default function ProjectViewPage() {
   useEffect(() => {
     async function fetchProject() {
       try {
-        const token = localStorage.getItem('token')
+        const token = await getAuthToken()
         const headers: HeadersInit = {
           "Content-Type": "application/json",
         }

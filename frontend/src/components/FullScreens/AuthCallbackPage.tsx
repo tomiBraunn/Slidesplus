@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { supabase } from '../../utils/supabaseClient';
 
 export default function AuthCallbackPage() {
   const [searchParams] = useSearchParams();
@@ -8,27 +9,43 @@ export default function AuthCallbackPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = searchParams.get('token');
-    const errorParam = searchParams.get('error');
+    const handleCallback = async () => {
+      try {
+        const errorParam = searchParams.get('error');
 
-    if (errorParam) {
-      setError(`Authentication failed with ${errorParam}. Please try again.`);
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
-      return;
-    }
+        if (errorParam) {
+          setError(`Authentication failed with ${errorParam}. Please try again.`);
+          setTimeout(() => {
+            navigate('/login');
+          }, 3000);
+          return;
+        }
 
-    if (token) {
-      localStorage.setItem('token', token);
+        // Get the current session from Supabase (handles both hash and query params)
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-      navigate('/home');
-    } else {
-      setError('No authentication token received');
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
-    }
+        if (sessionError || !session) {
+          setError('No authentication session found');
+          setTimeout(() => {
+            navigate('/login');
+          }, 3000);
+          return;
+        }
+
+        // Session exists; store access token in localStorage for legacy backend calls if needed
+        localStorage.setItem('token', session.access_token);
+
+        // Redirect to home
+        navigate('/home');
+      } catch (err: any) {
+        setError('Unexpected error during authentication');
+        setTimeout(() => {
+          navigate('/login');
+        }, 3000);
+      }
+    };
+
+    handleCallback();
   }, [searchParams, navigate]);
 
   if (error) {

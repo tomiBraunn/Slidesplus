@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React, { useState, useRef, useEffect } from "react";
 import { urlbackend } from "../../../config.js";
+import { getAuthToken } from "../../../utils/getAuthToken";
 import BasicModal from "./BasicModal";
 
 type Props = {
@@ -95,7 +96,7 @@ export default function SettingsModal({ onClose }: Props) {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = await getAuthToken();
         if (!token) {
           setIsLoading(false);
           return;
@@ -129,7 +130,7 @@ export default function SettingsModal({ onClose }: Props) {
 
     const fetchProjects = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = await getAuthToken();
         const response = await fetch(`${urlbackend}/projects`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -153,7 +154,7 @@ export default function SettingsModal({ onClose }: Props) {
 
   const checkSpotifyConnection = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = await getAuthToken();
       if (!token) return;
       const response = await fetch(`${urlbackend}/spotify/status`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -210,7 +211,7 @@ export default function SettingsModal({ onClose }: Props) {
       const formData = new FormData();
       formData.append("avatar", file);
 
-      const token = localStorage.getItem("token");
+      const token = await getAuthToken();
       const response = await fetch(`${urlbackend}/users/me/avatar`, {
         method: "POST",
         headers: {

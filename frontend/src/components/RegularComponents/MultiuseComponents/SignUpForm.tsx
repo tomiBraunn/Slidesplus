@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React, { useState } from "react";
-import { urlbackend } from "../../../config.js";
+import { toast } from "sonner";
+import { supabase } from "../../../utils/supabaseClient";
 
 function SignUpForm() {
   const [username, setUsername] = useState("");
@@ -11,40 +12,76 @@ function SignUpForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrors({});
 
     if (password !== confirmPassword) {
-      setErrors({ confirmPassword: "Las contraseñas no coinciden" });
+      toast.error("Las contraseñas no coinciden");
       return;
     }
 
     try {
-      const res = await fetch(`${urlbackend}/createuser`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username,
-          email,
-          first_name: firstName,
-          last_name: lastName,
-          password,
-        }),
-      });
+      // Use Supabase Auth to sign up. Supabase will send the confirmation email if SMTP is configured.
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          // Redirect after confirmation (user clicks link in email)
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          data: {
+            username,
+            first_name: firstName,
+            last_name: lastName,
+          },
+        },
+      } as any);
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setErrors({ [data?.field || "form"]: data?.message || "Error en el registro" });
+      if (error) {
+        toast.error(error.message || "No se pudo crear la cuenta");
         return;
       }
 
-      window.location.href = "/login";
-    } catch {
-      setErrors({ form: "Error de conexión con el servidor" });
+      // Send user data + password to backend to save in public.users
+      if (data?.user?.id) {
+        try {
+          const registerRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://slides-plus-backend.vercel.app'}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: data.user.id,
+              email,
+              username,
+              password,
+              first_name: firstName,
+              last_name: lastName,
+            }),
+          });
+          if (!registerRes.ok) {
+            toast.error("No se pudo sincronizar el registro con el backend");
+          }
+        } catch (backendErr) {
+          console.warn('Backend registration sync failed:', backendErr);
+          toast.error("No se pudo sincronizar el registro con el backend");
+        }
+      }
+
+      toast.success("Verifica tu casilla de mail", {
+        description: "Revisa tu bandeja y confirma tu cuenta para completar el registro.",
+        action: {
+          label: "Ir a login",
+          onClick: () => {
+            window.location.href = "/login";
+          },
+        },
+      });
+
+      // Optionally clear form or keep values for user convenience
+      setPassword("");
+      setConfirmPassword("");
+
+    } catch (err: any) {
+      toast.error("Error de conexión con el servidor");
     }
   };
 
@@ -88,13 +125,8 @@ function SignUpForm() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
-                  className={`bg-[#121212] px-3 py-2.5 w-full text-sm rounded-lg border ${
-                    errors.username ? "border-red-500" : "border-[#2B2B2B]"
-                  } focus:outline-none focus:border-[#3B3B3B]`}
+                  className="bg-[#121212] px-3 py-2.5 w-full text-sm rounded-lg border border-[#2B2B2B] focus:outline-none focus:border-[#3B3B3B]"
                 />
-                {errors.username && (
-                  <span className="text-red-500 text-xs mt-1">{errors.username}</span>
-                )}
               </div>
 
               <div className="grid gap-2 sm:gap-1">
@@ -104,13 +136,8 @@ function SignUpForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className={`bg-[#121212] px-3 py-2.5 w-full text-sm rounded-lg border ${
-                    errors.email ? "border-red-500" : "border-[#2B2B2B]"
-                  } focus:outline-none focus:border-[#3B3B3B]`}
+                  className="bg-[#121212] px-3 py-2.5 w-full text-sm rounded-lg border border-[#2B2B2B] focus:outline-none focus:border-[#3B3B3B]"
                 />
-                {errors.email && (
-                  <span className="text-red-500 text-xs mt-1">{errors.email}</span>
-                )}
               </div>
               <div className="grid gap-2 sm:gap-1 relative">
                 <label className="text-sm font-medium">Password</label>
@@ -120,9 +147,7 @@ function SignUpForm() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className={`bg-[#121212] px-3 py-2.5 w-full text-sm rounded-lg border ${
-                      errors.password ? "border-red-500" : "border-[#2B2B2B]"
-                    } pr-12 focus:outline-none focus:border-[#3B3B3B]`}
+                    className="bg-[#121212] px-3 py-2.5 w-full text-sm rounded-lg border border-[#2B2B2B] pr-12 focus:outline-none focus:border-[#3B3B3B]"
                   />
                   <button
                     type="button"
@@ -143,9 +168,7 @@ function SignUpForm() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    className={`bg-[#121212] px-3 py-2.5 w-full text-sm rounded-lg border ${
-                      errors.confirmPassword ? "border-red-500" : "border-[#2B2B2B]"
-                    } pr-12 focus:outline-none focus:border-[#3B3B3B]`}
+                    className="bg-[#121212] px-3 py-2.5 w-full text-sm rounded-lg border border-[#2B2B2B] pr-12 focus:outline-none focus:border-[#3B3B3B]"
                   />
                   <button
                     type="button"
@@ -157,14 +180,7 @@ function SignUpForm() {
                     </span>
                   </button>
                 </div>
-                {errors.confirmPassword && (
-                  <span className="text-red-500 text-xs mt-1">{errors.confirmPassword}</span>
-                )}
               </div>
-
-              {errors.form && (
-                <p className="text-red-500 text-sm text-center">{errors.form}</p>
-              )}
 
               <button
                 type="submit"
@@ -184,6 +200,7 @@ function SignUpForm() {
           </div>
         </div>
       </div>
+
     </div>
   );
 }

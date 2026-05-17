@@ -2,6 +2,7 @@
 import { useEffect, useState, useMemo } from "react";
 import TextType from "../../ThirdPartyComponents/TextType/TextType.js";
 import { urlbackend } from "../../../config.js";
+import { getAuthToken } from '../../../utils/getAuthToken';
 
 type User = {
     id: string;
@@ -20,7 +21,7 @@ function WelcomeMessages() {
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                const token = localStorage.getItem("token");
+                const token = await getAuthToken();
                 if (!token) {
                     setIsLoading(false);
                     return;

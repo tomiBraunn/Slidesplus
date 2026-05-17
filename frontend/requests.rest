@@ -22,6 +22,15 @@ Content-Type: application/json
   "password": "testpass123"
 }
 
+### Sync password after Supabase reset
+POST http://localhost:8000/auth/sync-password
+Content-Type: application/json
+Authorization: Bearer {{TOKEN}}
+
+{
+  "new_password": "newpass123"
+}
+
 ### Me
 GET http://localhost:8000/me
 Authorization: Bearer {{TOKEN}}

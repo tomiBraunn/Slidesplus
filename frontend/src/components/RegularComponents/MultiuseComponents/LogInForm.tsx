@@ -1,12 +1,14 @@
 // @ts-nocheck
 import React, { useState } from "react";
+import { toast } from "sonner";
 import { urlbackend } from "../../../config.js";
+import { supabase } from "../../../utils/supabaseClient";
 
 function LogInForm() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
+  const [isSendingReset, setIsSendingReset] = useState(false);
 
   const handleGoogleLogin = () => {
     window.location.href = `${urlbackend}/auth/google`;
@@ -18,7 +20,6 @@ function LogInForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
 
     try {
       const res = await fetch(`${urlbackend}/login`, {
@@ -30,7 +31,7 @@ function LogInForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.message || "Error en login");
+        toast.error(data.message || "Error en login");
         return;
       }
 
@@ -38,7 +39,35 @@ function LogInForm() {
       window.location.href = "/home";
     } catch (err) {
       console.error("Error:", err);
-      setError("Error de conexión con el servidor");
+      toast.error("Error de conexión con el servidor");
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    const defaultEmail = identifier.includes("@") ? identifier : "";
+    const emailInput = window.prompt("Ingresá tu email para recuperar la contraseña:", defaultEmail)?.trim();
+
+    if (!emailInput) return;
+
+    setIsSendingReset(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(emailInput, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        toast.error(error.message || "No se pudo enviar la recuperación");
+        return;
+      }
+
+      toast.success("Te enviamos un mail para recuperar tu contraseña", {
+        description: "Seguí el link del mail para definir una nueva contraseña.",
+      });
+    } catch (err) {
+      console.error("Forgot password error:", err);
+      toast.error("Error de conexión con el servidor");
+    } finally {
+      setIsSendingReset(false);
     }
   };
 
@@ -91,7 +120,7 @@ function LogInForm() {
               <span className="bg-[#0f0f0f]/90 relative z-10 px-3 text-gray-400">
                 Or continue with
               </span>
-              <div className="absolute inset-0 top-1/2 -translate-y-1/2 border-t border-[#2B2B2B]" />
+              <div className="absolute inset-0 top-1/4 -translate-y-1/4 border-t border-[#2B2B2B]" />
             </div>
 
             <div className="grid gap-2 sm:gap-3">
@@ -114,12 +143,14 @@ function LogInForm() {
                 <label htmlFor="password" className="text-sm font-medium">
                   Password
                 </label>
-                <a
-                  href="#"
-                  className="ml-auto text-xs sm:text-sm underline-offset-4 hover:underline text-gray-400 hover:text-gray-300 transition"
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  disabled={isSendingReset}
+                  className="ml-auto text-xs sm:text-sm underline-offset-4 hover:underline text-gray-400 hover:text-gray-300 transition disabled:opacity-60"
                 >
-                  Forgot your password?
-                </a>
+                  {isSendingReset ? "Enviando..." : "Forgot your password?"}
+                </button>
               </div>
 
               <div className="relative">
@@ -142,10 +173,6 @@ function LogInForm() {
                 </button>
               </div>
             </div>
-
-            {error && (
-              <p className="text-red-500 text-sm text-center">{error}</p>
-            )}
 
             <button
               type="submit"
