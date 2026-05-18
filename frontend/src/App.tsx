@@ -9,6 +9,7 @@ import ResetPasswordPage from "./components/FullScreens/ResetPasswordPage";
 import AuthCallbackPage from "./components/FullScreens/AuthCallbackPage";
 import UrlNotFoundPage from "./components/FullScreens/UrlNotFoundPage";
 import ProtectedRoute from "./ProtectedRoute";
+import AltLandingPage from "./components/FullScreens/AltLandingPage";
 import { ThemeProvider } from "./contexts/ThemeContext";
 
 export default function App() {
@@ -24,6 +25,7 @@ export default function App() {
           <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
           <Route path="/p/:id" element={<ProtectedRoute><ProjectPage /></ProtectedRoute>} />
           <Route path="/v/:id" element={<ProjectViewPage />} />
+          <Route path="/altlanding" element={<AltLandingPage />} />
           <Route path="/notfound" element={<UrlNotFoundPage />} />
           <Route path="*" element={<Navigate to="/notfound" replace />} />
         </Routes>
