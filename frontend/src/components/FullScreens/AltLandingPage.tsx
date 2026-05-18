@@ -3,6 +3,7 @@ import type { MouseEvent, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import SEO from "../SEO";
 import AppIconWithoutLink from "../RegularComponents/MultiuseComponents/AppIconWithoutLink";
+import Grainient from "../ThirdPartyComponents/Grainient/Grainient";
 
 type Language = "en" | "es";
 
@@ -306,9 +307,32 @@ function SectionCorner() {
 
 function GrainientBackground() {
   return (
-    <div className="grainient-bg pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-      <div className="grainient-noise absolute inset-0" />
-      <div className="absolute inset-0 bg-background/20" />
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+      <Grainient
+        color1="#7182FF"
+        color2="#249931"
+        color3="#0d0d0c"
+        timeSpeed={0.22}
+        colorBalance={-0.08}
+        warpStrength={0.85}
+        warpFrequency={4.6}
+        warpSpeed={1.4}
+        warpAmplitude={58}
+        blendAngle={18}
+        blendSoftness={0.08}
+        rotationAmount={360}
+        noiseScale={1.8}
+        grainAmount={0.08}
+        grainScale={2.4}
+        grainAnimated={false}
+        contrast={1.25}
+        gamma={1}
+        saturation={1.08}
+        centerX={0}
+        centerY={0}
+        zoom={0.92}
+      />
+      <div className="absolute inset-0 bg-background/28" />
     </div>
   );
 }
