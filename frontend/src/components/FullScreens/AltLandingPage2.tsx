@@ -338,7 +338,7 @@ function CornerDots() {
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
-};
+} as const;
 
 const stagger = {
   hidden: { opacity: 0 },
@@ -370,7 +370,6 @@ export default function AltLandingPage2() {
     const target = document.querySelector(href);
     target?.scrollIntoView({ behavior: "smooth", block: "start" });
     window.history.replaceState(null, "", href);
-    setMobileMenuOpen(false);
   };
 
   useEffect(() => {
