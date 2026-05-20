@@ -73,7 +73,7 @@ function LogInForm() {
 
   return (
     <div className="flex flex-col gap-6 relative z-10 w-full max-w-md px-4 sm:px-6">
-      <div className="rounded-2xl border border-[#2B2B2B] bg-[#0f0f0f]/90 backdrop-blur">
+      <div className="rounded-2xl border border-white/[0.06] bg-black/50 backdrop-blur-xl shadow-xl shadow-black/30">
         <div className="text-center px-4 sm:px-6 pt-6">
           <h1 className="text-xl sm:text-2xl font-semibold">Welcome back!</h1>
           <p className="text-sm text-gray-400 mt-1">

@@ -88,7 +88,7 @@ function SignUpForm() {
   return (
     <div className="relative flex items-center justify-center w-full">
       <div className="relative z-10 w-full max-w-md px-4 sm:px-6">
-        <div className="rounded-2xl border border-[#2B2B2B] bg-[#0f0f0f]/90 backdrop-blur">
+        <div className="rounded-2xl border border-white/[0.06] bg-black/50 backdrop-blur-xl shadow-xl shadow-black/30">
           <div className="text-center px-4 sm:px-6 pt-6">
             <p className="text-xl sm:text-2xl font-semibold">Create your account</p>
           </div>
