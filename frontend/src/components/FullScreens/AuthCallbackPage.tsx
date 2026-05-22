@@ -21,10 +21,23 @@ export default function AuthCallbackPage() {
           return;
         }
 
-        // Get the current session from Supabase (handles both hash and query params)
+        // Supabase automatically handles the OAuth callback
+        // Just wait a moment for the session to be established
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Get the current session from Supabase
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-        if (sessionError || !session) {
+        if (sessionError) {
+          console.error("Session error:", sessionError);
+          setError('Error retrieving session');
+          setTimeout(() => {
+            navigate('/login');
+          }, 3000);
+          return;
+        }
+
+        if (!session) {
           setError('No authentication session found');
           setTimeout(() => {
             navigate('/login');
@@ -32,12 +45,13 @@ export default function AuthCallbackPage() {
           return;
         }
 
-        // Session exists; store access token in localStorage for legacy backend calls if needed
+        // Store access token for legacy backend calls if needed
         localStorage.setItem('token', session.access_token);
 
         // Redirect to home
         navigate('/home');
       } catch (err: any) {
+        console.error("Callback error:", err);
         setError('Unexpected error during authentication');
         setTimeout(() => {
           navigate('/login');

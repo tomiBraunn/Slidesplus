@@ -18,7 +18,7 @@ export default function App() {
     <ThemeProvider>
       <Router>
         <Routes>
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<AltLandingPage2 />} />
           <Route path="/login" element={<LogInPage />} />
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -26,8 +26,8 @@ export default function App() {
           <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
           <Route path="/p/:id" element={<ProtectedRoute><ProjectPage /></ProtectedRoute>} />
           <Route path="/v/:id" element={<ProjectViewPage />} />
+          <Route path="/oldlanding" element={<LandingPage />} />
           <Route path="/altlanding" element={<AltLandingPage />} />
-          <Route path="/altlanding2" element={<AltLandingPage2 />} />
           <Route path="/notfound" element={<UrlNotFoundPage />} />
           <Route path="*" element={<Navigate to="/notfound" replace />} />
         </Routes>

@@ -383,7 +383,7 @@ export default function AltLandingPage2() {
       <SEO
         title="slides+ | Build presentations with code, AI, and your team."
         description={t.seoDescription}
-        canonicalUrl="https://slidesplus.com/altlanding2"
+        canonicalUrl="https://slidesplus.com/"
       />
 
       <div className="relative min-h-screen bg-black text-white font-sans antialiased w-full">

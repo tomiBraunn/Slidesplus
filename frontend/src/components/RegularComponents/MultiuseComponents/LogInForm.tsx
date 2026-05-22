@@ -10,12 +10,38 @@ function LogInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSendingReset, setIsSendingReset] = useState(false);
 
-  const handleGoogleLogin = () => {
-    window.location.href = `${urlbackend}/auth/google`;
+  const handleGoogleLogin = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) {
+        toast.error(error.message || "Google login failed");
+      }
+    } catch (err) {
+      console.error("Google login error:", err);
+      toast.error("Error connecting to Google");
+    }
   };
 
-  const handleGitHubLogin = () => {
-    window.location.href = `${urlbackend}/auth/github`;
+  const handleGitHubLogin = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "github",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) {
+        toast.error(error.message || "GitHub login failed");
+      }
+    } catch (err) {
+      console.error("GitHub login error:", err);
+      toast.error("Error connecting to GitHub");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
