@@ -383,7 +383,7 @@ export default function AltLandingPage2() {
       <SEO
         title="slides+ | Build presentations with code, AI, and your team."
         description={t.seoDescription}
-        canonicalUrl="https://slidesplus.com/"
+        canonicalUrl="https://slidesplus.com/altlanding2"
       />
 
       <div className="relative min-h-screen bg-black text-white font-sans antialiased w-full">
@@ -430,13 +430,13 @@ export default function AltLandingPage2() {
                   {label}
                 </a>
               ))}
-              <a
-                href="#get-started"
-                onClick={(e) => scrollToSection(e, "#get-started")}
+              <button
+                type="button"
+                onClick={() => navigate("/login")}
                 className="inline-flex items-center rounded-md bg-black px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white transition-opacity hover:opacity-90"
               >
                 {t.startShort}
-              </a>
+              </button>
             </div>
           </div>
         </nav>
@@ -503,7 +503,7 @@ export default function AltLandingPage2() {
                       </p>
                       <button
                         type="button"
-                        onClick={() => navigate("/signup")}
+                        onClick={() => navigate("/login")}
                         className="group pointer-events-auto inline-flex items-stretch gap-1 cursor-pointer shrink-0"
                       >
                         <span className="px-5 py-3 rounded-md bg-foreground text-background text-xs font-medium tracking-widest uppercase">
