@@ -47,9 +47,9 @@ function ProjectPreview({
   const [mainScale, setMainScale] = useState(1)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const mainPreviewRef = useRef<HTMLDivElement>(null)
-  const [previewsHeight, setPreviewsHeight] = useState<number>(0)
   const navigate = useNavigate()
   const [isMobile, setIsMobile] = useState(false)
+  const [previewsHeight, setPreviewsHeight] = useState<number>(0)
 
   useEffect(() => {
     const checkMobile = () => {
@@ -305,7 +305,7 @@ function ProjectPreview({
     >
       <div
         onMouseDown={(e) => e.stopPropagation()}
-        className={`text-white rounded-xl bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300 card-animate w-[95vw] md:w-[85vw] max-w-[1400px] h-[90vh] md:max-h-[90vh] overflow-hidden flex flex-col border border-white/10 bg-[#0b0b0bcc] transform transition-all duration-200 ease-out backdrop-bl-sm select-none${show ? " opacity-100 scale-100" : " opacity-0 scale-95"}`}
+        className={`text-white rounded-xl bg-theme-quaternary backdrop-blur-xl border border-theme-tertiary text-theme-primary transition-colors duration-300 card-animate w-[95vw] md:w-[85vw] max-w-[1400px] h-[75vh] md:max-h-[75vh] overflow-hidden flex flex-col transform transition-all duration-200 ease-out select-none${show ? " opacity-100 scale-100" : " opacity-0 scale-95"}`}
       >
         <div className="flex items-center justify-between gap-2 w-full p-2 md:p-4 flex-shrink-0">
           <div className="flex items-start flex-col min-w-0 flex-1 text-theme-primary">
@@ -330,17 +330,17 @@ function ProjectPreview({
         </div>
 
         <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} items-start justify-start gap-2 w-full min-h-0 px-2 md:px-4 pb-1 md:pb-2`} style={{ flex: '1 1 0', overflow: 'hidden' }}>
-          <div ref={mainPreviewRef} className={`text-white rounded-xl border  bg-white ${isMobile ? 'w-full flex-1 min-h-0' : 'w-full'} ${isMobile ? '' : 'aspect-video'} p-0 overflow-hidden border-solid relative select-none`}>
+          <div ref={mainPreviewRef} className={`text-white rounded-xl border border-theme-tertiary bg-theme-quaternary ${isMobile ? 'w-full flex-1 min-h-0' : 'w-full'} ${isMobile ? '' : 'aspect-video'} p-0 overflow-hidden border-solid relative select-none`}>
             {slides.length === 0 ? (
               <div className="w-full h-full flex items-center justify-center">
                 <p className="text-gray-400 text-lg">Empty presentation - Add slides to get started!</p>
               </div>
             ) : (
-              <iframe ref={iframeRef} title="Project Preview" className="w-full h-full border-0 bg-white" style={{ background: 'white' }} />
+              <iframe ref={iframeRef} title="Project Preview" className="w-full h-full border-0" />
             )}
           </div>
           <div
-            className={`rounded-xl ${isMobile ? 'w-full h-16' : 'w-1/6 min-w-[120px]'} p-1.5 md:p-2 flex ${isMobile ? 'flex-row overflow-x-auto' : 'flex-col overflow-y-auto'} gap-1.5 md:gap-2 scrollbar-custom flex-shrink-0`}
+            className={`rounded-xl bg-theme-quaternary backdrop-blur-xl ${isMobile ? 'w-full h-16' : 'w-1/6 min-w-[120px]'} p-1.5 md:p-2 flex ${isMobile ? 'flex-row overflow-x-auto' : 'flex-col overflow-y-auto'} gap-1.5 md:gap-2 scrollbar-custom flex-shrink-0`}
             style={isMobile ? {} : { height: previewsHeight }}
           >
             {slides.map((s) => {
@@ -353,7 +353,7 @@ function ProjectPreview({
                 <div
                   key={s.id}
                   onClick={() => setSelectedSlide(s.position)}
-                  className={`cursor-pointer border rounded-md overflow-hidden bg-white ${selectedSlide === s.position ? "border-blue-500 border-2" : "border-transparent"}`}
+                  className={`cursor-pointer border rounded-md overflow-hidden bg-theme-quaternary ${selectedSlide === s.position ? "border-blue-500 border-2" : "border-theme-tertiary"}`}
                   style={{
                     flex: "0 0 auto",
                     aspectRatio: "16/9",
@@ -363,9 +363,8 @@ function ProjectPreview({
                   <iframe
                     title={`slide-${s.position}`}
                     srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:1920px;height:1080px;overflow:hidden;background:white;}body{transform:scale(${thumbScale});transform-origin:top left;width:1920px;height:1080px;}section{width:1920px;height:1080px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem;text-align:center;background:white;}</style></head><body>${s.html}</body></html>`}
-                    className="w-full h-full border-0 pointer-events-none bg-white"
+                    className="w-full h-full border-0 pointer-events-none"
                     sandbox=""
-                    style={{ background: 'white' }}
                   />
                 </div>
               )
@@ -379,7 +378,7 @@ function ProjectPreview({
               <button
                 key={item.label}
                 onClick={item.onClick}
-                className={`${isMobile ? 'flex-1' : 'min-w-[100px]'} flex items-center justify-center bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300 bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300 hover:bg-theme-hover rounded-3xl p-1.5 md:p-2.5 hover:bg-[#222]`}
+                className={`${isMobile ? 'flex-1' : 'min-w-[100px]'} flex items-center justify-center bg-theme-quaternary backdrop-blur-xl border border-theme-tertiary text-theme-primary transition-colors duration-300 hover:bg-theme-hover rounded-3xl p-1.5 md:p-2.5`}
                 title={item.label}
                 disabled={item.label === "Open" && !projectId}
               >

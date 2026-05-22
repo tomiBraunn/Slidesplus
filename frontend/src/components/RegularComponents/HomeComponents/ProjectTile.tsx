@@ -102,7 +102,7 @@ function ProjectTile({ name, description, onClick, listMode = false, owner, coll
         return (
             <SpotlightCard
                 onClick={onClick}
-                className="rounded-xl bg-theme-primary border border-theme-tertiary text-theme-primary hover:bg-theme-hover transition-colors duration-300 w-full cursor-pointer flex flex-row items-center py-2 px-3 gap-3 rounded-full"
+                className="rounded-full bg-theme-quaternary backdrop-blur-xl border border-theme-tertiary text-theme-primary hover:bg-theme-hover transition-colors duration-300 w-full cursor-pointer flex flex-row items-center py-2 px-3 gap-3"
                 spotlightColor="rgba(255, 255, 255, 0.15)"
             >
                 <span
@@ -133,7 +133,7 @@ function ProjectTile({ name, description, onClick, listMode = false, owner, coll
     return (
         <SpotlightCard
             onClick={onClick}
-            className="rounded-[15px] bg-theme-primary border border-theme-tertiary transition-all duration-300 w-full cursor-pointer flex flex-col gap-2 overflow-hidden group p-1.5 hover:bg-theme-hover"
+            className="rounded-[15px] bg-theme-quaternary backdrop-blur-xl border border-theme-tertiary transition-all duration-300 w-full cursor-pointer flex flex-col gap-2 overflow-hidden group p-1.5 hover:bg-theme-hover"
             spotlightColor="rgba(255, 255, 255, 0.15)"
         >
             <div ref={containerRef} className="w-full aspect-[16/9] bg-white overflow-hidden relative rounded-[15px] border border-theme-tertiary flex items-center justify-center">

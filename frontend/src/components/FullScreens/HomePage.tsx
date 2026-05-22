@@ -370,13 +370,13 @@ function HomePage() {
                 {showAIPanel && (
                   <button
                     onClick={handleAIPanelClose}
-                    className="absolute -top-1 right-0 text-xs flex items-center justify-center gap-1 p-4 w-5 h-5 text-theme-secondary hover:text-theme-primary transition-colors bg-theme-primary border border-theme-tertiary rounded-full"
+                    className="absolute -top-1 right-0 text-xs flex items-center justify-center gap-1 p-4 w-5 h-5 text-theme-secondary hover:text-theme-primary transition-colors bg-theme-quaternary backdrop-blur-xl border border-theme-tertiary rounded-full"
                   >
                     <span className="material-symbols-outlined text-lg">close</span>
                   </button>
                 )}
                 <div
-                  className={`relative flex w-full gap-2 bg-theme-primary border border-theme-tertiary ${showAIPanel ? "rounded-3xl h-[60vh] flex-col items-start justify-start py-4 px-4 searchbar-glow-ai mt-10" : "rounded-full min-h-[50px] items-center justify-center px-4 searchbar-glow-subtle"}`}
+                  className={`relative flex w-full gap-2 bg-theme-quaternary backdrop-blur-xl border border-theme-tertiary ${showAIPanel ? "rounded-3xl h-[60vh] flex-col items-start justify-start py-4 px-4 searchbar-glow-ai mt-10" : "rounded-full min-h-[50px] items-center justify-center px-4 searchbar-glow-subtle"}`}
                   style={{
                     transition: 'height 0.5s cubic-bezier(0.4, 0, 0.2, 1), padding 0.5s cubic-bezier(0.4, 0, 0.2, 1), margin 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
                   }}
@@ -454,12 +454,12 @@ function HomePage() {
                 <p className="text-red-500 text-xs">{aiError}</p>
               )}
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 bg-theme-quaternary backdrop-blur-xl rounded-full p-1">
                 <button
                   onClick={() => { setActiveTab("my-designs"); setShowAIPanel(false) }}
                   className={`px-6 py-2 rounded-full transition-all ${activeTab === "my-designs"
                     ? "bg-theme-inverted text-theme-inverted"
-                    : "bg-transparent text-theme-secondary hover:text-theme-primary"
+                    : "text-theme-secondary hover:text-theme-primary"
                     }`}
                 >
                   My designs
@@ -468,8 +468,8 @@ function HomePage() {
                   type="button"
                   onClick={handleAIPanelOpen}
                   className={`relative flex items-center justify-center gap-2 rounded-full transition-all duration-300 overflow-hidden ${showAIPanel
-                    ? "bg-transparent text-theme-primary border border-theme-tertiary"
-                    : "border border-theme-tertiary hover:bg-theme-hover"
+                    ? "bg-theme-inverted text-theme-inverted"
+                    : "text-theme-secondary hover:text-theme-primary"
                     } ${isMobile ? "p-2" : "px-4 py-2"}`}
                 >
                   <div className="absolute inset-0 pointer-events-none">
@@ -511,7 +511,7 @@ function HomePage() {
                   onClick={() => { setActiveTab("templates"); setShowAIPanel(false) }}
                   className={`px-6 py-2 rounded-full transition-all ${activeTab === "templates"
                     ? "bg-theme-inverted text-theme-inverted"
-                    : "bg-transparent text-theme-secondary hover:text-theme-primary"
+                    : "text-theme-secondary hover:text-theme-primary"
                     }`}
                 >
                   Templates
@@ -620,7 +620,7 @@ function HomePage() {
                   })()}
                 </div>
               ) : (
-                <div className="flex-1 overflow-y-auto m-8 flex items-center justify-center relative border border-theme-tertiary rounded-[20px]">
+                <div className="flex-1 overflow-y-auto m-8 flex items-center justify-center relative bg-theme-quaternary backdrop-blur-xl border border-theme-tertiary rounded-[20px]">
                   <div className="absolute inset-0 pointer-events-none overflow-hidden">
                     <svg
                       style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)", minWidth: "100%", minHeight: "100%" }}
