@@ -1,64 +1,76 @@
 // @ts-nocheck
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { urlbackend } from '../config'
 
-export function useAutoSave(projectId: string | undefined, documentContent: string) {
+export function useAutoSave(
+  projectId: string | undefined,
+  documentContent: string,
+  options?: {
+    onContentSynced?: (content: string) => void
+  }
+) {
   const [lastSavedContent, setLastSavedContent] = useState<string>(documentContent)
   const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null)
   const [isSaving, setIsSaving] = useState(false)
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const lastContentRef = useRef<string>(documentContent)
+  const initializedRef = useRef(false)
 
   useEffect(() => {
     lastContentRef.current = documentContent
   }, [documentContent])
 
+  const syncBaseline = useCallback((content: string) => {
+    setLastSavedContent(content)
+    lastContentRef.current = content
+    initializedRef.current = true
+  }, [])
+
+  const runAutoSave = useCallback(async () => {
+    if (!projectId) return false
+
+    const currentContent = lastContentRef.current
+    if (currentContent === lastSavedContent) {
+      return true
+    }
+
+    setIsSaving(true)
+
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`${urlbackend}/projects/${projectId}/auto-save`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ content: currentContent }),
+      })
+
+      if (response.ok) {
+        setLastSavedContent(currentContent)
+        setLastSaveTime(new Date())
+        options?.onContentSynced?.(currentContent)
+        return true
+      }
+      console.error('Auto-save failed:', await response.text())
+      return false
+    } catch (error) {
+      console.error('Auto-save error:', error)
+      return false
+    } finally {
+      setIsSaving(false)
+    }
+  }, [projectId, lastSavedContent, options])
+
   useEffect(() => {
     if (!projectId) return
 
-    const saveVersion = async () => {
-      const currentContent = lastContentRef.current
-
-      if (currentContent === lastSavedContent) {
-        return
-      }
-
-      setIsSaving(true)
-
-      try {
-        const token = localStorage.getItem('token')
-        const response = await fetch(`${urlbackend}/projects/${projectId}/auto-save`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {})
-          },
-          body: JSON.stringify({
-            content: currentContent
-          })
-        })
-
-        if (response.ok) {
-          setLastSavedContent(currentContent)
-          setLastSaveTime(new Date())
-        } else {
-          console.error('Auto-save failed:', await response.text())
-        }
-      } catch (error) {
-        console.error('Auto-save error:', error)
-      } finally {
-        setIsSaving(false)
-      }
-    }
-
     const interval = setInterval(() => {
-      saveVersion()
-    }, 60000) 
+      runAutoSave()
+    }, 60000)
 
-    return () => {
-      clearInterval(interval)
-    }
-  }, [projectId, lastSavedContent])
+    return () => clearInterval(interval)
+  }, [projectId, runAutoSave])
 
   const hasUnsavedChanges = documentContent !== lastSavedContent
 
@@ -66,6 +78,8 @@ export function useAutoSave(projectId: string | undefined, documentContent: stri
     isSaving,
     lastSaveTime,
     hasUnsavedChanges,
-    lastSavedContent
+    lastSavedContent,
+    syncBaseline,
+    runAutoSave,
   }
 }

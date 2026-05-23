@@ -11,6 +11,7 @@ import { ShareModal } from "../RegularComponents/MultiuseComponents/ShareModal"
 import ProjectAccessRoute from "../RegularComponents/ProjectComponents/ProjectAccessRoute"
 import { useAutoSave } from "../../hooks/useAutoSave"
 import { useRealtimeCollaboration } from "../../useRealtimeProject"
+import { buildSlidesPayload } from "../../utils/projectDocument"
 import { urlbackend } from "../../config.js"
 
 type ProjectMode = "code" | "visual" | "ai"
@@ -89,10 +90,14 @@ function ProjectPageContent() {
   const editorRef = useRef<HTMLDivElement>(null)
   const isApplyingRemoteChange = useRef(false)
   const livePreviewRef = useRef<HTMLIFrameElement>(null)
+  const saveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pendingDocRef = useRef<string | null>(null)
+  const docRef = useRef(doc)
+  const projectIdRef = useRef(projectId)
 
   const user = getUserFromStorage()
 
-  const { isSaving, lastSaveTime, hasUnsavedChanges } = useAutoSave(
+  const { syncBaseline, runAutoSave } = useAutoSave(
     projectId || undefined,
     doc
   )
@@ -100,13 +105,8 @@ function ProjectPageContent() {
   const {
     activeUsers,
     lastChange,
-    chatMessages,
-    cursors,
     isConnected,
-    broadcastChange,
-    updatePresence,
-    updateCursor,
-    sendChatMessage,
+    notifySlidesUpdated,
     clearLastChange
   } = useRealtimeCollaboration(
     projectId,
@@ -117,9 +117,19 @@ function ProjectPageContent() {
     user?.avatar
   )
 
-  const loadProject = async (id: string) => {
+  useEffect(() => {
+    docRef.current = doc
+  }, [doc])
+
+  useEffect(() => {
+    projectIdRef.current = projectId
+  }, [projectId])
+
+  const loadProject = async (id: string, options?: { applyToEditor?: boolean }) => {
     const token = localStorage.getItem("token")
     if (!token) return
+
+    const applyToEditor = options?.applyToEditor !== false
 
     try {
       const projectRes = await fetch(`${urlbackend}/projects/${id}`, {
@@ -133,19 +143,79 @@ function ProjectPageContent() {
       })
       const slidesData = await slidesRes.json()
 
+      let loadedDoc: string
       if (slidesData.ok && slidesData.slides.length > 0) {
-        setDoc(
+        loadedDoc =
           "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>" +
           slidesData.slides.map((s: any) => s.html).join("\n") +
           "</body></html>"
-        )
       } else {
-        setDoc(
+        loadedDoc =
           "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body><section class='slide'><h1>Slide 1</h1></section></body></html>"
-        )
       }
+
+      if (applyToEditor) {
+        isApplyingRemoteChange.current = true
+        setDoc(loadedDoc)
+        syncBaseline(loadedDoc)
+        pendingDocRef.current = null
+        setTimeout(() => {
+          isApplyingRemoteChange.current = false
+        }, 150)
+      }
+
+      return loadedDoc
     } catch (error) {
       console.error("Error loading project:", error)
+    }
+  }
+
+  const saveSlidesToServer = async (finalDoc: string, options?: { keepalive?: boolean }) => {
+    const id = projectIdRef.current
+    if (!id) return false
+
+    const token = localStorage.getItem("token")
+    if (!token) return false
+
+    const slides = buildSlidesPayload(finalDoc)
+    if (slides.length === 0) return false
+
+    const response = await fetch(`${urlbackend}/projects/${id}/slides`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ slides, content: finalDoc }),
+      keepalive: options?.keepalive ?? false,
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error("Failed to save slides:", response.status, errorText)
+      return false
+    }
+
+    syncBaseline(finalDoc)
+    notifySlidesUpdated()
+    return true
+  }
+
+  const flushPendingSave = async (options?: { keepalive?: boolean }) => {
+    if (saveDebounceRef.current) {
+      clearTimeout(saveDebounceRef.current)
+      saveDebounceRef.current = null
+    }
+
+    const docToSave = pendingDocRef.current ?? docRef.current
+    if (!docToSave || !projectIdRef.current) return
+
+    pendingDocRef.current = null
+    setSaveState("saving")
+    const ok = await saveSlidesToServer(docToSave, options)
+    setSaveState(ok ? "saved" : "error")
+    if (ok) {
+      window.setTimeout(() => setSaveState("idle"), 800)
     }
   }
 
@@ -165,18 +235,59 @@ function ProjectPageContent() {
   }, [])
 
   useEffect(() => {
-    if (!lastChange) return
+    if (!lastChange || !projectId) return
 
-    if (lastChange.change_type === 'doc_update') {
-      isApplyingRemoteChange.current = true
-      setDoc(lastChange.change_data.doc)
-      setTimeout(() => {
-        isApplyingRemoteChange.current = false
-      }, 100)
+    if (lastChange.change_type === "slides_updated") {
+      loadProject(projectId)
     }
 
     clearLastChange()
-  }, [lastChange, clearLastChange])
+  }, [lastChange, clearLastChange, projectId])
+
+  const flushPendingSaveRef = useRef(flushPendingSave)
+  const runAutoSaveRef = useRef(runAutoSave)
+  flushPendingSaveRef.current = flushPendingSave
+  runAutoSaveRef.current = runAutoSave
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const docToSave = pendingDocRef.current ?? docRef.current
+      if (!docToSave || !projectIdRef.current) return
+
+      const token = localStorage.getItem("token")
+      if (!token) return
+
+      const slides = buildSlidesPayload(docToSave)
+      if (slides.length === 0) return
+
+      fetch(`${urlbackend}/projects/${projectIdRef.current}/slides`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ slides, content: docToSave }),
+        keepalive: true,
+      })
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        flushPendingSaveRef.current({ keepalive: true })
+        runAutoSaveRef.current()
+      }
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload)
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload)
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+      flushPendingSaveRef.current()
+      runAutoSaveRef.current()
+    }
+  }, [projectId])
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.altKey && e.key === '1') {
@@ -219,50 +330,28 @@ function ProjectPageContent() {
 
     setDoc(finalDoc)
     setSaveState("saving")
+    pendingDocRef.current = finalDoc
 
-    if (isConnected && projectId) {
-      broadcastChange('doc_update', { doc: finalDoc })
+    if (saveDebounceRef.current) {
+      clearTimeout(saveDebounceRef.current)
     }
 
-    window.clearTimeout((onChangeDoc as any)._t)
-      ; (onChangeDoc as any)._t = window.setTimeout(async () => {
-        try {
-          if (!projectId) return
-          const token = localStorage.getItem("token")
-          if (!token) return
-          const slides = finalDoc
-            .split(/<section/i)
-            .slice(1)
-            .map((s) => "<section" + s.split("</section>")[0] + "</section>")
-            .filter((s) => s.trim() !== "")
-            .map((s, i) => ({
-              html: s,
-              position: i,
-              css: "", // Backend expects this field
-            }))
-          const response = await fetch(`${urlbackend}/projects/${projectId}/slides`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ slides }),
-          })
-
-          if (!response.ok) {
-            const errorText = await response.text()
-            console.error('Failed to save slides:', response.status, errorText)
-            setSaveState("error")
-            return
-          }
-
-          setSaveState("saved")
-          window.setTimeout(() => setSaveState("idle"), 800)
-        } catch (error) {
-          console.error('Error saving slides:', error)
+    saveDebounceRef.current = window.setTimeout(async () => {
+      saveDebounceRef.current = null
+      try {
+        const ok = await saveSlidesToServer(finalDoc)
+        if (!ok) {
           setSaveState("error")
+          return
         }
-      }, 500)
+        pendingDocRef.current = null
+        setSaveState("saved")
+        window.setTimeout(() => setSaveState("idle"), 800)
+      } catch (error) {
+        console.error("Error saving slides:", error)
+        setSaveState("error")
+      }
+    }, 500)
   }
 
   const applySetDoc = (val: string | ((v: string) => string)) => {
@@ -387,12 +476,6 @@ function ProjectPageContent() {
     setHoveredSlide(null)
   }
 
-  const handleVersionRestored = () => {
-    if (projectId) {
-      loadProject(projectId)
-    }
-  }
-
   return (
     <div className="w-screen h-screen flex flex-col">
       <ProjectNavBar
@@ -403,17 +486,12 @@ function ProjectPageContent() {
         onChangeMode={setMode}
         activeUsers={activeUsers as any}
         currentUserId={user?.id}
+        isCollaborationConnected={isConnected}
         onShareClick={() => setShareModalOpen(true)}
-        onVersionRestored={handleVersionRestored}
         useLegacyVisualEditor={useLegacyVisualEditor}
         onToggleLegacyEditor={() => setUseLegacyVisualEditor(!useLegacyVisualEditor)}
       />
 
-      {user && (
-        <>
-          {/* Removed ActiveUsers and LiveCursors to reduce Supabase realtime usage */}
-        </>
-      )}
 
       <ShareModal
         projectId={projectId}

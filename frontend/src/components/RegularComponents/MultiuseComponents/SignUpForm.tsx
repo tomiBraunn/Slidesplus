@@ -190,9 +190,9 @@ function SignUpForm() {
               </button>
               <div className="text-center text-sm flex justify-center">
                 <p className="text-gray-400">
-                  Go back
+                  Go back to
                   <a href="/" className="underline underline-offset-4 ml-1 text-white hover:text-gray-300 transition">
-                    to Home
+                     home
                   </a>
                 </p>
               </div>

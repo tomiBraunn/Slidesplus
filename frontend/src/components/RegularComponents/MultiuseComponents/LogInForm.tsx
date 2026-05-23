@@ -143,7 +143,7 @@ function LogInForm() {
             </div>
 
             <div className="relative text-center text-sm">
-              <span className="bg-[#0f0f0f]/90 relative z-10 px-3 text-gray-400">
+              <span className="relative z-10 px-3 text-gray-400">
                 Or continue with
               </span>
               {/* <div className="absolute inset-0 top-1/4 -translate-y-1/4 border-t border-[#2B2B2B]" /> */}
@@ -210,7 +210,7 @@ function LogInForm() {
             <div className="text-center text-sm">
               <span className="text-gray-400">Don't have an account?</span>
               <a href="/signup" className="underline underline-offset-4 ml-1 text-white hover:text-gray-300 transition">
-                Sign up
+                sign up
               </a>
             </div>
           </form>

@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React, { useEffect, useState, useRef } from "react"
+import { useNavigate } from "react-router-dom"
 import { urlbackend } from "../../../config.js"
 
 type Version = {
@@ -20,10 +21,10 @@ type Props = {
     isOpen: boolean
     onClose: () => void
     projectId: string | null
-    onVersionRestored?: () => void
 }
 
-export function VersionHistoryModal({ isOpen, onClose, projectId, onVersionRestored }: Props) {
+export function VersionHistoryModal({ isOpen, onClose, projectId }: Props) {
+    const navigate = useNavigate()
     const [versions, setVersions] = useState<Version[]>([])
     const [selectedVersion, setSelectedVersion] = useState<Version | null>(null)
     const [selectedSlideIndex, setSelectedSlideIndex] = useState(0)
@@ -92,35 +93,42 @@ export function VersionHistoryModal({ isOpen, onClose, projectId, onVersionResto
         }
     }
 
+    const parseSlidesFromVersion = (version: Version) => {
+        if (version.slides && Array.isArray(version.slides) && version.slides.length > 0) {
+            return version.slides.map((slide: any, index: number) => ({
+                html: slide.html || slide,
+                position: slide.position ?? index,
+            }))
+        }
+
+        const contentData = version.content
+        if (!contentData || typeof contentData !== "string") return []
+
+        const parser = new DOMParser()
+        const doc = parser.parseFromString(contentData, "text/html")
+        const slideElements = doc.querySelectorAll("section")
+
+        if (slideElements.length > 0) {
+            return Array.from(slideElements).map((slide) => ({
+                html: slide.outerHTML,
+            }))
+        }
+
+        return []
+    }
+
     const loadVersionDetailDirect = (version: Version) => {
-        console.log('Loading version detail direct:', version)
         try {
-            const contentData = version.content || version.slides
-            if (!contentData) {
-                console.error('No content in version:', version)
+            const slides = parseSlidesFromVersion(version)
+            if (slides.length === 0) {
+                console.error("No slides in version:", version)
                 return
             }
 
-            let slides
-            if (typeof contentData === 'string') {
-                const parser = new DOMParser()
-                const doc = parser.parseFromString(contentData, 'text/html')
-                const slideElements = doc.querySelectorAll('.slide')
-
-                slides = Array.from(slideElements).map(slide => ({
-                    html: slide.outerHTML
-                }))
-
-                console.log(`Extracted ${slides.length} slides from HTML`)
-            } else {
-                slides = contentData
-            }
-
-            console.log('Parsed slides:', slides)
             setSelectedVersion({ ...version, slides })
             setSelectedSlideIndex(0)
         } catch (err) {
-            console.error('Error parsing version content:', err)
+            console.error("Error parsing version content:", err)
         }
     }
 
@@ -134,51 +142,33 @@ export function VersionHistoryModal({ isOpen, onClose, projectId, onVersionResto
         loadVersionDetailDirect(version)
     }
 
-    const handleRestore = async () => {
+    const handleDuplicate = async () => {
         if (!selectedVersion || !projectId) return
-        if (!confirm("Are you sure you want to restore this version? Current changes will be overwritten.")) return
+        if (!confirm("¿Crear una copia nueva del proyecto con esta versión? El proyecto actual no se modificará.")) return
 
         setRestoring(true)
         try {
             const token = localStorage.getItem("token")
-            const res = await fetch(`${urlbackend}/projects/${projectId}/versions/${selectedVersion.id}/restore`, {
-                method: "POST",
-                headers: { Authorization: `Bearer ${token}` }
-            })
-            if (!res.ok) throw new Error("Failed to restore version")
+            const res = await fetch(
+                `${urlbackend}/projects/${projectId}/versions/${selectedVersion.id}/duplicate`,
+                {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            )
+            if (!res.ok) throw new Error("Failed to duplicate version")
 
+            const data = await res.json()
             onClose()
 
-            if (onVersionRestored) {
-                onVersionRestored()
+            if (data.project_id) {
+                navigate(`/projects/${data.project_id}`)
             }
         } catch (err) {
             console.error(err)
-            alert("Error restoring version")
+            alert("Error al crear la copia del proyecto")
         } finally {
             setRestoring(false)
-        }
-    }
-
-    const handleCreateVersion = async () => {
-        if (!projectId) return
-        const name = prompt("Enter version name (optional):")
-
-        try {
-            const token = localStorage.getItem("token")
-            const res = await fetch(`${urlbackend}/projects/${projectId}/versions`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({ name: name || undefined })
-            })
-            if (!res.ok) throw new Error("Failed to create version")
-            loadVersions()
-        } catch (err) {
-            console.error(err)
-            alert("Error creating version")
         }
     }
 
@@ -330,12 +320,12 @@ export function VersionHistoryModal({ isOpen, onClose, projectId, onVersionResto
 
                     <div className="p-4 border-t border-[#2B2B2B] flex justify-end gap-2">
                         <button
-                            onClick={handleRestore}
+                            onClick={handleDuplicate}
                             disabled={!selectedVersion || restoring}
                             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-2"
                         >
-                            <span className="material-symbols-outlined text-lg">restore</span>
-                            {restoring ? "Restoring..." : "Restore This Version"}
+                            <span className="material-symbols-outlined text-lg">content_copy</span>
+                            {restoring ? "Creando copia..." : "Restaurar como copia"}
                         </button>
                     </div>
                 </div>

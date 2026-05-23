@@ -25,8 +25,8 @@ type Props = {
     activity: any;
   }>;
   currentUserId?: string;
+  isCollaborationConnected?: boolean;
   onShareClick?: () => void;
-  onVersionRestored?: () => void;
   useLegacyVisualEditor?: boolean;
   onToggleLegacyEditor?: () => void;
 };
@@ -65,8 +65,8 @@ export default function ProjectNavBar({
   onChangeMode,
   activeUsers = [],
   currentUserId,
+  isCollaborationConnected = false,
   onShareClick,
-  onVersionRestored,
   useLegacyVisualEditor = false,
   onToggleLegacyEditor
 }: Props) {
@@ -77,8 +77,6 @@ export default function ProjectNavBar({
   const [spotifyColor, setSpotifyColor] = useState<string>('');
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(name);
-  const [versions, setVersions] = useState<any[]>([]);
-  const [currentVersionIndex, setCurrentVersionIndex] = useState(0);
   const nameInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -110,90 +108,6 @@ export default function ProjectNavBar({
       nameInputRef.current.select();
     }
   }, [isEditingName]);
-
-  useEffect(() => {
-    if (projectId) {
-      loadVersions();
-    }
-  }, [projectId]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
-        e.preventDefault();
-        handleUndo();
-      } else if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'z')) {
-        e.preventDefault();
-        handleRedo();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [projectId, versions, currentVersionIndex]);
-
-  const loadVersions = async () => {
-    if (!projectId) return;
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${urlbackend}/projects/${projectId}/versions`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      const versionsList = data.versions || [];
-      setVersions(versionsList);
-      setCurrentVersionIndex(0);
-    } catch (err) {
-      console.error("Error loading versions:", err);
-    }
-  };
-
-  const handleUndo = async () => {
-    if (!projectId || versions.length === 0 || currentVersionIndex >= versions.length - 1) return;
-
-    const nextIndex = currentVersionIndex + 1;
-    const versionToRestore = versions[nextIndex];
-
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${urlbackend}/projects/${projectId}/versions/${versionToRestore.id}/restore`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error("Failed to restore version");
-
-      setCurrentVersionIndex(nextIndex);
-      if (onVersionRestored) {
-        onVersionRestored();
-      }
-    } catch (err) {
-      console.error("Error restoring version:", err);
-    }
-  };
-
-  const handleRedo = async () => {
-    if (!projectId || versions.length === 0 || currentVersionIndex <= 0) return;
-
-    const nextIndex = currentVersionIndex - 1;
-    const versionToRestore = versions[nextIndex];
-
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${urlbackend}/projects/${projectId}/versions/${versionToRestore.id}/restore`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error("Failed to restore version");
-
-      setCurrentVersionIndex(nextIndex);
-      if (onVersionRestored) {
-        onVersionRestored();
-      }
-    } catch (err) {
-      console.error("Error restoring version:", err);
-    }
-  };
 
   const handleNameDoubleClick = () => {
     setIsEditingName(true);
@@ -293,11 +207,17 @@ export default function ProjectNavBar({
           </div>
 
           <div className="flex items-center gap-2.5">
-            {currentUserId && activeUsers.length > 0 && (
+            {currentUserId && (
               <ActiveUsersAvatars
-                users={activeUsers}
+                users={activeUsers.map((u) => ({
+                  userId: u.userId || u.user_id,
+                  username: u.username,
+                  avatar: u.avatar,
+                  firstName: u.firstName || u.first_name,
+                  lastName: u.lastName || u.last_name,
+                }))}
                 currentUserId={currentUserId}
-                isConnected={true}
+                isConnected={isCollaborationConnected}
               />
             )}
 
@@ -380,7 +300,6 @@ export default function ProjectNavBar({
         isOpen={versionHistoryOpen}
         onClose={() => setVersionHistoryOpen(false)}
         projectId={projectId || null}
-        onVersionRestored={onVersionRestored}
       />
 
       {settingsOpen && (
