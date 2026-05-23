@@ -1,6 +1,13 @@
 import { pool } from "../config/database.js"
 import { supabase } from "../services/supabaseService.js"
 import { generateWithGemini } from "../services/geminiService.js"
+import {
+	parseSectionsFromHtml,
+	normalizeSlidesInput,
+	persistProjectContent,
+	slidesFingerprint,
+	pruneProjectChanges,
+} from "../services/projectPersistence.js"
 
 const checkProjectAccess = async (projectId, userId, requireEdit = false) => {
 	const query = `
@@ -367,23 +374,25 @@ export const saveSlides = async (req, res) => {
 	try {
 		const projectId = req.params.id
 		let { slides } = req.body ?? {}
+		let content = typeof req.body?.content === "string" ? req.body.content : undefined
 
 		if ((!slides || !Array.isArray(slides) || slides.length === 0) && typeof req.body.document === "string") {
-			const sections = req.body.document.match(/<section[\s\S]*?<\/section>/gi) || []
-			slides = sections.map((html, i) => ({ html, position: i }))
+			content = req.body.document
+			slides = parseSectionsFromHtml(content)
 		}
 
 		if ((!slides || !Array.isArray(slides) || slides.length === 0) && typeof req.body.html === "string") {
-			const sections = req.body.html.match(/<section[\s\S]*?<\/section>/gi) || []
-			slides = sections.map((html, i) => ({ html, position: i }))
+			content = req.body.html
+			slides = parseSectionsFromHtml(content)
 		}
 
-		if (!slides || !Array.isArray(slides) || slides.length === 0) {
+		slides = normalizeSlidesInput(slides)
+
+		if (slides.length === 0) {
 			console.warn(`saveSlides: no slides provided for project ${projectId}`, { bodySample: Object.keys(req.body).slice(0, 10) })
 			return res.status(400).json({ message: "Missing slides array or document to extract slides from" })
 		}
 
-		// Check if user has edit access (owner or editor)
 		const { hasAccess, isViewer, exists } = await checkProjectAccess(projectId, req.user.sub, true)
 
 		if (!exists) {
@@ -394,35 +403,16 @@ export const saveSlides = async (req, res) => {
 			return res.status(403).json({ message: "Access denied. Only owners and editors can save slides." })
 		}
 
-		// Use UPSERT to handle existing slides
-		const upsertedSlides = []
-		for (const slide of slides) {
-			if (!slide.html) continue
-			const q = await pool.query(
-				`INSERT INTO slides (project_id, position, html)
-				VALUES ($1, $2, $3)
-				ON CONFLICT (project_id, position)
-				DO UPDATE SET
-					html = EXCLUDED.html,
-					updated_at = NOW()
-				RETURNING id, project_id, position, html, created_at, updated_at`,
-				[projectId, slide.position || 0, slide.html]
-			)
-			upsertedSlides.push(q.rows[0])
-		}
+		const result = await persistProjectContent(pool, projectId, req.user.sub, {
+			content,
+			slides,
+		})
 
-		// Delete slides that are no longer in the array (e.g., if user deleted slides)
-		const positions = slides.map((s, i) => s.position !== undefined ? s.position : i)
-		if (positions.length > 0) {
-			await pool.query(
-				`DELETE FROM slides WHERE project_id = $1 AND position NOT IN (${positions.map((_, i) => `$${i + 2}`).join(',')})`,
-				[projectId, ...positions]
-			)
-		} else {
-			await pool.query(`DELETE FROM slides WHERE project_id = $1`, [projectId])
-		}
-
-		res.status(201).json({ ok: true, slides: upsertedSlides })
+		res.status(201).json({
+			ok: true,
+			slides: result.slides,
+			last_modified_at: new Date().toISOString(),
+		})
 	} catch (err) {
 		console.error("Error saving slides:", err)
 		res.status(500).json({ message: "Internal error", detail: err instanceof Error ? err.message : String(err) })
@@ -764,25 +754,38 @@ export const autoSaveProject = async (req, res) => {
 			return res.status(403).json({ ok: false, message: "Access denied" })
 		}
 
-		// Check if content changed from last version
+		const parsedSlides = parseSectionsFromHtml(content)
+		if (parsedSlides.length === 0) {
+			return res.status(400).json({ ok: false, message: "No slides found in content" })
+		}
+
+		const persistResult = await persistProjectContent(pool, projectId, userId, {
+			content,
+			slides: parsedSlides,
+		})
+
+		const slideSnapshots = persistResult.slideSnapshots
+		const fingerprint = slidesFingerprint(slideSnapshots)
+
 		const lastVersionQuery = await pool.query(
-			`SELECT change_data->>'content' as content
-			FROM project_changes
+			`SELECT change_data FROM project_changes
 			WHERE project_id = $1
 			ORDER BY created_at DESC
 			LIMIT 1`,
 			[projectId]
 		)
 
-		// If content is the same as last version, don't create new version
-		if (lastVersionQuery.rowCount > 0 && lastVersionQuery.rows[0].content === content) {
-			return res.json({ ok: true, message: "No changes detected", version_id: null })
+		if (lastVersionQuery.rowCount > 0) {
+			const lastData = lastVersionQuery.rows[0].change_data
+			const lastSlides = lastData?.slides
+			if (lastSlides && slidesFingerprint(lastSlides) === fingerprint) {
+				return res.json({ ok: true, message: "No changes detected", version_id: null })
+			}
+			if (!lastSlides && lastData?.content === content) {
+				return res.json({ ok: true, message: "No changes detected", version_id: null })
+			}
 		}
 
-		// Count slides in the content
-		const slideCount = (content.match(/<section/g) || []).length
-
-		// Create new version
 		const versionQuery = await pool.query(
 			`INSERT INTO project_changes (project_id, user_id, change_type, change_data, created_at)
 			VALUES ($1, $2, $3, $4, NOW())
@@ -790,23 +793,21 @@ export const autoSaveProject = async (req, res) => {
 			[
 				projectId,
 				userId,
-				'auto_save',
-				JSON.stringify({ content, slide_count: slideCount })
+				"auto_save",
+				JSON.stringify({
+					content: persistResult.document,
+					slides: slideSnapshots,
+					slide_count: slideSnapshots.length,
+				}),
 			]
 		)
 
-		// Also update the main project document
-		await pool.query(
-			`UPDATE projects
-			SET document = $1, updated_at = NOW(), last_modified_by = $2, last_modified_at = NOW()
-			WHERE id = $3`,
-			[content, userId, projectId]
-		)
+		await pruneProjectChanges(pool, projectId)
 
 		res.json({
 			ok: true,
 			version_id: versionQuery.rows[0].id,
-			created_at: versionQuery.rows[0].created_at
+			created_at: versionQuery.rows[0].created_at,
 		})
 	} catch (err) {
 		console.error("Error auto-saving project:", err)
@@ -851,19 +852,21 @@ export const getProjectVersions = async (req, res) => {
 		const versions = versionsQuery.rows.map((v, index) => {
 			const changeData = v.change_data
 			const createdAt = new Date(v.created_at)
-			const autoSaveName = `Auto-saved at ${createdAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`
+			const defaultName = `Auto-saved at ${createdAt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}`
+			const displayName = changeData.name || defaultName
 
 			return {
 				id: v.id,
 				version_number: versionsQuery.rowCount - index,
-				name: autoSaveName,
+				name: displayName,
 				created_at: v.created_at,
 				username: v.username,
 				first_name: v.first_name,
 				last_name: v.last_name,
 				avatar: v.avatar,
-				slide_count: changeData.slide_count || 0,
-				content: changeData.content // Include content for preview/restore
+				slide_count: changeData.slide_count || changeData.slides?.length || 0,
+				content: changeData.content,
+				slides: changeData.slides || null,
 			}
 		})
 
@@ -880,40 +883,179 @@ export const restoreProjectVersion = async (req, res) => {
 		const { projectId, versionId } = req.params
 		const userId = req.user.sub
 
-		// Check project access
 		const { hasAccess, isViewer } = await checkProjectAccess(projectId, userId, true)
 		if (!hasAccess || isViewer) {
 			return res.status(403).json({ ok: false, message: "Access denied. Only owners and editors can restore versions." })
 		}
 
-		// Get the version content
-		const versionQuery = await pool.query(
-			`SELECT change_data FROM project_changes WHERE id = $1 AND project_id = $2`,
-			[versionId, projectId]
-		)
-
-		if (versionQuery.rowCount === 0) {
+		const changeData = await getVersionChangeData(projectId, versionId)
+		if (!changeData) {
 			return res.status(404).json({ ok: false, message: "Version not found" })
 		}
 
-		const changeData = versionQuery.rows[0].change_data
-		const content = changeData.content
+		const slides = changeData.slides?.length
+			? changeData.slides
+			: parseSectionsFromHtml(changeData.content)
 
-		if (!content) {
+		if (!slides.length) {
 			return res.status(400).json({ ok: false, message: "Version has no content to restore" })
 		}
 
-		// Update the project document with the version content
-		await pool.query(
-			`UPDATE projects
-			SET document = $1, updated_at = NOW(), last_modified_by = $2, last_modified_at = NOW()
-			WHERE id = $3`,
-			[content, userId, projectId]
-		)
+		await persistProjectContent(pool, projectId, userId, {
+			content: changeData.content,
+			slides,
+		})
 
 		res.json({ ok: true, message: "Version restored successfully" })
 	} catch (err) {
 		console.error("Error restoring project version:", err)
+		res.status(500).json({ ok: false, message: "Internal error" })
+	}
+}
+
+async function getVersionChangeData(projectId, versionId) {
+	const versionQuery = await pool.query(
+		`SELECT change_data FROM project_changes WHERE id = $1 AND project_id = $2`,
+		[versionId, projectId]
+	)
+	if (versionQuery.rowCount === 0) return null
+	return versionQuery.rows[0].change_data
+}
+
+/**
+ * POST /projects/:projectId/versions/:versionId/duplicate
+ * Creates a new project copy from a history snapshot.
+ */
+export const duplicateProjectFromVersion = async (req, res) => {
+	if (!pool) return res.status(500).json({ message: "Database not configured" })
+	try {
+		const { projectId, versionId } = req.params
+		const userId = req.user.sub
+
+		const { hasAccess, exists } = await checkProjectAccess(projectId, userId)
+		if (!exists) {
+			return res.status(404).json({ ok: false, message: "Project not found" })
+		}
+		if (!hasAccess) {
+			return res.status(403).json({ ok: false, message: "Access denied" })
+		}
+
+		const changeData = await getVersionChangeData(projectId, versionId)
+		if (!changeData) {
+			return res.status(404).json({ ok: false, message: "Version not found" })
+		}
+
+		const slides = changeData.slides?.length
+			? changeData.slides
+			: parseSectionsFromHtml(changeData.content)
+
+		if (!slides.length) {
+			return res.status(400).json({ ok: false, message: "Version has no content to duplicate" })
+		}
+
+		const sourceProject = await pool.query(
+			`SELECT name FROM projects WHERE id = $1`,
+			[projectId]
+		)
+		const baseName = sourceProject.rows[0]?.name || "Project"
+		const copyLabel = new Date().toLocaleString("es-ES", {
+			day: "2-digit",
+			month: "short",
+			hour: "2-digit",
+			minute: "2-digit",
+		})
+		const newName = `${baseName} (copia ${copyLabel})`
+
+		const insertProject = await pool.query(
+			`INSERT INTO projects (owner_id, name, document, visibility)
+			VALUES ($1, $2, $3, 'private')
+			RETURNING id, name`,
+			[userId, newName, changeData.content || ""]
+		)
+
+		const newProjectId = insertProject.rows[0].id
+
+		await persistProjectContent(pool, newProjectId, userId, {
+			content: changeData.content,
+			slides,
+		})
+
+		res.status(201).json({
+			ok: true,
+			project_id: newProjectId,
+			name: insertProject.rows[0].name,
+		})
+	} catch (err) {
+		console.error("Error duplicating project from version:", err)
+		res.status(500).json({ ok: false, message: "Internal error" })
+	}
+}
+
+/**
+ * POST /projects/:projectId/versions — manual snapshot (project_changes)
+ */
+export const createProjectSnapshot = async (req, res) => {
+	if (!pool) return res.status(500).json({ message: "Database not configured" })
+	try {
+		const { projectId } = req.params
+		const userId = req.user.sub
+		const { name } = req.body ?? {}
+
+		const { hasAccess, isViewer } = await checkProjectAccess(projectId, userId, true)
+		if (!hasAccess || isViewer) {
+			return res.status(403).json({ ok: false, message: "Access denied" })
+		}
+
+		const projectRes = await pool.query(
+			`SELECT p.document,
+				COALESCE(
+					json_agg(json_build_object('position', s.position, 'html', s.html) ORDER BY s.position)
+					FILTER (WHERE s.id IS NOT NULL),
+					'[]'
+				) AS slides
+			FROM projects p
+			LEFT JOIN slides s ON s.project_id = p.id
+			WHERE p.id = $1
+			GROUP BY p.id, p.document`,
+			[projectId]
+		)
+
+		if (projectRes.rowCount === 0) {
+			return res.status(404).json({ ok: false, message: "Project not found" })
+		}
+
+		const row = projectRes.rows[0]
+		const slideSnapshots = Array.isArray(row.slides) ? row.slides : []
+		const content = row.document || ""
+
+		const versionQuery = await pool.query(
+			`INSERT INTO project_changes (project_id, user_id, change_type, change_data, created_at)
+			VALUES ($1, $2, $3, $4, NOW())
+			RETURNING id, created_at`,
+			[
+				projectId,
+				userId,
+				"manual_save",
+				JSON.stringify({
+					content,
+					slides: slideSnapshots,
+					slide_count: slideSnapshots.length,
+					name: name || null,
+				}),
+			]
+		)
+
+		await pruneProjectChanges(pool, projectId)
+
+		res.status(201).json({
+			ok: true,
+			version: {
+				id: versionQuery.rows[0].id,
+				created_at: versionQuery.rows[0].created_at,
+			},
+		})
+	} catch (err) {
+		console.error("Error creating project snapshot:", err)
 		res.status(500).json({ ok: false, message: "Internal error" })
 	}
 }
