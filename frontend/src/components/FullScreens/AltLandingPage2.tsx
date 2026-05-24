@@ -41,7 +41,7 @@ type ContentShape = {
 
 const content: Record<Language, ContentShape> = {
   en: {
-    seoTitle: "slides★ | Build presentations with code, AI, and your team.",
+    seoTitle: "slides+ | Build presentations with code, AI, and your team.",
     seoDescription:
       "Create presentations with AI, visual editing, and code-level control.",
     skip: "Skip to main content",
@@ -52,7 +52,7 @@ const content: Record<Language, ContentShape> = {
     heroCta: "Get started",
     heroSecondary: "Explore features",
     heroCopy:
-      "Slides★ gives you AI to get started, an editor to go deeper, and code when you need full control. From first idea to final slide — that's slides★.",
+      "Slides+ gives you AI to get started, an editor to go deeper, and code when you need full control. From first idea to final slide — that's slides+.",
     featuresTitle: "One workspace for the whole deck",
     featuresEyebrow: "Features",
     features: [
@@ -69,7 +69,7 @@ const content: Record<Language, ContentShape> = {
         copy: "Open a clean view link to present directly from the app, or export when the deck is ready to ship.",
       },
     ],
-    workflowTitle: "How Slides★ fits into your flow",
+    workflowTitle: "How Slides+ fits into your flow",
     workflowEyebrow: "Workflow",
     steps: [
       [
@@ -94,7 +94,7 @@ const content: Record<Language, ContentShape> = {
     faqEyebrow: "FAQ",
     faqs: [
       [
-        "What can I create with Slides★?",
+        "What can I create with Slides+?",
         "Decks for pitches, lessons, product demos, reports, workshops, and any presentation where you want more control than a typical slide tool.",
       ],
       [
@@ -112,12 +112,12 @@ const content: Record<Language, ContentShape> = {
     ],
     footerHeadline: ["Every great pitch", "starts somewhere plus."],
     footerTagline:
-      "AI to get started. An editor to go deeper. Code when you need it. That's slides★.",
+      "AI to get started. An editor to go deeper. Code when you need it. That's slides+.",
     footerCta: "Start for free",
-    copyright: "2026 Slides★. All rights reserved.",
+    copyright: "2026 Slides+. All rights reserved.",
   },
   es: {
-    seoTitle: "slides★ | Crea presentaciones con IA y control total.",
+    seoTitle: "slides+ | Crea presentaciones con IA y control total.",
     seoDescription:
       "Crea presentaciones con IA, edicion visual y control por codigo.",
     skip: "Saltar al contenido principal",
@@ -126,8 +126,9 @@ const content: Record<Language, ContentShape> = {
     startShort: "Empezar",
     heroTitle: "Todo gran pitch empieza en algun lugar.",
     heroCta: "Empezar",
+    heroSecondary: "Ver funciones",
     heroCopy:
-      "Slides★ te da IA para arrancar, un editor para profundizar y codigo cuando necesitas control total. De la primera idea al slide final — eso es slides★.",
+      "Slides+ te da IA para arrancar, un editor para profundizar y codigo cuando necesitas control total. De la primera idea al slide final — eso es slides+.",
     featuresTitle: "Un solo workspace para todo el deck",
     featuresEyebrow: "Funciones",
     features: [
@@ -144,7 +145,7 @@ const content: Record<Language, ContentShape> = {
         copy: "Abri un link de vista limpia para presentar directo desde la app, o exporta cuando el deck este listo.",
       },
     ],
-    workflowTitle: "Como Slides★ encaja en tu flujo",
+    workflowTitle: "Como Slides+ encaja en tu flujo",
     workflowEyebrow: "Flujo",
     steps: [
       [
@@ -169,7 +170,7 @@ const content: Record<Language, ContentShape> = {
     faqEyebrow: "FAQ",
     faqs: [
       [
-        "Que puedo crear con Slides★?",
+        "Que puedo crear con Slides+?",
         "Decks para pitches, clases, demos de producto, reportes, workshops y cualquier presentacion donde quieras mas control que en una herramienta tradicional.",
       ],
       [
@@ -187,9 +188,9 @@ const content: Record<Language, ContentShape> = {
     ],
     footerHeadline: ["Todo gran pitch", "empieza en algun lugar plus."],
     footerTagline:
-      "IA para arrancar. Editor para profundizar. Codigo cuando lo necesitas. Eso es slides★.",
+      "IA para arrancar. Editor para profundizar. Codigo cuando lo necesitas. Eso es slides+.",
     footerCta: "Empezar gratis",
-    copyright: "2026 Slides★. Todos los derechos reservados.",
+    copyright: "2026 Slides+. Todos los derechos reservados.",
   },
 };
 
@@ -441,9 +442,7 @@ function SectionHeader({
 
 export default function AltLandingPage2() {
   const navigate = useNavigate();
-  const [language, setLanguage] = useState<Language>(
-  () => (navigator.language?.startsWith("es") ? "es" : "en") as Language
-);
+  const [language, setLanguage] = useState<Language>("en");
   const [introDone, setIntroDone] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
   const t = content[language];
@@ -512,10 +511,7 @@ export default function AltLandingPage2() {
               onClick={(e) => scrollToSection(e, "#main-content")}
               className="pointer-events-auto relative inline-flex items-center gap-3 text-4xl font-bold tracking-tight rounded-lg text-white hover:text-white/80 transition-colors"
             >
-              <span>
-                slides
-                <span className="appColorFadeText text-4xl leading-none">★</span>
-              </span>
+              <span>slides+</span>
             </a>
 
             <div className="pointer-events-auto flex items-center gap-4 rounded-lg bg-white px-4 py-2 text-black shadow-sm">
@@ -575,7 +571,7 @@ export default function AltLandingPage2() {
                     className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
                   >
                     <span className="inline-flex text-[clamp(3rem,10vw,10rem)] font-bold tracking-tight text-white">
-                      {"slides★".split("").map((char, i) => (
+                      {"slides+".split("").map((char, i) => (
                         <motion.span
                           key={i}
                           initial={{ opacity: 0, y: 40 }}
@@ -585,7 +581,6 @@ export default function AltLandingPage2() {
                             delay: i * 0.08,
                             ease: "easeOut",
                           }}
-                          className={char === "★" ? "appColorFadeText" : ""}
                         >
                           {char === " " ? "\u00A0" : char}
                         </motion.span>
@@ -904,8 +899,7 @@ export default function AltLandingPage2() {
                       <AppIconWithoutLink />
                     </span>
                     <span className="text-lg font-semibold tracking-tight">
-                      slides
-                      <span className="appColorFadeText">★</span>
+                      slides+
                     </span>
                   </a>
                   <p className="text-sm text-white/35 leading-relaxed max-w-[28ch]">
