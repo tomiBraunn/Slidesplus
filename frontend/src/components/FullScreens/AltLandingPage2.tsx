@@ -442,7 +442,9 @@ function SectionHeader({
 
 export default function AltLandingPage2() {
   const navigate = useNavigate();
-  const [language, setLanguage] = useState<Language>("en");
+  const [language, setLanguage] = useState<Language>(
+    () => (navigator.language?.startsWith("es") ? "es" : "en") as Language
+  );
   const [introDone, setIntroDone] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
   const t = content[language];
