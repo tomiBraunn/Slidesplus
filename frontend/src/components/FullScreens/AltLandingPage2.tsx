@@ -124,7 +124,7 @@ const content: Record<Language, ContentShape> = {
     navLabels: ["Funciones", "Flujo", "FAQ"],
     navHrefs: ["#features", "#workflow", "#faq"],
     startShort: "Empezar",
-    heroTitle: "Todo gran pitch empieza en algun lugar.",
+    heroTitle: "Toda buena presentación necesita un pequeño plus.",
     heroCta: "Empezar",
     heroSecondary: "Ver funciones",
     heroCopy:
