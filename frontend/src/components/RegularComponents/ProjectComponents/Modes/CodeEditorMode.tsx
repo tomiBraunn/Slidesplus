@@ -7,7 +7,7 @@ type Props = {
 
 export default function CodeEditorMode({ doc, onChange }: Props) {
   return (
-    <div className="w-full h-full bg-theme-primary">
+    <div className="w-full h-full bg-transparent">
       <CodeEditor code={doc} setCode={onChange} language="html" />
     </div>
   );

@@ -1673,9 +1673,9 @@ export default function GeminiChatbot({
 
   return (
     <div className="flex flex-col h-full w-full overflow-hidden p-3 relative">
-      <div className="absolute inset-0 bg-theme-alt" />
+      <div className="absolute inset-0" />
 
-      <div className="flex flex-col bg-theme-primary border border-theme-tertiary text-theme-primary rounded-xl h-full w-full p-4 overflow-hidden relative z-[1]">
+      <div className="flex flex-col border border-theme-tertiary text-theme-primary rounded-xl h-full w-full p-4 overflow-hidden relative z-[1]">
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-6">
           {loadingHistory ? (
             <div className="flex items-center justify-center gap-2 text-theme-secondary text-sm mt-12">
