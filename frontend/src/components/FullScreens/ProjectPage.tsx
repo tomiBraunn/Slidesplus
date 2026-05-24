@@ -519,7 +519,7 @@ function ProjectPageContent() {
                 </div>
               </div>
 
-              <div className="border border-theme-tertiary rounded-3xl overflow-hidden flex flex-col bg-theme-quaternary backdrop-blur-xl" style={{ maxHeight: '30vh' }}>
+              <div className="border border-theme-tertiary rounded-3xl overflow-hidden flex flex-col" style={{ maxHeight: '30vh' }}>
                 <div className="flex items-center gap-2 px-4 py-3 border-b border-theme-tertiary">
                   <span className="text-xs text-theme-secondary">
                     {slides.length > 0 ? `${currentSlide + 1} / ${slides.length}` : 'No slides'}
@@ -597,7 +597,7 @@ function ProjectPageContent() {
 
           <div
             ref={editorRef}
-            className="h-full flex-1 relative flex justify-center items-center bg-theme-quaternary backdrop-blur-xl"
+            className="h-full flex-1 relative flex justify-center items-center"
             style={{
               width: `${100 - previewWidth}%`,
               height: "100%"

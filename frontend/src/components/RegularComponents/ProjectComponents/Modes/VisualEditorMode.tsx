@@ -424,7 +424,7 @@ export default function VisualEditorMode({
   ]
 
   return (
-    <div className="absolute inset-0 bg-transparent">
+    <div className="absolute inset-0 bg-theme-alt">
       <div className="flex w-full h-full items-center justify-center p-4">
         <div className="flex gap-2 w-full max-w-full min-h-full rounded-xl overflow-hidden">
 

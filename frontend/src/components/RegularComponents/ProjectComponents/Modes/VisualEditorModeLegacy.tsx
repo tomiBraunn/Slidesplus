@@ -269,7 +269,7 @@ export default function VisualEditorModeLegacy({
   }
 
   return (
-    <div className="w-full h-full flex items-center justify-center">
+    <div className="w-full h-full bg-theme-primary flex items-center justify-center">
       {selectedElement ? (
         <div className="w-full h-full bg-theme-quaternary p-6 overflow-y-auto">
           <h3 className="text-lg font-semibold text-white mb-6">

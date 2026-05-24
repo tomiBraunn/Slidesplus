@@ -160,6 +160,7 @@ export default function ProjectNavBar({
       transition: 'background .1s ease-in-out'
     }
     : {
+      backgroundColor: 'var(--bg-primary)',
       transition: 'background .1s ease-in-out'
     };
 
@@ -167,7 +168,7 @@ export default function ProjectNavBar({
     <>
       <nav className="relative h-18 w-screen z-10">
         <div
-          className="absolute inset-0 border-b border-theme-tertiary bg-theme-quaternary backdrop-blur-xl"
+          className="absolute inset-0 border-b border-theme-tertiary"
           style={navbarBgStyle}
         />
 
@@ -258,7 +259,7 @@ export default function ProjectNavBar({
               refreshTrigger={spotifyRefreshTrigger}
               onColorChange={setSpotifyColor}
             />
-            <div className="flex items-center justify-between w-auto bg-theme-quaternary backdrop-blur-xl border border-theme-tertiary text-theme-primary transition-colors duration-300 rounded-[20px]">
+            <div className="flex items-center justify-between w-auto bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300 rounded-[20px]">
               <span
                 onClick={() => onChangeMode("code")}
                 className={`material-symbols-outlined cursor-pointer w-[1.5em] aspect-square flex items-center justify-center rounded-l-[20px] transition ${mode === "code"
