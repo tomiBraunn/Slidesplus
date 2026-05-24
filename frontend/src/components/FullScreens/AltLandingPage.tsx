@@ -630,13 +630,6 @@ export default function AltLandingPage() {
                     >
                       {t.heroCta}
                     </button>
-                    <a
-                      href="#features"
-                      onClick={(event) => scrollToSection(event, "#features")}
-                      className="inline-flex items-center gap-2 rounded-full px-2 py-3 text-xs font-semibold uppercase tracking-[0.12em] hover:text-muted-foreground"
-                    >
-                      {t.heroSecondary} <ArrowRight />
-                    </a>
                   </div>
                 </div>
                 <div className="relative z-10 min-h-80 overflow-hidden lg:min-h-[640px]">
