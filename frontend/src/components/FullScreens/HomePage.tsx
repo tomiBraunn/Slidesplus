@@ -1,5 +1,6 @@
 // @ts-nocheck
 import ProjectTile from "../RegularComponents/HomeComponents/ProjectTile"
+import { Skeleton } from "../ui/skeleton"
 import AppTextLogo from "../RegularComponents/MultiuseComponents/AppTextLogo"
 import NavBar from "../RegularComponents/HomeComponents/Navbar"
 import CreateProject from "../RegularComponents/HomeComponents/Modals/CreateProject"
@@ -563,7 +564,25 @@ function HomePage() {
                   {(() => {
                     if (loading)
                       return (
-                        <div className="text-white/70 col-span-full">Loading projects…</div>
+                        <>
+                          {Array.from({ length: isMobile || viewMode === "list" ? 8 : 12 }).map((_, i) =>
+                            isMobile || viewMode === "list" ? (
+                              <div key={i} className="rounded-full bg-theme-quaternary border border-theme-tertiary w-full flex flex-row items-center py-2 px-3 gap-3">
+                                <Skeleton className="w-6 h-6 rounded-full shrink-0" />
+                                <Skeleton className="h-4 w-1/3 rounded-full" />
+                                <Skeleton className="h-3 w-1/4 rounded-full" />
+                              </div>
+                            ) : (
+                              <div key={i} className="rounded-[15px] bg-theme-quaternary border border-theme-tertiary w-full flex flex-col gap-2 overflow-hidden p-1.5">
+                                <Skeleton className="w-full aspect-[16/9] rounded-[15px]" />
+                                <div className="flex items-center gap-2 px-1 py-0.5">
+                                  <Skeleton className="w-3.5 h-3.5 rounded-full shrink-0" />
+                                  <Skeleton className="h-4 w-3/4 rounded-full" />
+                                </div>
+                              </div>
+                            )
+                          )}
+                        </>
                       )
                     if (err) return <div className="text-red-400 col-span-full">{err}</div>
                     if (projects.length === 0)
