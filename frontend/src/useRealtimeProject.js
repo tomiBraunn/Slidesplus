@@ -1,25 +1,9 @@
 // @ts-nocheck
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { createClient } from '@supabase/supabase-js'
-import { urlbackend } from './config'
-
-let supabaseClient = null
+import { supabase } from './utils/supabaseClient'
 
 async function getSupabase() {
-  if (supabaseClient) return supabaseClient
-
-  const token = localStorage.getItem('token')
-  const res = await fetch(`${urlbackend}/realtime/config`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  })
-  if (!res.ok) throw new Error('Failed to load realtime config')
-  const data = await res.json()
-  if (!data.ok || !data.config?.url || !data.config?.anonKey) {
-    throw new Error('Invalid realtime config')
-  }
-
-  supabaseClient = createClient(data.config.url, data.config.anonKey)
-  return supabaseClient
+  return supabase
 }
 
 export const useRealtimeCollaboration = (
