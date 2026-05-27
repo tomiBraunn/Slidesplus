@@ -34,12 +34,21 @@ export async function auth(req, res, next) {
 		const userRes = await pool.query("SELECT id FROM users WHERE id=$1", [user.id])
 		if (userRes.rowCount === 0) {
 			const metadata = user.user_metadata || {}
+			const username = metadata.preferred_username || metadata.user_name || metadata.full_name?.replace(/\s+/g, "").toLowerCase() || user.email?.split("@")[0] || user.id
 			try {
 				await pool.query(
-					`INSERT INTO users (id, username, email, first_name, last_name)
-					VALUES ($1, $2, $3, $4, $5)
+					`INSERT INTO users (id, username, email, password, first_name, last_name, avatar)
+					VALUES ($1, $2, $3, $4, $5, $6, $7)
 					ON CONFLICT (id) DO NOTHING`,
-					[user.id, metadata.username || "", user.email || "", metadata.first_name || "", metadata.last_name || ""]
+					[
+						user.id,
+						username,
+						user.email || "",
+						"oauth_no_password",
+						metadata.full_name?.split(" ")[0] || metadata.first_name || "",
+						metadata.full_name?.split(" ").slice(1).join(" ") || metadata.last_name || "",
+						metadata.avatar_url || metadata.picture || null
+					]
 				)
 			} catch (insertErr) {
 				console.error("[Auth] Error inserting user from Supabase:", insertErr)
