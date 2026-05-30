@@ -5,6 +5,7 @@ import {
   ComposerPrimitive,
   MessagePrimitive,
   ThreadPrimitive,
+  useThread,
 } from "@assistant-ui/react";
 import {
   ArrowDownIcon,
@@ -82,7 +83,7 @@ const AssistantActionBar: FC = () => {
           <MessagePrimitive.If copied>
             <CheckIcon className="h-3 w-3" />
           </MessagePrimitive.If>
-          <MessagePrimitive.If not copied>
+          <MessagePrimitive.If copied={false}>
             <CopyIcon className="h-3 w-3" />
           </MessagePrimitive.If>
         </button>
@@ -131,10 +132,10 @@ const ThreadScrollToBottom: FC = () => {
 };
 
 const Composer: FC = () => {
+  const { isRunning } = useThread();
   return (
     <ComposerPrimitive.Root className="relative w-full">
       <div className="flex items-end gap-2 rounded-2xl border border-theme-tertiary bg-theme-secondary/5 px-3 py-2 transition-colors focus-within:border-theme-secondary/40">
-        {/* Attach button */}
         <ComposerPrimitive.AddAttachment asChild>
           <button
             className="shrink-0 pb-0.5 text-theme-secondary hover:text-theme-primary transition-colors disabled:opacity-40"
@@ -144,7 +145,6 @@ const Composer: FC = () => {
           </button>
         </ComposerPrimitive.AddAttachment>
 
-        {/* Textarea */}
         <ComposerPrimitive.Input
           placeholder="Message AI…"
           rows={1}
@@ -152,8 +152,7 @@ const Composer: FC = () => {
           autoFocus
         />
 
-        {/* Send / Stop */}
-        <MessagePrimitive.If running={false}>
+        {!isRunning ? (
           <ComposerPrimitive.Send asChild>
             <button
               className="shrink-0 flex h-7 w-7 items-center justify-center rounded-lg bg-theme-inverted text-theme-inverted transition-all hover:opacity-85 disabled:opacity-30 disabled:cursor-not-allowed"
@@ -162,8 +161,7 @@ const Composer: FC = () => {
               <ArrowUpIcon className="h-4 w-4" />
             </button>
           </ComposerPrimitive.Send>
-        </MessagePrimitive.If>
-        <MessagePrimitive.If running>
+        ) : (
           <ComposerPrimitive.Cancel asChild>
             <button
               className="shrink-0 flex h-7 w-7 items-center justify-center rounded-lg bg-theme-inverted text-theme-inverted transition-all hover:opacity-85"
@@ -172,7 +170,7 @@ const Composer: FC = () => {
               <SquareIcon className="h-3 w-3 fill-current" />
             </button>
           </ComposerPrimitive.Cancel>
-        </MessagePrimitive.If>
+        )}
       </div>
     </ComposerPrimitive.Root>
   );
