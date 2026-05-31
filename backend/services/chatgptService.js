@@ -6,21 +6,15 @@ export async function generateWithChatGPT({ system, message, history, context, m
 	if (!API_KEY) throw new Error("OPENAI_API_KEY not configured")
 
 	const mdl = model || "gpt-4o"
-	const url = "https://api.openai.com/v1/chat/completions"
+	const url = "https://api.openai.com/v1/responses"
 
-	const messages = []
-
-	if (system) {
-		messages.push({
-			role: "system",
-			content: String(system)
-		})
-	}
+	// Build input: previous conversation + current message
+	const input = []
 
 	if (Array.isArray(history) && history.length > 0) {
 		for (const msg of history) {
 			if (!msg || !msg.role || !msg.content) continue
-			messages.push({
+			input.push({
 				role: msg.role === "assistant" ? "assistant" : "user",
 				content: String(msg.content)
 			})
@@ -36,16 +30,15 @@ export async function generateWithChatGPT({ system, message, history, context, m
 		userMessage = parts.join('\n\n')
 	}
 
-	messages.push({
-		role: "user",
-		content: userMessage
-	})
+	input.push({ role: "user", content: userMessage })
 
 	const payload = {
 		model: mdl,
-		messages,
+		instructions: system ? String(system) : undefined,
+		input,
 		temperature: 0.7,
-		max_tokens: 4000
+		max_output_tokens: 4000,
+		tools: [{ type: "web_search_preview" }],
 	}
 
 	const r = await fetch(url, {
@@ -58,5 +51,23 @@ export async function generateWithChatGPT({ system, message, history, context, m
 	})
 
 	const raw = await r.text()
-	return { ok: r.ok, status: r.status, raw }
+
+	// Normalize Responses API output to { text } shape
+	if (r.ok) {
+		try {
+			const data = JSON.parse(raw)
+			// output is an array of items; find the first message with text
+			const text = data.output
+				?.filter(o => o.type === "message")
+				?.flatMap(o => o.content)
+				?.filter(c => c.type === "output_text")
+				?.map(c => c.text)
+				?.join("") || ""
+			return { ok: true, status: r.status, raw: JSON.stringify({ text }) }
+		} catch {
+			return { ok: false, status: 500, raw }
+		}
+	}
+
+	return { ok: false, status: r.status, raw }
 }
