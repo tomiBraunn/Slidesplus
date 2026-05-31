@@ -15,7 +15,38 @@ export default async function handler(req, res) {
     return res.status(400).json({ ok: false, message: 'Missing or invalid "slideCount" (positive integer expected)' })
   }
 
-  const systemPrompt = "You are a presentation expert. Return ONLY valid JSON, no markdown, no backticks.";
+  const systemPrompt = `You are an editorial presentation designer. Your slides must look like they were art-directed by a senior designer at Wired, Bloomberg, or The New York Times. Every slide is a deliberate compositional choice — not a template filled in.
+
+RENDERING CONTEXT: Your output is injected into an iframe with a fixed 1920x1080px body. Design for this fixed canvas. Use px for layout and sizing.
+
+TYPOGRAPHY — BANNED: Inter, Roboto, Arial, Space Grotesk, system-ui. Never use these. Load fonts via @import from Google Fonts. Pick ONE distinctive font pair for the whole presentation.
+
+COLOR PALETTES (rotate, never repeat adjacent):
+INK & PAPER: bg:#f5f0e8 — text:#1a1208 — accent:#c8392b
+BONE & CHARCOAL: bg:#faf9f7 — text:#2c2c2c — accent:#1a1a1a
+NIGHT EDITORIAL: bg:#0e0e0e — text:#f0ece4 — accent:#e8c547
+STEEL & COPPER: bg:#1c1c1e — text:#e8e4df — accent:#b87333
+CHALK & FOREST: bg:#f2f0eb — text:#1f2b1e — accent:#2d5a27
+PRINT BLUE: bg:#f4f6f9 — text:#0d1b2a — accent:#1b4f8a
+
+LAYOUT VARIETY (vary across slides, never repeat adjacent):
+- COVER: full bleed image + gradient overlay, title bottom-left anchored
+- FEATURE SPREAD: 800px solid color left + 1120px image right
+- DATA STORY: dark bg, 2-3 giant stats (160px+), small caps labels
+- TYPOGRAPHIC: pure text, headline 120px+, 40% empty space
+- PULL QUOTE: decorative quote mark opacity 0.08, display font 52-64px
+- SECTION DIVIDER: single word/phrase 180-220px, 1px rule, solid bg only
+
+DESIGN RULES:
+- NEVER center everything — use left-aligned, bottom-anchored, asymmetric
+- NEVER glassmorphism as primary element
+- NEVER purple gradients
+- Use Unsplash images on 60%+ of slides: https://images.unsplash.com/photo-{ID}?w=1920&q=80&fit=crop
+- Always gradient overlay on background images
+- Max 5 bullets, max 8 words each, one message per slide
+
+IMPORTANT: Return ONLY a valid JSON array. No markdown, no backticks, no explanation.
+Format: [{ slideNumber, title, bullets: [3-5 strings], speakerNotes }]`;
   const userPrompt = `Create a ${count}-slide presentation about '${topic}' in ${tone} tone in ${language}.\nReturn a JSON array with this exact structure:\n[{ slideNumber, title, bullets: [3-5 strings], speakerNotes }]`;
 
   try {
@@ -26,28 +57,30 @@ export default async function handler(req, res) {
         return res.status(500).json({ ok: false, message: 'Gemini API key not configured' })
       }
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`
-      const body = {
+      const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite']
+      const requestBody = {
         contents: [{ parts: [{ text: userPrompt }] }],
         systemInstruction: { parts: [{ text: systemPrompt }] }
       }
 
-      const doRequest = async () => fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      })
-
-      resp = await doRequest()
-      if (resp.status === 429) {
-        await new Promise(r => setTimeout(r, 2000))
-        resp = await doRequest()
+      for (const mdl of GEMINI_MODELS) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${mdl}:generateContent?key=${process.env.GEMINI_API_KEY}`
+        resp = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        })
+        if (resp.status === 429) {
+          console.log(`[generate-slides] ${mdl} rate limited, trying next`)
+          continue
+        }
+        break
       }
 
-      if (!resp.ok) {
-        const text = await resp.text().catch(() => '')
-        console.error('Gemini API error:', resp.status, text)
-        return res.status(502).json({ ok: false, message: 'Gemini API error', status: resp.status, detail: text })
+      if (!resp || !resp.ok) {
+        const text = resp ? await resp.text().catch(() => '') : 'No response'
+        console.error('Gemini API error:', resp?.status, text)
+        return res.status(502).json({ ok: false, message: 'Gemini API error', status: resp?.status, detail: text })
       }
 
       const json = await resp.json()

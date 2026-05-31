@@ -1,8 +1,41 @@
-import { generateWithGemini } from "../services/geminiService.js"
+import { generateWithGemini, generateWithGeminiFallback, buildCompressedHistory } from "../services/geminiService.js"
+import { generateWithChatGPT } from "../services/chatgptService.js"
+import { pool } from "../config/database.js"
+
+async function isAdminUser(userId) {
+	if (!pool || !userId) return false
+	try {
+		const r = await pool.query("SELECT is_admin FROM users WHERE id=$1", [userId])
+		return r.rows[0]?.is_admin === true
+	} catch (err) {
+		console.error("[Gemini] isAdminUser error:", err)
+		return false
+	}
+}
 
 export const generateWithGeminiController = async (req, res) => {
 	try {
-		const r = await generateWithGemini(req.body ?? {})
+		const userId = req.user?.sub ?? null
+		const admin = await isAdminUser(userId)
+		const { model: requestedModel, history: rawHistory, ...body } = req.body ?? {}
+
+		const history = await buildCompressedHistory(rawHistory)
+
+		if (admin) {
+			const model = requestedModel || "gpt-4o"
+			console.log(`[AI Router] Admin ${userId} → ${model}`)
+			const r = await generateWithChatGPT({ ...body, history, model })
+			if (!r.ok) {
+				let details
+				try { details = JSON.parse(r.raw) } catch { details = r.raw }
+				return res.status(502).json({ error: "GPT-4o upstream error", status: r.status, details })
+			}
+			const data = JSON.parse(r.raw)
+			return res.json({ text: data.choices?.[0]?.message?.content || "" })
+		}
+
+		console.log(`[AI Router] User ${userId ?? 'anon'} → Gemini fallback`)
+		const r = await generateWithGeminiFallback({ ...body, history })
 		if (!r.ok) {
 			let details
 			try { details = JSON.parse(r.raw) } catch { details = r.raw }
@@ -11,7 +44,7 @@ export const generateWithGeminiController = async (req, res) => {
 		res.type("application/json").send(r.raw)
 	} catch (err) {
 		console.error("[Gemini] Error:", err)
-		res.status(500).json({ error: "Error connecting to Gemini", details: err instanceof Error ? err.message : String(err) })
+		res.status(500).json({ error: "Error connecting to AI", details: err instanceof Error ? err.message : String(err) })
 	}
 }
 

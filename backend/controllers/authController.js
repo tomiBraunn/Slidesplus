@@ -134,3 +134,17 @@ export const login = async (req, res) => {
 		res.status(500).json({ message: "Internal error" })
 	}
 }
+
+export const getMe = async (req, res) => {
+	if (!pool) return res.status(500).json({ message: "Database not configured" })
+	try {
+		const r = await pool.query(
+			"SELECT id, username, email, first_name, last_name, avatar, user_number, is_admin FROM users WHERE id=$1",
+			[req.user.sub]
+		)
+		if (r.rowCount === 0) return res.status(404).json({ message: "User not found" })
+		res.json({ ok: true, user: r.rows[0] })
+	} catch {
+		res.status(500).json({ message: "Internal error" })
+	}
+}

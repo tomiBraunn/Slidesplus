@@ -1,5 +1,20 @@
 import fetch from "node-fetch"
 
+const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite']
+const rateLimitState = Object.fromEntries(GEMINI_MODELS.map(m => [m, { failedAt: null }]))
+const COOLDOWN_MS = 60 * 1000
+
+function isRateLimited(model) {
+	const s = rateLimitState[model]
+	return s?.failedAt && (Date.now() - s.failedAt) < COOLDOWN_MS
+}
+function markRateLimited(model) {
+	if (rateLimitState[model]) rateLimitState[model].failedAt = Date.now()
+}
+function clearRateLimit(model) {
+	if (rateLimitState[model]) rateLimitState[model].failedAt = null
+}
+
 export async function generateWithGemini({ system, mode, message, history, context, model, image }) {
 	if (!message || !String(message).trim()) throw new Error("Missing message")
 	const API_KEY = process.env.GEMINI_API_KEY
@@ -57,4 +72,41 @@ export async function generateWithGemini({ system, mode, message, history, conte
 	})
 	const raw = await r.text()
 	return { ok: r.ok, status: r.status, raw }
+}
+
+export async function generateWithGeminiFallback(params) {
+	for (const model of GEMINI_MODELS) {
+		if (isRateLimited(model)) {
+			console.log(`[Gemini] Skipping ${model} — rate limited`)
+			continue
+		}
+		const r = await generateWithGemini({ ...params, model })
+		if (r.ok) { clearRateLimit(model); return r }
+		if (r.status === 429) { markRateLimited(model); continue }
+		return r
+	}
+	return { ok: false, status: 429, raw: JSON.stringify({ error: 'All Gemini models rate limited' }) }
+}
+
+export async function buildCompressedHistory(history) {
+	if (!Array.isArray(history) || history.length <= 20) return history
+	const recent = history.slice(-10)
+	const toSummarize = history.slice(0, -10)
+	const summaryText = toSummarize.map(m => `${m.role}: ${m.content}`).join('\n')
+	const r = await generateWithGemini({
+		message: `Summarize this conversation in 3-5 sentences, preserving key decisions, slide changes, and important context:\n${summaryText}`,
+		model: 'gemini-2.0-flash-lite'
+	})
+	if (!r.ok) return recent
+	try {
+		const data = JSON.parse(r.raw)
+		const summary = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+		return [
+			{ role: 'user', content: `[Previous conversation summary]: ${summary}` },
+			{ role: 'model', content: 'Understood. I have the context of our previous conversation.' },
+			...recent
+		]
+	} catch {
+		return recent
+	}
 }
