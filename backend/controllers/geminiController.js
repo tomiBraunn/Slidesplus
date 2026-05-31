@@ -23,7 +23,19 @@ export const generateWithGeminiController = async (req, res) => {
 
 		if (admin) {
 			const model = requestedModel || "gpt-4o"
+			const isGeminiModel = model.startsWith("gemini-")
 			console.log(`[AI Router] Admin ${userId} → ${model}`)
+
+			if (isGeminiModel) {
+				const r = await generateWithGemini({ ...body, history, model })
+				if (!r.ok) {
+					let details
+					try { details = JSON.parse(r.raw) } catch { details = r.raw }
+					return res.status(502).json({ error: "Gemini upstream error", status: r.status, details })
+				}
+				return res.type("application/json").send(r.raw)
+			}
+
 			const r = await generateWithChatGPT({ ...body, history, model })
 			if (!r.ok) {
 				let details
