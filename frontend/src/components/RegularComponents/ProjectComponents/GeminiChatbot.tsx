@@ -509,9 +509,26 @@ export default function GeminiChatbot({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [inputValue, setInputValue] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [selectedModel, setSelectedModel] = useState(localStorage.getItem("selectedModel") || "gpt-4o");
+  const [showModelPicker, setShowModelPicker] = useState(false);
+
+  const ADMIN_MODELS = [
+    { id: "gpt-4o", label: "GPT-4o" },
+    { id: "gpt-4o-mini", label: "GPT-4o Mini" },
+  ];
 
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   useEffect(() => { scrollToBottom(); }, [messages, loading]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    fetch(`${urlbackend}/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(data => { if (data?.user?.is_admin) setIsAdmin(true); })
+      .catch(() => {});
+  }, []);
 
   /* ── load history ── */
   useEffect(() => {
@@ -650,12 +667,11 @@ export default function GeminiChatbot({
       }
 
       const history = messages.slice(-20).map((m) => ({ role: m.role, content: m.content }));
-      const selectedModel = localStorage.getItem("selectedModel") || undefined;
       const token = localStorage.getItem("token");
       const res = await fetch(`${urlbackend}/gemini`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ system: systemPrompt, mode: "auto", message, context: contextToSend, history, model: selectedModel }),
+        body: JSON.stringify({ system: systemPrompt, mode: "auto", message, context: contextToSend, history, model: isAdmin ? selectedModel : undefined }),
       });
       const data = await res.json();
       if (!res.ok) { setErrors({ form: data?.error || "Error connecting to Gemini" }); return; }
@@ -958,6 +974,34 @@ export default function GeminiChatbot({
                     </button>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {isAdmin && (
+              <div className="relative flex items-center gap-2 mb-1">
+                <button
+                  onClick={() => setShowModelPicker(p => !p)}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border border-theme-tertiary bg-theme-primary hover:bg-[#52585A] text-theme-secondary transition-all"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
+                  {ADMIN_MODELS.find(m => m.id === selectedModel)?.label || selectedModel}
+                  <svg className={`w-3 h-3 transition-transform ${showModelPicker ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                {showModelPicker && (
+                  <div className="absolute bottom-full mb-1 left-0 bg-theme-primary border border-theme-tertiary rounded-lg shadow-lg overflow-hidden z-10">
+                    {ADMIN_MODELS.map(m => (
+                      <button
+                        key={m.id}
+                        onClick={() => { setSelectedModel(m.id); localStorage.setItem("selectedModel", m.id); setShowModelPicker(false); }}
+                        className={`w-full text-left px-4 py-2 text-xs hover:bg-[#52585A] transition-colors flex items-center gap-2 ${selectedModel === m.id ? "text-theme-primary font-medium" : "text-theme-secondary"}`}
+                      >
+                        {selectedModel === m.id && <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />}
+                        {selectedModel !== m.id && <span className="w-1.5 h-1.5 inline-block" />}
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
