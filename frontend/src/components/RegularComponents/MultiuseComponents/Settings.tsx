@@ -1,15 +1,30 @@
 // @ts-nocheck
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { urlbackend } from "../../../config.js"
+
+const ADMIN_MODELS = [
+  { id: "gpt-4o", label: "GPT-4o", color: "#249931" },
+  { id: "gpt-4o-mini", label: "GPT-4o Mini", color: "#249931" },
+]
 
 function Settings() {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [aiModel, setAiModel] = useState(localStorage.getItem("aiModel") || "gemini");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [selectedModel, setSelectedModel] = useState(localStorage.getItem("selectedModel") || "gpt-4o");
 
-  const handleAiModelChange = (model: string) => {
-    setAiModel(model);
-    localStorage.setItem("aiModel", model);
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    fetch(`${urlbackend}/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(data => { if (data?.user?.is_admin) setIsAdmin(true) })
+      .catch(() => {});
+  }, []);
+
+  const handleModelChange = (modelId: string) => {
+    setSelectedModel(modelId);
+    localStorage.setItem("selectedModel", modelId);
   };
 
   const handleCleanAllProjects = async () => {
@@ -84,31 +99,30 @@ function Settings() {
                 <button className="text-left px-4 py-2 rounded hover:bg-[#222]">Profile Picture</button>
                 <button className="text-left px-4 py-2 rounded hover:bg-[#222]">Change Info</button>
                 <button className="text-left px-4 py-2 rounded hover:bg-[#222]">Language</button>
-                <div className="px-4 py-2">
-                  <p className="text-sm text-[#999999] mb-2">AI Model</p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleAiModelChange("gemini")}
-                      className={`px-4 py-2 rounded transition-colors ${
-                        aiModel === "gemini"
-                          ? "bg-[#7182FF] text-white"
-                          : "bg-[#222] text-[#999] hover:bg-[#333]"
-                      }`}
-                    >
-                      Gemini
-                    </button>
-                    <button
-                      onClick={() => handleAiModelChange("chatgpt")}
-                      className={`px-4 py-2 rounded transition-colors ${
-                        aiModel === "chatgpt"
-                          ? "bg-[#249931] text-white"
-                          : "bg-[#222] text-[#999] hover:bg-[#333]"
-                      }`}
-                    >
-                      ChatGPT
-                    </button>
+
+                {isAdmin && (
+                  <div className="px-4 py-2">
+                    <p className="text-sm text-[#999999] mb-1">AI Model</p>
+                    <p className="text-xs text-[#666] mb-2">Admin access — GPT-4o powered</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {ADMIN_MODELS.map(m => (
+                        <button
+                          key={m.id}
+                          onClick={() => handleModelChange(m.id)}
+                          className={`px-4 py-2 rounded transition-colors text-sm ${
+                            selectedModel === m.id
+                              ? "text-white"
+                              : "bg-[#222] text-[#999] hover:bg-[#333]"
+                          }`}
+                          style={selectedModel === m.id ? { backgroundColor: m.color } : {}}
+                        >
+                          {m.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
+
                 <button className="text-left px-4 py-2 rounded hover:bg-[#222]">Export Data</button>
                 <button
                   onClick={handleCleanAllProjects}

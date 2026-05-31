@@ -649,10 +649,13 @@ export default function GeminiChatbot({
         message = userMsg + filesContext;
       }
 
-      const history = messages.slice(-10).map((m) => ({ role: m.role, content: m.content }));
+      const history = messages.slice(-20).map((m) => ({ role: m.role, content: m.content }));
+      const selectedModel = localStorage.getItem("selectedModel") || undefined;
+      const token = localStorage.getItem("token");
       const res = await fetch(`${urlbackend}/gemini`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ system: systemPrompt, mode: "auto", message, context: contextToSend, history }),
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ system: systemPrompt, mode: "auto", message, context: contextToSend, history, model: selectedModel }),
       });
       const data = await res.json();
       if (!res.ok) { setErrors({ form: data?.error || "Error connecting to Gemini" }); return; }
