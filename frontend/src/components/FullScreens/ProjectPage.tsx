@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef } from "react"
 import { useLocation } from "react-router-dom"
 import ProjectNavBar from "../RegularComponents/ProjectComponents/ProjectNavBar"
+import { FullscreenLoader } from "../ui/FullscreenLoader"
 import CodeEditorMode from "../RegularComponents/ProjectComponents/Modes/CodeEditorMode"
 import VisualEditorMode from "../RegularComponents/ProjectComponents/Modes/VisualEditorMode"
 import VisualEditorModeLegacy from "../RegularComponents/ProjectComponents/Modes/VisualEditorModeLegacy"
@@ -81,6 +82,7 @@ function ProjectPageContent() {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [slides, setSlides] = useState<string[]>([])
   const [shareModalOpen, setShareModalOpen] = useState(false)
+  const [projectLoading, setProjectLoading] = useState(true)
   const [draggedSlide, setDraggedSlide] = useState<number | null>(null)
   const [hoveredSlide, setHoveredSlide] = useState<number | null>(null)
   const [initialAIPrompt, setInitialAIPrompt] = useState<string | null>(null)
@@ -167,6 +169,8 @@ function ProjectPageContent() {
       return loadedDoc
     } catch (error) {
       console.error("Error loading project:", error)
+    } finally {
+      setProjectLoading(false)
     }
   }
 
@@ -475,6 +479,8 @@ function ProjectPageContent() {
     setDraggedSlide(null)
     setHoveredSlide(null)
   }
+
+  if (projectLoading) return <FullscreenLoader />
 
   return (
     <div className="w-screen h-screen flex flex-col">

@@ -11,6 +11,7 @@ import {
   useExternalStoreRuntime,
 } from "@assistant-ui/react";
 import { urlbackend } from "../../../config.js";
+import { Spinner } from "../../ui/spinner";
 
 type ChatMsg = {
   id: string;
@@ -514,8 +515,12 @@ export default function GeminiChatbot({
   const [showModelPicker, setShowModelPicker] = useState(false);
 
   const ADMIN_MODELS = [
-    { id: "gpt-4o", label: "GPT-4o" },
-    { id: "gpt-4o-mini", label: "GPT-4o Mini" },
+    { id: "gpt-4o", label: "GPT-4o", provider: "openai" },
+    { id: "gpt-4o-mini", label: "GPT-4o Mini", provider: "openai" },
+    { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash", provider: "gemini" },
+    { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro", provider: "gemini" },
+    { id: "gemini-2.0-flash", label: "Gemini 2.0 Flash", provider: "gemini" },
+    { id: "gemini-2.0-flash-lite", label: "Gemini 2.0 Flash Lite", provider: "gemini" },
   ];
 
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -868,12 +873,8 @@ export default function GeminiChatbot({
 
             {/* Loading history */}
             {loadingHistory && (
-              <div className="flex items-center justify-center gap-2 text-theme-secondary text-sm mt-12">
-                <div className="flex gap-1">
-                  {[0, 200, 400].map((d) => (
-                    <div key={d} className="w-2 h-2 bg-theme-secondary rounded-full animate-pulse" style={{ animationDelay: `${d}ms` }} />
-                  ))}
-                </div>
+              <div className="flex items-center justify-center mt-12">
+                <Spinner className="size-5 text-theme-secondary" />
               </div>
             )}
 
@@ -939,11 +940,7 @@ export default function GeminiChatbot({
             {loading && (
               <div className="flex items-center gap-2 animate-fadeIn">
                 <div className="text-xs font-medium text-theme-primary">Assistant</div>
-                <div className="flex gap-1 mt-1">
-                  {[0, 100, 200].map((d) => (
-                    <div key={d} className="w-2 h-2 bg-theme-secondary rounded-full animate-bounce" style={{ animationDelay: `${d}ms` }} />
-                  ))}
-                </div>
+                <Spinner className="size-3 text-theme-secondary mt-0.5" />
               </div>
             )}
 
