@@ -127,22 +127,29 @@ function ProjectPreview({
     }
   }, [open, projectId])
 
+  const [mainDims, setMainDims] = useState({ width: 0, height: 0 })
+  const wrapperRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
     function updateScale() {
-      if (!mainPreviewRef.current) return
-      const rect = mainPreviewRef.current.getBoundingClientRect()
-      const containerWidth = rect.width
-      const containerHeight = rect.height
-      const baseWidth = 1920
-      const baseHeight = 1080
-      const scaleX = containerWidth / baseWidth
-      const scaleY = containerHeight / baseHeight
-      const newScale = Math.min(scaleX, scaleY)
+      if (!wrapperRef.current) return
+      const rect = wrapperRef.current.getBoundingClientRect()
+      const availW = rect.width
+      const availH = rect.height
+      const BASE_W = 1920
+      const BASE_H = 1080
+      const newScale = Math.min(availW / BASE_W, availH / BASE_H)
       setMainScale(newScale)
+      setMainDims({ width: BASE_W * newScale, height: BASE_H * newScale })
     }
     updateScale()
+    const ro = new ResizeObserver(() => requestAnimationFrame(updateScale))
+    if (wrapperRef.current) ro.observe(wrapperRef.current)
     window.addEventListener("resize", updateScale)
-    return () => window.removeEventListener("resize", updateScale)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener("resize", updateScale)
+    }
   }, [slides])
 
   useEffect(() => {
@@ -330,14 +337,26 @@ function ProjectPreview({
         </div>
 
         <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} items-start justify-start gap-2 w-full min-h-0 px-2 md:px-4 pb-1 md:pb-2`} style={{ flex: '1 1 0', overflow: 'hidden' }}>
-          <div ref={mainPreviewRef} className={`text-white rounded-xl border border-theme-tertiary bg-theme-quaternary ${isMobile ? 'w-full flex-1 min-h-0' : 'w-full'} ${isMobile ? '' : 'aspect-video'} p-0 overflow-hidden border-solid relative select-none`}>
-            {slides.length === 0 ? (
-              <div className="w-full h-full flex items-center justify-center">
-                <p className="text-gray-400 text-lg">Empty presentation - Add slides to get started!</p>
-              </div>
-            ) : (
-              <iframe ref={iframeRef} title="Project Preview" className="w-full h-full border-0" />
-            )}
+          <div
+            ref={wrapperRef}
+            className={`flex items-center justify-center ${isMobile ? 'w-full flex-1 min-h-0' : 'flex-1 min-h-0 h-full'}`}
+          >
+            <div
+              ref={mainPreviewRef}
+              className="rounded-xl border border-theme-tertiary bg-theme-quaternary overflow-hidden relative select-none flex-shrink-0"
+              style={{
+                width: mainDims.width || '100%',
+                height: mainDims.height || 'auto',
+              }}
+            >
+              {slides.length === 0 ? (
+                <div className="w-full h-full flex items-center justify-center">
+                  <p className="text-gray-400 text-lg">Empty presentation - Add slides to get started!</p>
+                </div>
+              ) : (
+                <iframe ref={iframeRef} title="Project Preview" className="w-full h-full border-0" />
+              )}
+            </div>
           </div>
           <div
             className={`rounded-xl bg-theme-quaternary backdrop-blur-xl ${isMobile ? 'w-full h-16' : 'w-1/6 min-w-[120px]'} p-1.5 md:p-2 flex ${isMobile ? 'flex-row overflow-x-auto' : 'flex-col overflow-y-auto'} gap-1.5 md:gap-2 scrollbar-custom flex-shrink-0`}

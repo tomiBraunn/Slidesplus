@@ -511,9 +511,9 @@ function ProjectPageContent() {
             style={{ width: `${previewWidth}%` }}
             className="h-full flex flex-col"
           >
-            <div className="flex-1 min-h-0 p-4 flex flex-col">
-              <div className="flex-1 flex items-center justify-center">
-                <div className="w-full h-full">
+            <div className="flex-1 min-h-0 p-4 flex flex-col gap-3">
+              <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden">
+                <div className="w-full h-full max-h-full">
                   <LivePreview
                     ref={livePreviewRef}
                     document={getCurrentSlideDoc()}
@@ -525,7 +525,7 @@ function ProjectPageContent() {
                 </div>
               </div>
 
-              <div className="border border-theme-tertiary rounded-3xl overflow-hidden flex flex-col" style={{ maxHeight: '30vh' }}>
+              <div className="border border-theme-tertiary rounded-3xl overflow-hidden flex flex-col flex-shrink-0" style={{ maxHeight: '28vh', minHeight: '80px' }}>
                 <div className="flex items-center gap-2 px-4 py-3 border-b border-theme-tertiary">
                   <span className="text-xs text-theme-secondary">
                     {slides.length > 0 ? `${currentSlide + 1} / ${slides.length}` : 'No slides'}

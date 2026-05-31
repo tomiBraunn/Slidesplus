@@ -17,42 +17,42 @@ const LivePreview = forwardRef<HTMLIFrameElement, Props>(({
 }, ref) => {
   const internalRef = useRef<HTMLIFrameElement>(null)
   const iframeRef = (ref as React.RefObject<HTMLIFrameElement>) || internalRef
+  const wrapperRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
+  const [dims, setDims] = useState({ width: 0, height: 0 })
 
   useEffect(() => {
     const updateScale = () => {
-      if (!containerRef.current) return
+      if (!wrapperRef.current) return
 
-      const container = containerRef.current
-      const rect = container.getBoundingClientRect()
-      const containerWidth = rect.width
-      const containerHeight = rect.height
+      const rect = wrapperRef.current.getBoundingClientRect()
+      const availW = rect.width
+      const availH = rect.height
 
-      const baseWidth = 1920
-      const baseHeight = 1080
+      const BASE_W = 1920
+      const BASE_H = 1080
 
-      const scaleX = containerWidth / baseWidth
-      const scaleY = containerHeight / baseHeight
-      const newScale = Math.min(scaleX, scaleY)
+      // fit 16:9 inside available space
+      const scaleByW = availW / BASE_W
+      const scaleByH = availH / BASE_H
+      const newScale = Math.min(scaleByW, scaleByH)
+
+      const finalW = BASE_W * newScale
+      const finalH = BASE_H * newScale
 
       setScale(newScale)
+      setDims({ width: finalW, height: finalH })
     }
 
     updateScale()
 
-    const resizeObserver = new ResizeObserver(() => {
-      requestAnimationFrame(updateScale)
-    })
-
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current)
-    }
-
+    const ro = new ResizeObserver(() => requestAnimationFrame(updateScale))
+    if (wrapperRef.current) ro.observe(wrapperRef.current)
     window.addEventListener('resize', updateScale)
 
     return () => {
-      resizeObserver.disconnect()
+      ro.disconnect()
       window.removeEventListener('resize', updateScale)
     }
   }, [])
@@ -81,7 +81,7 @@ const LivePreview = forwardRef<HTMLIFrameElement, Props>(({
                 width: 1920px;
                 height: 1080px;
                 overflow: hidden;
-                background: white;
+                background: #000;
               }
               body {
                 transform: scale(${scale});
@@ -99,7 +99,7 @@ const LivePreview = forwardRef<HTMLIFrameElement, Props>(({
                 justify-content: center;
                 padding: 4rem;
                 text-align: center;
-                background: white;
+                background: #000;
               }
             </style>
           </head>
@@ -150,24 +150,27 @@ const LivePreview = forwardRef<HTMLIFrameElement, Props>(({
   }, [currentSlide, totalSlides])
 
   return (
-    <div className="flex flex-col items-center justify-center gap-1 w-full h-full">
-      <div className={`w-full h-full flex items-center justify-center ${visualMode ? '' : 'rounded-3xl'}`}>
-        <div
-          ref={containerRef}
-          className={`w-full aspect-[16/9] overflow-hidden max-h-full bg-white relative ${visualMode ? '' : 'rounded-4xl border'}`}
-        >
-          <iframe
-            ref={iframeRef}
-            title="Live Preview"
-            className="w-full h-full border-none absolute top-0 left-0 bg-white"
-            style={{
-              border: 'none',
-              outline: 'none',
-              overflow: 'hidden',
-              background: 'white'
-            }}
-          />
-        </div>
+    <div ref={wrapperRef} className="flex items-center justify-center w-full h-full">
+      <div
+        ref={containerRef}
+        className={`overflow-hidden relative flex-shrink-0 ${visualMode ? '' : 'rounded-2xl border border-theme-tertiary'}`}
+        style={visualMode
+          ? { width: '100%', height: '100%' }
+          : { width: dims.width || '100%', height: dims.height || 'auto' }
+        }
+      >
+        <iframe
+          ref={iframeRef}
+          title="Live Preview"
+          className="absolute top-0 left-0 border-none"
+          style={{
+            width: '100%',
+            height: '100%',
+            border: 'none',
+            outline: 'none',
+            overflow: 'hidden',
+          }}
+        />
       </div>
     </div>
   )

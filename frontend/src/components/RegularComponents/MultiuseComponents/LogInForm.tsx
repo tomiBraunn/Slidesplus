@@ -3,12 +3,14 @@ import React, { useState } from "react";
 import { toast } from "sonner";
 import { urlbackend } from "../../../config.js";
 import { supabase } from "../../../utils/supabaseClient";
+import { FullscreenLoader } from "../../ui/FullscreenLoader";
 
 function LogInForm() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSendingReset, setIsSendingReset] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
   const handleGoogleLogin = async () => {
     try {
@@ -20,6 +22,8 @@ function LogInForm() {
       });
       if (error) {
         toast.error(error.message || "Google login failed");
+      } else {
+        setRedirecting(true);
       }
     } catch (err) {
       console.error("Google login error:", err);
@@ -37,6 +41,8 @@ function LogInForm() {
       });
       if (error) {
         toast.error(error.message || "GitHub login failed");
+      } else {
+        setRedirecting(true);
       }
     } catch (err) {
       console.error("GitHub login error:", err);
@@ -62,6 +68,7 @@ function LogInForm() {
       }
 
       localStorage.setItem("token", data.token);
+      setRedirecting(true);
       window.location.href = "/home";
     } catch (err) {
       console.error("Error:", err);
@@ -96,6 +103,8 @@ function LogInForm() {
       setIsSendingReset(false);
     }
   };
+
+  if (redirecting) return <FullscreenLoader />;
 
   return (
     <div className="flex flex-col gap-6 relative z-10 w-full max-w-md px-4 sm:px-6">
