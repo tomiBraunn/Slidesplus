@@ -51,20 +51,30 @@ export async function generateWithChatGPT({ system, message, history, context, m
 	})
 
 	const raw = await r.text()
+	console.log(`[ChatGPT] status=${r.status} body=${raw.slice(0, 300)}`)
 
-	// Normalize Responses API output to { text } shape
 	if (r.ok) {
 		try {
 			const data = JSON.parse(raw)
-			// output is an array of items; find the first message with text
-			const text = data.output
+
+			// Responses API: output array with message items
+			let text = data.output
 				?.filter(o => o.type === "message")
 				?.flatMap(o => o.content)
 				?.filter(c => c.type === "output_text")
 				?.map(c => c.text)
 				?.join("") || ""
+
+			// Fallback: output_text at top level
+			if (!text && data.output_text) text = data.output_text
+
+			// Fallback: direct text field
+			if (!text && data.text) text = data.text
+
+			console.log(`[ChatGPT] parsed text length=${text.length}`)
 			return { ok: true, status: r.status, raw: JSON.stringify({ text }) }
-		} catch {
+		} catch (e) {
+			console.error(`[ChatGPT] parse error:`, e)
 			return { ok: false, status: 500, raw }
 		}
 	}
