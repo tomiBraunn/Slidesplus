@@ -43,7 +43,7 @@ export const generateWithGeminiController = async (req, res) => {
 				return res.status(502).json({ error: "GPT-4o upstream error", status: r.status, details })
 			}
 			const data = JSON.parse(r.raw)
-			return res.json({ text: data.choices?.[0]?.message?.content || "" })
+			return res.json({ text: data.text || "" })
 		}
 
 		console.log(`[AI Router] User ${userId ?? 'anon'} → Gemini fallback`)
