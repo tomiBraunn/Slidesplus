@@ -37,7 +37,7 @@ export async function generateWithChatGPT({ system, message, history, context, m
 		instructions: system ? String(system) : undefined,
 		input,
 		temperature: 0.7,
-		max_output_tokens: 4000,
+		max_output_tokens: 16000,
 		tools: [{ type: "web_search_preview" }],
 	}
 
@@ -51,11 +51,14 @@ export async function generateWithChatGPT({ system, message, history, context, m
 	})
 
 	const raw = await r.text()
-	console.log(`[ChatGPT] status=${r.status} body=${raw.slice(0, 300)}`)
+	console.log(`[ChatGPT] status=${r.status} body=${raw.slice(0, 2000)}`)
 
 	if (r.ok) {
 		try {
 			const data = JSON.parse(raw)
+
+			console.log(`[ChatGPT] output types:`, data.output?.map(o => o.type))
+			console.log(`[ChatGPT] output[last]:`, JSON.stringify(data.output?.[data.output.length - 1])?.slice(0, 500))
 
 			// Responses API: output array with message items
 			let text = data.output
@@ -71,7 +74,10 @@ export async function generateWithChatGPT({ system, message, history, context, m
 			// Fallback: direct text field
 			if (!text && data.text) text = data.text
 
-			console.log(`[ChatGPT] parsed text length=${text.length}`)
+			// Strip markdown code blocks if GPT wraps output in ```html ... ```
+			text = text.replace(/^```[\w]*\n?/m, '').replace(/\n?```$/m, '').trim()
+
+			console.log(`[ChatGPT] parsed text length=${text.length}, preview: ${text.slice(0, 100)}`)
 			return { ok: true, status: r.status, raw: JSON.stringify({ text }) }
 		} catch (e) {
 			console.error(`[ChatGPT] parse error:`, e)
