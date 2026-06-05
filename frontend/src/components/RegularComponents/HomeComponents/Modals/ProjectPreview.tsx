@@ -339,7 +339,7 @@ function ProjectPreview({
         <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} items-start justify-start gap-2 w-full min-h-0 px-2 md:px-4 pb-1 md:pb-2`} style={{ flex: '1 1 0', overflow: 'hidden' }}>
           <div
             ref={wrapperRef}
-            className={`flex items-center justify-center ${isMobile ? 'w-full flex-1 min-h-0' : 'flex-1 min-h-0 h-full'}`}
+            className={`flex items-center justify-start w-10 ${isMobile ? 'w-full flex-1 min-h-0' : 'flex-1 min-h-0 h-full'}`}
           >
             <div
               ref={mainPreviewRef}
@@ -350,7 +350,7 @@ function ProjectPreview({
               }}
             >
               {slides.length === 0 ? (
-                <div className="w-full h-full flex items-center justify-center">
+                <div className="min-w-full min-h-full flex items-center justify-center">
                   <p className="text-gray-400 text-lg">Empty presentation - Add slides to get started!</p>
                 </div>
               ) : (
