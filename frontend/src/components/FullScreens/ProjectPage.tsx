@@ -87,6 +87,7 @@ function ProjectPageContent() {
   const [hoveredSlide, setHoveredSlide] = useState<number | null>(null)
   const [initialAIPrompt, setInitialAIPrompt] = useState<string | null>(null)
   const [useLegacyVisualEditor, setUseLegacyVisualEditor] = useState(false)
+  const [isResizing, setIsResizing] = useState(false)
   const isDragging = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const editorRef = useRef<HTMLDivElement>(null)
@@ -368,8 +369,10 @@ function ProjectPageContent() {
 
   const handleMouseDown = () => {
     isDragging.current = true
+    setIsResizing(true)
     document.body.style.cursor = "col-resize"
     document.body.style.userSelect = "none"
+    document.querySelectorAll("iframe").forEach((f) => (f.style.pointerEvents = "none"))
   }
 
   const handleMouseMove = (e: MouseEvent) => {
@@ -381,8 +384,10 @@ function ProjectPageContent() {
 
   const handleMouseUp = () => {
     isDragging.current = false
+    setIsResizing(false)
     document.body.style.cursor = ""
     document.body.style.userSelect = ""
+    document.querySelectorAll("iframe").forEach((f) => (f.style.pointerEvents = ""))
   }
 
   useEffect(() => {
@@ -590,15 +595,9 @@ function ProjectPageContent() {
 
           <div
             onMouseDown={handleMouseDown}
-            className="w-1 bg-theme-quaternary hover:bg-blue-500 cursor-col-resize transition-colors relative group"
+            className="w-px bg-theme-quaternary cursor-col-resize relative select-none flex-shrink-0"
           >
-            <div className="absolute inset-y-0 -left-1 -right-1" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <div className="flex gap-0.5">
-                <div className="w-0.5 h-8 bg-blue-400 rounded-full" />
-                <div className="w-0.5 h-8 bg-blue-400 rounded-full" />
-              </div>
-            </div>
+            <div className="absolute inset-y-0 -left-2 -right-2" />
           </div>
 
           <div

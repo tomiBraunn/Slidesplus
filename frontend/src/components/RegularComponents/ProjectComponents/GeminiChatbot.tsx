@@ -386,10 +386,9 @@ function SlidesPreviewModal({ isOpen, onClose, slides, onInsertSlides }: {
   const [show, setShow] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [viewMode, setViewMode] = useState<"visual" | "code">("visual");
-  const [mainScale, setMainScale] = useState(1);
-  const mainPreviewRef = useRef<HTMLDivElement>(null);
+  const [dims, setDims] = useState({ width: 0, height: 0 });
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [previewsHeight, setPreviewsHeight] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -402,82 +401,179 @@ function SlidesPreviewModal({ isOpen, onClose, slides, onInsertSlides }: {
     else { setShow(false); document.documentElement.classList.remove("overflow-hidden"); }
   }, [isOpen]);
   useEffect(() => {
-    const update = () => { if (!mainPreviewRef.current) return; const r = mainPreviewRef.current.getBoundingClientRect(); setMainScale(Math.min(r.width / 1920, r.height / 1080)); };
-    update(); window.addEventListener("resize", update); return () => window.removeEventListener("resize", update);
-  }, [slides]);
-  useEffect(() => {
-    const update = () => { if (mainPreviewRef.current) setPreviewsHeight(mainPreviewRef.current.offsetHeight); };
-    update(); window.addEventListener("resize", update); return () => window.removeEventListener("resize", update);
-  }, [slides]);
+    const update = () => {
+      if (!wrapperRef.current) return;
+      const r = wrapperRef.current.getBoundingClientRect();
+      const scale = Math.min(r.width / 1920, r.height / 1080);
+      setDims({ width: 1920 * scale, height: 1080 * scale });
+    };
+    update();
+    const ro = new ResizeObserver(() => requestAnimationFrame(update));
+    if (wrapperRef.current) ro.observe(wrapperRef.current);
+    window.addEventListener("resize", update);
+    return () => { ro.disconnect(); window.removeEventListener("resize", update); };
+  }, [isOpen]);
   useEffect(() => {
     if (viewMode !== "visual") return;
     const target = iframeRef.current?.contentDocument || iframeRef.current?.contentWindow?.document;
     if (!target || !slides[currentIndex]) return;
+    const scale = dims.width / 1920 || 1;
     target.open();
-    target.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:1920px;height:1080px;overflow:hidden;background:white;}body{transform:scale(${mainScale});transform-origin:top left;display:flex;align-items:center;justify-content:center;}section{width:1920px;height:1080px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem;text-align:center;background:white;}</style></head><body>${slides[currentIndex]}</body></html>`);
+    target.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:1920px;height:1080px;overflow:hidden;background:white;}body{transform:scale(${scale});transform-origin:top left;display:flex;align-items:center;justify-content:center;}section{width:1920px;height:1080px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem;text-align:center;background:white;}</style></head><body>${slides[currentIndex]}</body></html>`);
     target.close();
-  }, [slides, currentIndex, mainScale, viewMode]);
+  }, [slides, currentIndex, dims, viewMode]);
 
   const handleClose = () => setShow(false);
   const onEnd = () => { if (!show) { setMounted(false); document.documentElement.classList.remove("overflow-hidden"); onClose(); } };
   if (!mounted) return null;
 
   return (
-    <div className={["fixed z-50 inset-0 flex items-center justify-center bg-black/40 transition-[backdrop-filter,opacity] duration-200", show ? "opacity-100 backdrop-blur-xl" : "opacity-0 backdrop-blur-0"].join(" ")} onMouseDown={handleClose} onTransitionEnd={onEnd}>
-      <div onMouseDown={(e) => e.stopPropagation()} className={`rounded-xl bg-[#0b0b0bcc] border border-white/10 w-[95vw] md:w-[85vw] max-w-[1400px] h-[90vh] flex flex-col overflow-hidden transform transition-all duration-200 ${show ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-theme-tertiary">
-          <div className="flex items-center gap-4">
-            <h3 className="text-lg font-medium text-theme-primary">Preview ({currentIndex + 1} / {slides.length})</h3>
-            <div className="flex gap-2">
-              <button onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))} disabled={currentIndex === 0} className="p-1.5 text-theme-secondary hover:text-theme-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors" title="Previous slide">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+    <div
+      className={["fixed z-50 inset-0 flex items-center justify-center bg-black/40 transition-[backdrop-filter,opacity] duration-200", show ? "opacity-100 backdrop-blur-xl" : "opacity-0 backdrop-blur-0"].join(" ")}
+      onMouseDown={handleClose}
+      onTransitionEnd={onEnd}
+    >
+      <div
+        onMouseDown={(e) => e.stopPropagation()}
+        className={`rounded-2xl bg-theme-primary border border-theme-tertiary w-[95vw] md:w-[85vw] max-w-[1400px] h-[90vh] flex flex-col overflow-hidden transform transition-all duration-200 ${show ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
+      >
+        {/* header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-theme-tertiary flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-theme-primary">{currentIndex + 1} / {slides.length}</span>
+            <div className="flex gap-1">
+              <button onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))} disabled={currentIndex === 0} className="p-1.5 rounded-lg text-theme-secondary hover:text-theme-primary hover:bg-theme-quaternary disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
               </button>
-              <button onClick={() => setCurrentIndex(Math.min(slides.length - 1, currentIndex + 1))} disabled={currentIndex === slides.length - 1} className="p-1.5 text-theme-secondary hover:text-theme-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors" title="Next slide">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              <button onClick={() => setCurrentIndex(Math.min(slides.length - 1, currentIndex + 1))} disabled={currentIndex === slides.length - 1} className="p-1.5 rounded-lg text-theme-secondary hover:text-theme-primary hover:bg-theme-quaternary disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </button>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center bg-theme-quaternary rounded-lg p-0.5">
               {(["visual", "code"] as const).map((m) => (
-                <button key={m} onClick={() => setViewMode(m)} className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${viewMode === m ? "bg-theme-inverted text-theme-inverted" : "bg-theme-primary text-theme-secondary hover:text-theme-primary"}`}>
+                <button key={m} onClick={() => setViewMode(m)} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${viewMode === m ? "bg-theme-secondary text-theme-primary" : "text-theme-secondary hover:text-theme-primary"}`}>
                   {m.charAt(0).toUpperCase() + m.slice(1)}
                 </button>
               ))}
             </div>
-            <button onClick={handleClose} className="p-1 text-theme-secondary hover:text-theme-primary transition-colors">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            <button onClick={handleClose} className="p-1.5 rounded-lg text-theme-secondary hover:text-theme-primary hover:bg-theme-quaternary transition-all">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
         </div>
-        <div className={`flex ${isMobile ? "flex-col" : "flex-row"} items-start justify-start gap-2 w-full min-h-0 px-2 md:px-4 pb-1 md:pb-2`} style={{ flex: "1 1 0", overflow: "hidden" }}>
+
+        {/* body */}
+        <div className={`flex ${isMobile ? "flex-col" : "flex-row"} w-full min-h-0 p-3 gap-3`} style={{ flex: "1 1 0", overflow: "hidden" }}>
           {viewMode === "visual" ? (
             <>
-              <div ref={mainPreviewRef} className={`text-white rounded-xl border bg-white ${isMobile ? "w-full flex-1 min-h-0" : "w-full"} ${isMobile ? "" : "aspect-video"} overflow-hidden border-solid relative select-none`}>
-                <iframe ref={iframeRef} className="w-full h-full border-none bg-white" title="Slide preview" style={{ background: "white" }} />
+              {/* main preview */}
+              <div ref={wrapperRef} className={`flex items-center justify-center bg-theme-quaternary rounded-xl overflow-hidden ${isMobile ? "w-full flex-1 min-h-0" : "flex-1 min-h-0 h-full"}`}>
+                {dims.width > 0 && (
+                  <div className="relative flex-shrink-0 rounded-lg overflow-hidden" style={{ width: dims.width, height: dims.height }}>
+                    <iframe ref={iframeRef} className="absolute inset-0 w-full h-full border-none" title="Slide preview" />
+                  </div>
+                )}
               </div>
-              <div className={`rounded-xl ${isMobile ? "w-full h-16" : "w-1/6 min-w-[120px]"} p-1.5 md:p-2 flex ${isMobile ? "flex-row overflow-x-auto" : "flex-col overflow-y-auto"} gap-1.5 md:gap-2 scrollbar-custom flex-shrink-0`} style={isMobile ? {} : { height: previewsHeight }}>
+
+              {/* thumbnails */}
+              <div className={`flex-shrink-0 flex bg-theme-quaternary rounded-xl p-2 gap-2 scrollbar-custom ${isMobile ? "w-full flex-row overflow-x-auto" : "flex-col overflow-y-auto"}`} style={isMobile ? { height: "80px" } : { width: "140px" }}>
                 {slides.map((slide, idx) => {
-                  const thumbWidth = isMobile ? 90 : mainPreviewRef.current ? mainPreviewRef.current.offsetWidth * 0.2 - 16 : 100;
+                  const thumbW = isMobile ? 120 : 120;
+                  const thumbH = Math.round(thumbW * (1080 / 1920));
+                  const thumbScale = thumbW / 1920;
                   return (
-                    <div key={idx} onClick={() => setCurrentIndex(idx)} className={`cursor-pointer border rounded-md overflow-hidden bg-white flex-shrink-0 ${currentIndex === idx ? "border-blue-500 border-2" : "border-transparent"}`} style={{ aspectRatio: "16/9", ...(isMobile ? { width: "90px", height: "50px" } : {}) }}>
-                      <iframe title={`slide-${idx}`} srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:1920px;height:1080px;overflow:hidden;background:white;}body{transform:scale(${thumbWidth / 1920});transform-origin:top left;}section{width:1920px;height:1080px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem;text-align:center;background:white;}</style></head><body>${slide}</body></html>`} className="w-full h-full border-0 pointer-events-none bg-white" sandbox="" style={{ background: "white" }} />
+                    <div
+                      key={idx}
+                      onClick={() => setCurrentIndex(idx)}
+                      className={`cursor-pointer rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all ${currentIndex === idx ? "border-blue-500" : "border-transparent hover:border-theme-tertiary"}`}
+                      style={{ width: thumbW, height: thumbH }}
+                    >
+                      <iframe
+                        title={`thumb-${idx}`}
+                        srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:1920px;height:1080px;overflow:hidden;}body{transform:scale(${thumbScale});transform-origin:top left;}</style></head><body>${slide}</body></html>`}
+                        className="border-none pointer-events-none"
+                        style={{ width: "1920px", height: "1080px", transform: `scale(${thumbScale})`, transformOrigin: "top left" }}
+                        sandbox=""
+                      />
                     </div>
                   );
                 })}
               </div>
             </>
           ) : (
-            <div className="w-full p-4">
-              <pre className="p-4 rounded-lg text-xs text-theme-primary overflow-x-auto border border-theme-tertiary whitespace-pre-wrap bg-theme-primary">{slides[currentIndex]}</pre>
+            <div className="w-full h-full overflow-auto">
+              <pre className="p-4 rounded-xl text-xs text-theme-primary overflow-x-auto border border-theme-tertiary whitespace-pre-wrap bg-theme-quaternary h-full">{slides[currentIndex]}</pre>
             </div>
           )}
         </div>
-        <div className="flex items-center justify-end px-6 py-4 border-t border-theme-tertiary">
-          <button onClick={() => { onInsertSlides(slides); handleClose(); }} className="px-6 py-2.5 text-sm font-medium bg-[#d0d0d0] hover:bg-[#bcbcbc] text-black rounded-lg transition-all">
+
+        {/* footer */}
+        <div className="flex items-center justify-end px-5 py-3 border-t border-theme-tertiary flex-shrink-0">
+          <button onClick={() => { onInsertSlides(slides); handleClose(); }} className="px-5 py-2 text-sm font-medium bg-theme-inverted text-theme-inverted rounded-lg hover:opacity-90 transition-all">
             Insert {slides.length} Slide{slides.length > 1 ? "s" : ""}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Inline slide preview (module-level so it never remounts on parent re-render) ── */
+function InlineSlidePreview({ slides: s, msgIndex, onInsert, onOpenModal }: {
+  slides: string[];
+  msgIndex: number;
+  onInsert: (s: string[]) => void;
+  onOpenModal: (slides: string[], messageIndex: number) => void;
+}) {
+  const [pi, setPi] = useState(0);
+  const [inlineScale, setInlineScale] = useState(1);
+  const inlineWrapperRef = useRef<HTMLDivElement>(null);
+  const inlineIframeRef = useRef<HTMLIFrameElement>(null);
+  useEffect(() => {
+    const update = () => {
+      if (!inlineWrapperRef.current) return;
+      const r = inlineWrapperRef.current.getBoundingClientRect();
+      setInlineScale(Math.min(r.width / 1920, r.height / 1080));
+    };
+    update();
+    const ro = new ResizeObserver(() => requestAnimationFrame(update));
+    if (inlineWrapperRef.current) ro.observe(inlineWrapperRef.current);
+    return () => ro.disconnect();
+  }, []);
+  useEffect(() => {
+    const target = inlineIframeRef.current?.contentDocument || inlineIframeRef.current?.contentWindow?.document;
+    if (!target) return;
+    target.open();
+    target.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><script src="https://cdn.tailwindcss.com"><\/script><style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:1920px;height:1080px;overflow:hidden;background:white;}body{transform:scale(${inlineScale});transform-origin:top left;display:flex;align-items:center;justify-content:center;}section{width:1920px;height:1080px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem;text-align:center;background:white;}</style></head><body>${s[pi]}</body></html>`);
+    target.close();
+  }, [s, pi, inlineScale]);
+  return (
+    <div className="mt-4 space-y-3">
+      <div className="bg-theme-primary border border-theme-tertiary rounded-xl p-4">
+        <div ref={inlineWrapperRef} className="w-full aspect-[16/9] bg-theme-quaternary rounded-lg overflow-hidden shadow-lg relative">
+          <iframe ref={inlineIframeRef} className="absolute top-0 left-0 w-full h-full border-none pointer-events-none" title={`Slide Preview ${pi + 1}`} />
+          {s.length > 1 && (
+            <div className="absolute bottom-2 right-2 flex gap-1 bg-black/50 rounded-lg p-1">
+              <button onClick={() => setPi(Math.max(0, pi - 1))} disabled={pi === 0} className="p-1 text-white hover:bg-white/20 rounded disabled:opacity-30 transition-all">
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>chevron_left</span>
+              </button>
+              <span className="text-white text-xs px-2 py-1 flex items-center">{pi + 1} / {s.length}</span>
+              <button onClick={() => setPi(Math.min(s.length - 1, pi + 1))} disabled={pi === s.length - 1} className="p-1 text-white hover:bg-white/20 rounded disabled:opacity-30 transition-all">
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>chevron_right</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <button onClick={() => onInsert(s)} className="flex-1 px-4 py-2.5 text-sm font-medium bg-[#d0d0d0] hover:bg-[#bcbcbc] text-black rounded-lg transition-all">
+          Insert {s.length} Slide{s.length > 1 ? "s" : ""}
+        </button>
+        <button onClick={() => onOpenModal(s, msgIndex)} className="p-2.5 text-theme-secondary hover:text-theme-primary bg-theme-primary hover:bg-[#52585A] rounded-lg border border-theme-tertiary transition-all" title="Open in modal">
+          <span className="material-symbols-outlined" style={{ fontSize: 20 }}>visibility</span>
+        </button>
       </div>
     </div>
   );
@@ -791,39 +887,6 @@ export default function GeminiChatbot({
     setTimeout(() => processMessage(lastUserMsg.content), 100);
   };
 
-  /* ── inline slide preview ── */
-  const InlineSlidePreview = ({ slides: s, msgIndex }: { slides: string[]; msgIndex: number }) => {
-    const [pi, setPi] = React.useState(0);
-    const slideHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><script src="https://cdn.tailwindcss.com"></script><style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:1920px;height:1080px;overflow:hidden;background:white;}body{transform:scale(0.26);transform-origin:top left;display:flex;align-items:center;justify-content:center;}section{width:1920px;height:1080px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem;text-align:center;background:white;}</style></head><body>${s[pi]}</body></html>`;
-    return (
-      <div className="mt-4 space-y-3">
-        <div className="bg-theme-primary border border-theme-tertiary rounded-xl p-4">
-          <div className="w-full aspect-[16/9] bg-white rounded-lg overflow-hidden shadow-lg relative">
-            <iframe srcDoc={slideHtml} className="w-full h-full border-none bg-white pointer-events-none" title={`Slide Preview ${pi + 1}`} style={{ background: "white" }} />
-            {s.length > 1 && (
-              <div className="absolute bottom-2 right-2 flex gap-1 bg-black/50 rounded-lg p-1">
-                <button onClick={() => setPi(Math.max(0, pi - 1))} disabled={pi === 0} className="p-1 text-white hover:bg-white/20 rounded disabled:opacity-30 transition-all">
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>chevron_left</span>
-                </button>
-                <span className="text-white text-xs px-2 py-1 flex items-center">{pi + 1} / {s.length}</span>
-                <button onClick={() => setPi(Math.min(s.length - 1, pi + 1))} disabled={pi === s.length - 1} className="p-1 text-white hover:bg-white/20 rounded disabled:opacity-30 transition-all">
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>chevron_right</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={() => insertSlidesAtPosition(s)} className="flex-1 px-4 py-2.5 text-sm font-medium bg-[#d0d0d0] hover:bg-[#bcbcbc] text-black rounded-lg transition-all">
-            Insert {s.length} Slide{s.length > 1 ? "s" : ""}
-          </button>
-          <button onClick={() => setSelectedSlidesModal({ slides: s, messageIndex: msgIndex })} className="p-2.5 text-theme-secondary hover:text-theme-primary bg-theme-primary hover:bg-[#52585A] rounded-lg border border-theme-tertiary transition-all" title="Open in modal">
-            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>visibility</span>
-          </button>
-        </div>
-      </div>
-    );
-  };
 
   /* ── code block accordion ── */
   const renderActionsForAssistant = (msg: ChatMsg, msgIndex: number) => {
@@ -831,7 +894,7 @@ export default function GeminiChatbot({
     const toggleShowCode = () => setShowCodeMap((p) => ({ ...p, [msgIndex]: !p[msgIndex] }));
 
     if (msg.previewSlides && msg.previewSlides.length > 0) {
-      return <InlineSlidePreview slides={msg.previewSlides} msgIndex={msgIndex} />;
+      return <InlineSlidePreview slides={msg.previewSlides} msgIndex={msgIndex} onInsert={insertSlidesAtPosition} onOpenModal={(s, i) => setSelectedSlidesModal({ slides: s, messageIndex: i })} />;
     }
     if (msg.codeBlock) {
       return (
@@ -865,10 +928,10 @@ export default function GeminiChatbot({
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
-      <div className="flex flex-col h-full w-full overflow-hidden p-3 relative">
-        <div className="absolute inset-0 bg-theme-alt" />
+      <div className="flex flex-col h-full w-full overflow-hidden p-4 relative">
+        <div className="absolute inset-0 w-full h-full bg-theme-alt" />
 
-        <div className="flex flex-col bg-theme-primary border border-theme-tertiary text-theme-primary rounded-xl h-full w-full p-4 overflow-hidden relative z-[1]">
+        <div className="flex flex-col bg-theme-primary border border-theme-tertiary text-theme-primary rounded-xl min-h-full min-w-full p-4 overflow-hidden relative z-[1]">
           <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-6">
 
             {/* Loading history */}
