@@ -22,7 +22,7 @@ export const getProjectAccess = async (req, res) => {
         const projectResult = await pool.query(projectQuery, [projectId])
 
         if (projectResult.rows.length === 0) {
-            return res.status(404).json({ ok: false, error: "Project not found" })
+            return res.status(404).json({ ok: false, exists: false, error: "Project not found" })
         }
 
         const project = projectResult.rows[0]
@@ -100,13 +100,16 @@ export const updateProjectVisibility = async (req, res) => {
             return res.status(403).json({ ok: false, error: "Only owner can change visibility" })
         }
 
+        // allow_comments solo se actualiza si el cliente lo envía; así el toggle
+        // de visibilidad no lo sobreescribe con NULL.
         const query = `
-      UPDATE projects 
-      SET visibility = $1, allow_comments = $2
+      UPDATE projects
+      SET visibility = COALESCE($1, visibility),
+          allow_comments = COALESCE($2, allow_comments)
       WHERE id = $3
       RETURNING *
     `
-        await pool.query(query, [visibility, allowComments, projectId])
+        await pool.query(query, [visibility ?? null, allowComments ?? null, projectId])
 
         res.json({ ok: true })
     } catch (error) {
