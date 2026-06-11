@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../utils/supabaseClient';
+import { FullscreenLoader } from '../ui/FullscreenLoader';
 
 export default function AuthCallbackPage() {
   const [searchParams] = useSearchParams();
@@ -77,15 +78,5 @@ export default function AuthCallbackPage() {
     );
   }
 
-  return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#0a0a0a]">
-      <div className="text-center">
-        <div className="mb-4 animate-spin">
-          <span className="material-symbols-outlined text-blue-500 text-6xl">progress_activity</span>
-        </div>
-        <h1 className="text-2xl font-bold text-white mb-2">Logging you in...</h1>
-        <p className="text-gray-400">Please wait</p>
-      </div>
-    </div>
-  );
+  return <FullscreenLoader />;
 }

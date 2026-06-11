@@ -1,10 +1,10 @@
 // @ts-nocheck
-import ProjectTile from "../RegularComponents/HomeComponents/ProjectTile"
+import ProjectExpandable from "../RegularComponents/HomeComponents/ProjectExpandable"
+import SpotlightCard from "../RegularComponents/MultiuseComponents/SpotlightCard"
 import { Skeleton } from "../ui/skeleton"
 import AppTextLogo from "../RegularComponents/MultiuseComponents/AppTextLogo"
 import NavBar from "../RegularComponents/HomeComponents/Navbar"
 import CreateProject from "../RegularComponents/HomeComponents/Modals/CreateProject"
-import ProjectPreview from "../RegularComponents/HomeComponents/Modals/ProjectPreview"
 import SortBy from "../RegularComponents/HomeComponents/SortBy"
 import ViewModeSwitch from "../RegularComponents/HomeComponents/ViewModeSwitch"
 import { useEffect, useState } from "react"
@@ -37,6 +37,8 @@ type Project = {
   preview_url?: string
 }
 
+type Template = { name: string; description: string }
+
 type User = {
   id: string
   username: string
@@ -61,8 +63,6 @@ function HomePage() {
   };
 
   const [showCreate, setShowCreate] = useState(false)
-  const [selected, setSelected] = useState<Project | null>(null)
-  const [showPreview, setShowPreview] = useState(false)
   const [viewMode, setViewMode] = useState<"grid" | "list">(getViewModeFromCookie())
   const [projects, setProjects] = useState<Project[]>([])
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([])
@@ -188,11 +188,6 @@ function HomePage() {
     setFilteredProjects(projects)
   }, [projects])
 
-  const openPreview = (p: Project) => {
-    setSelected(p)
-    setShowPreview(true)
-  }
-
   const onCreated = (p: Project) => {
     setProjects((prev) => [p, ...prev])
     setFilteredProjects((prev) => [p, ...prev])
@@ -201,10 +196,10 @@ function HomePage() {
   }
 
   const onDeleteProject = async () => {
-    if (!selected) return
+    if (true) return // handled inside ProjectExpandable
     try {
       const token = await getAuthToken()
-      const res = await fetch(`${urlbackend}/projects/${selected.id}`, {
+      const res = await fetch(`${urlbackend}/projects/placeholder`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -273,6 +268,21 @@ function HomePage() {
   }, [sortOption])
 
   const [activeTab, setActiveTab] = useState<"my-designs" | "ai-tryout" | "templates">("my-designs")
+  const [templates, setTemplates] = useState<Template[]>([])
+  const [templatesLoading, setTemplatesLoading] = useState(false)
+  const [templateSearch, setTemplateSearch] = useState("")
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
+
+  useEffect(() => {
+    if (activeTab !== "templates" || templates.length > 0) return
+    setTemplatesLoading(true)
+    fetch(`/templates/catalog.json`)
+      .then(r => r.json())
+      .then(data => setTemplates(data))
+      .catch(() => {})
+      .finally(() => setTemplatesLoading(false))
+  }, [activeTab])
+
   const [aiTitle, setAiTitle] = useState("")
   const [aiCreating, setAiCreating] = useState(false)
   const [aiError, setAiError] = useState("")
@@ -624,97 +634,101 @@ function HomePage() {
                           scale: { duration: 0.2 }
                         }}
                       >
-                        <ProjectTile
-                          name={p.name}
-                          description={p.description ?? ""}
-                          onClick={() => openPreview(p)}
+                        <ProjectExpandable
+                          project={p}
                           listMode={isMobile || viewMode === "list"}
-                          owner={p.owner}
-                          collaborators={p.collaborators}
-                          previewUrl={p.preview_url}
-                          projectId={p.id}
+                          onDelete={(id) => {
+                            setProjects((prev) => prev.filter((x) => x.id !== id))
+                            setFilteredProjects((prev) => prev.filter((x) => x.id !== id))
+                          }}
+                          onRename={(id, name) => {
+                            setProjects((prev) => prev.map((x) => x.id === id ? { ...x, name } : x))
+                            setFilteredProjects((prev) => prev.map((x) => x.id === id ? { ...x, name } : x))
+                          }}
                         />
                       </motion.div>
                     ))
                   })()}
                 </div>
               ) : (
-                <div className="flex-1 overflow-y-auto m-8 flex items-center justify-center relative bg-theme-quaternary backdrop-blur-xl border border-theme-tertiary rounded-[20px]">
-                  <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                    <svg
-                      style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)", minWidth: "100%", minHeight: "100%" }}
-                      preserveAspectRatio="xMidYMid slice"
-                      width="1738"
-                      height="421"
-                      viewBox="0 0 1738 421"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <g filter="url(#filter0_f_3378_1076)">
-                        <path d="M60.1211 -469L142.378 19.1523L-26.9893 147.364L-246.28 42.8938L60.1211 -469Z" fill="#7182FF"/>
-                      </g>
-                      <g filter="url(#filter1_f_3378_1076)">
-                        <path d="M1887.2 -362L1969.45 126.152L1800.09 254.364L1580.8 149.894L1887.2 -362Z" fill="#7182FF"/>
-                      </g>
-                      <g filter="url(#filter2_f_3378_1076)">
-                        <path d="M1060.06 450.832L643.802 782.665L434.922 690.198L418.871 429.482L1060.06 450.832Z" fill="#7182FF"/>
-                      </g>
-                      <g opacity="0.4">
-                        <g filter="url(#filter3_f_3378_1076)">
-                          <path d="M7.59824 13.9287L175.828 101.85L-28.3075 283.6L-86.5945 85.2329L7.59824 13.9287Z" fill="#249931" fillOpacity="0.71"/>
-                          <path d="M7.59824 13.9287L175.828 101.85L-28.3075 283.6L-86.5945 85.2329L7.59824 13.9287Z" stroke="black"/>
-                        </g>
-                      </g>
-                      <g opacity="0.4">
-                        <g filter="url(#filter4_f_3378_1076)">
-                          <path d="M1834.67 120.929L2002.9 208.85L1798.77 390.6L1740.48 192.233L1834.67 120.929Z" fill="#249931" fillOpacity="0.71"/>
-                          <path d="M1834.67 120.929L2002.9 208.85L1798.77 390.6L1740.48 192.233L1834.67 120.929Z" stroke="black"/>
-                        </g>
-                      </g>
-                      <g filter="url(#filter5_f_3378_1076)">
-                        <path d="M1263.63 -89.7244L1472.44 61.0165L692.999 -102.015L926.885 -165.817L1263.63 -89.7244Z" fill="#249966" fillOpacity="0.33"/>
-                        <path d="M1263.63 -89.7244L1472.44 61.0165L692.999 -102.015L926.885 -165.817L1263.63 -89.7244Z" stroke="black"/>
-                      </g>
-                      <defs>
-                        <filter id="filter0_f_3378_1076" x="-646.279" y="-869" width="1188.66" height="1416.36" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
-                          <feFlood floodOpacity="0" result="BackgroundImageFix"/>
-                          <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
-                          <feGaussianBlur stdDeviation="200" result="effect1_foregroundBlur_3378_1076"/>
-                        </filter>
-                        <filter id="filter1_f_3378_1076" x="1180.8" y="-762" width="1188.66" height="1416.36" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
-                          <feFlood floodOpacity="0" result="BackgroundImageFix"/>
-                          <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
-                          <feGaussianBlur stdDeviation="200" result="effect1_foregroundBlur_3378_1076"/>
-                        </filter>
-                        <filter id="filter2_f_3378_1076" x="18.8711" y="29.4819" width="1441.19" height="1153.18" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
-                          <feFlood floodOpacity="0" result="BackgroundImageFix"/>
-                          <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
-                          <feGaussianBlur stdDeviation="200" result="effect1_foregroundBlur_3378_1076"/>
-                        </filter>
-                        <filter id="filter3_f_3378_1076" x="-287.172" y="-186.661" width="663.873" height="671.159" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
-                          <feFlood floodOpacity="0" result="BackgroundImageFix"/>
-                          <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
-                          <feGaussianBlur stdDeviation="100" result="effect1_foregroundBlur_3378_1076"/>
-                        </filter>
-                        <filter id="filter4_f_3378_1076" x="1539.9" y="-79.6613" width="663.873" height="671.159" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
-                          <feFlood floodOpacity="0" result="BackgroundImageFix"/>
-                          <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
-                          <feGaussianBlur stdDeviation="100" result="effect1_foregroundBlur_3378_1076"/>
-                        </filter>
-                        <filter id="filter5_f_3378_1076" x="492.867" y="-366.332" width="1179.86" height="627.838" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
-                          <feFlood floodOpacity="0" result="BackgroundImageFix"/>
-                          <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
-                          <feGaussianBlur stdDeviation="100" result="effect1_foregroundBlur_3378_1076"/>
-                        </filter>
-                      </defs>
-                    </svg>
+                /* ── Templates tab ── */
+                <div className="flex-1 flex flex-col gap-4 overflow-hidden pb-8">
+                  {/* Search bar */}
+                  <div className="flex-shrink-0">
+                    <input
+                      type="text"
+                      placeholder="Search templates..."
+                      value={templateSearch}
+                      onChange={e => setTemplateSearch(e.target.value)}
+                      className="w-full sm:w-72 px-4 py-2 text-sm bg-theme-quaternary border border-theme-tertiary rounded-full text-theme-primary placeholder:text-theme-secondary focus:outline-none focus:border-[#7182FF] transition-colors"
+                    />
                   </div>
-                  <div className="relative z-10 text-center text-theme-primary flex flex-col items-center justify-center gap-2 p-8 text-md">
-                    <p>We're still</p>
-                    <p className="text-4xl font-bold">Cooking our website</p>
-                    <p>New feature coming soon.</p>
-                    <p>Stay tuned.</p>
-                  </div>
+
+                  {templatesLoading ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 flex-1 overflow-y-auto">
+                      {Array.from({ length: 12 }).map((_, i) => (
+                        <div key={i} className="rounded-[15px] bg-theme-quaternary border border-theme-tertiary p-1.5 flex flex-col gap-2">
+                          <Skeleton className="w-full aspect-[16/9] rounded-[10px]" />
+                          <div className="pl-1 pb-0.5">
+                            <Skeleton className="h-3.5 w-3/4 rounded-full" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 flex-1 overflow-y-auto">
+                      {templates
+                        .filter(t => !templateSearch || t.name.includes(templateSearch.toLowerCase()) || t.description.toLowerCase().includes(templateSearch.toLowerCase()))
+                        .map(t => {
+                          const displayName = t.name
+                            .replace(/^html-ppt-zhangzara-|^html-ppt-|^kami-|^open-design-|^ib-/, "")
+                            .split("-")
+                            .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+                            .join(" ")
+                          return (
+                            <motion.div
+                              key={t.name}
+                              layout
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                            >
+                              <SpotlightCard
+                                onClick={() => setSelectedTemplate(t)}
+                                className="rounded-[15px] bg-theme-quaternary backdrop-blur-xl border border-theme-tertiary transition-all duration-300 w-full cursor-pointer flex flex-col gap-2 overflow-hidden group p-1.5 hover:bg-theme-hover"
+                                spotlightColor="rgba(255, 255, 255, 0.15)"
+                              >
+                                {/* Preview */}
+                                <div className="w-full aspect-[16/9] overflow-hidden relative rounded-[10px] border border-theme-tertiary bg-[#0a0a0a]">
+                                  <iframe
+                                    src={`/templates/${t.name}/slides-plus.html`}
+                                    style={{
+                                      transform: "scale(0.25)",
+                                      transformOrigin: "top left",
+                                      width: "400%",
+                                      height: "400%",
+                                      border: "none",
+                                      pointerEvents: "none",
+                                      position: "absolute",
+                                      top: 0,
+                                      left: 0,
+                                    }}
+                                    sandbox="allow-same-origin"
+                                    title={t.name}
+                                    loading="lazy"
+                                  />
+                                </div>
+                                {/* Name */}
+                                <div className="flex items-center pl-1 pb-0.5">
+                                  <p className="truncate flex-1 text-left text-sm font-medium text-theme-primary" title={displayName}>
+                                    {displayName}
+                                  </p>
+                                </div>
+                              </SpotlightCard>
+                            </motion.div>
+                          )
+                        })}
+                    </div>
+                  )}
                 </div>
               )}
               </motion.div>
@@ -736,28 +750,63 @@ function HomePage() {
           <CreateProject onClose={() => setShowCreate(false)} onCreated={onCreated} />
         )}
 
-        <ProjectPreview
-          open={showPreview}
-          name={selected?.name || ""}
-          projectId={selected?.id}
-          slideCount={selected?.slideCount}
-          lastModified={selected?.updated_at}
-          onClose={() => setShowPreview(false)}
-          onDelete={async (id) => {
-            setProjects((prev) => prev.filter((p) => p.id !== id))
-            setFilteredProjects((prev) => prev.filter((p) => p.id !== id))
-            setShowPreview(false)
-          }}
-          onRename={async (id, next) => {
-            setProjects((prev) =>
-              prev.map((p) => (p.id === id ? { ...p, name: next } : p))
-            )
-            setFilteredProjects((prev) =>
-              prev.map((p) => (p.id === id ? { ...p, name: next } : p))
-            )
-            setSelected((prev) => (prev ? { ...prev, name: next } : prev))
-          }}
-        />
+
+        {/* Template detail modal */}
+        {selectedTemplate && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={() => setSelectedTemplate(null)}>
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+            <div
+              className="relative z-10 flex flex-col bg-theme-primary border border-theme-tertiary rounded-[20px] w-full max-w-3xl overflow-hidden shadow-2xl p-2 gap-2"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Large preview */}
+              <div className="relative w-full overflow-hidden rounded-[14px] border border-theme-tertiary bg-[#0a0a0a]" style={{ aspectRatio: "16/9" }}>
+                <iframe
+                  src={`/templates/${selectedTemplate.name}/slides-plus.html`}
+                  style={{
+                    transform: "scale(0.25)",
+                    transformOrigin: "top left",
+                    width: "400%",
+                    height: "400%",
+                    border: "none",
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                  }}
+                  sandbox="allow-same-origin"
+                  title={selectedTemplate.name}
+                />
+              </div>
+              {/* Info + actions */}
+              <div className="flex items-center gap-3 px-1 pb-1">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-theme-primary truncate">
+                    {selectedTemplate.name
+                      .replace(/^html-ppt-zhangzara-|^html-ppt-|^kami-|^open-design-|^ib-/, "")
+                      .split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}
+                  </p>
+                  <p className="text-xs text-theme-secondary mt-0.5 line-clamp-1">{selectedTemplate.description}</p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <button
+                    onClick={() => { setShowCreate(true); setSelectedTemplate(null) }}
+                    className="px-4 py-2 text-sm font-medium rounded-full bg-theme-inverted text-theme-inverted transition-colors"
+                  >
+                    Use template
+                  </button>
+                  <button
+                    onClick={() => setSelectedTemplate(null)}
+                    className="p-2 rounded-full text-theme-secondary hover:text-theme-primary hover:bg-theme-quaternary transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   )

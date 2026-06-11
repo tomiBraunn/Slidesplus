@@ -607,7 +607,7 @@ export default function AltLandingPage2() {
                   >
                     <motion.h1
                       variants={fadeUp}
-                      className="max-w-[10ch] text-[clamp(2.75rem,7.75vw,7.75rem)] font-medium leading-[0.95] tracking-tight"
+                      className="max-w-[10ch] text-[clamp(2.25rem,6.5vw,6.5rem)] font-medium leading-[0.95] tracking-tight"
                     >
                       <span className="block mt-20">{t.heroTitle}</span>
                     </motion.h1>

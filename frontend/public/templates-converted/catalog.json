@@ -1,0 +1,182 @@
+﻿[
+    {
+        "name":  "html-ppt-course-module",
+        "description":  "Online-course / workshop module deck â€” warm paper background + Playfair serif, persistent left sidebar of learning objectives, MCQ self-check page. Use for teaching modules, training materials, w..."
+    },
+    {
+        "name":  "html-ppt-graphify-dark-graph",
+        "description":  "æš—åº•çŸ¥è¯†å›¾è°± deck â€” #06060câ†’#0e1020 æ·±å¤œæ¸å˜ + æ¼‚æµ® blur orbsã€å°é¢ SVG åŠ›å¯¼å‘å›¾è°±ã€å½©è™¹æ¸å˜æ ‡é¢˜ã€JetBrains Mono å‘½ä»¤è¡Œé«˜äº®ã€glass-morphism å¡ç‰‡ã€‚é€‚åˆ dev..."
+    },
+    {
+        "name":  "html-ppt-hermes-cyber-terminal",
+        "description":  "æš—ç»ˆç«¯ honest-review deck â€” #0a0c10 é»‘åº• + 56px èµ›åšç½‘æ ¼ + CRT æš—è§’ + æ‰«æçº¿ã€çª—å£çº¢ç»¿ç¯ chromeã€`$ prompt` å‘½ä»¤è¡Œæ ‡é¢˜ã€è–„è·ç»¿ #7ed3a4 å¤§å­—ã€JetBrains Monoã€stro..."
+    },
+    {
+        "name":  "html-ppt-knowledge-arch-blueprint",
+        "description":  "å¥¶æ²¹è“å›¾æž¶æž„ deck â€” å¥¶æ²¹çº¸ #F0EAE0 åº•è‰² + å•ä¸€é”ˆçº¢ #B5392A é«˜äº®ã€48px è“å›¾ç½‘æ ¼ maskã€2px é»‘è¾¹ç¡¬å¡ç‰‡ã€pipeline æ­¥éª¤ç›’ï¼ˆå…¶ä¸­ä¸€ä¸ªæŠ¬é«˜ï¼‰ã€å³ä¾§é”ˆçº¢ insight..."
+    },
+    {
+        "name":  "html-ppt-obsidian-claude-gradient",
+        "description":  "GitHub æš—ç´«æ¸å˜ deck â€” GitHub-dark #0d1117 + ç´«è“ radial çŽ¯å¢ƒå…‰ + 60px ç½‘æ ¼ maskã€å±…ä¸­å¸ƒå±€ã€ç´«è‰² pill æ ‡ç­¾ã€ä¸‰è‰²æ¸å˜æ ‡é¢˜ï¼ˆ#a855f7â†’#60a5faâ†’#34d399ï¼‰ã€GitHub é£Žä..."
+    },
+    {
+        "name":  "html-ppt-pitch-deck",
+        "description":  "Investor-ready 10-slide HTML pitch deck â€” white + blueâ†’purple gradient hero, big numbers, traction bar chart, $4.5M-style ask page. Use when the user wants a fundraising deck, seed-round pitch,..."
+    },
+    {
+        "name":  "html-ppt-product-launch",
+        "description":  "Launch keynote deck â€” dark hero + light content, warm orangeâ†’peach accent, feature cards, pricing tiers, CTA. Use when announcing a product, launching a feature, or doing a keynote-style reveal."
+    },
+    {
+        "name":  "html-ppt-taste-editorial",
+        "description":  "16:9 HTML deck in editorial-minimalist taste. Warm cream slides, serif display + grotesque body, hairline rules, monospace meta, generous macro-whitespace, one accent. Distilled from Leonxlnx/taste..."
+    },
+    {
+        "name":  "html-ppt-tech-sharing",
+        "description":  "Conference / internal tech-talk deck â€” GitHub-dark, JetBrains Mono, terminal code blocks, agenda + Q\u0026A pages. Use for engineering presentations, internal sharing sessions, conference talks, and c..."
+    },
+    {
+        "name":  "html-ppt-xhs-pastel-card",
+        "description":  "æŸ”å’Œé©¬å¡é¾™æ…¢ç”Ÿæ´» deck â€” å¥¶æ²¹ #fef8f1 åº• + ä¸‰ä¸ªæŸ”å…‰ blobã€Playfair æ–œä½“è¡¬çº¿ display æ ‡é¢˜æ·· sans æ­£æ–‡ã€28px åœ†è§’é©¬å¡é¾™å¡ç‰‡ï¼ˆæ¡ƒ / è–„è· / å¤© / ç´« / æŸ  / çŽ«ï¼‰..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-8-bit-orbit",
+        "description":  "8-Bit Orbit â€” Pixel-art neon arcade aesthetic on a deep navy void. Anything that should feel like a CRT screen at 2am: cyberpunk, gaming, web3, indie dev tools, hackathon demos."
+    },
+    {
+        "name":  "html-ppt-zhangzara-biennale-yellow",
+        "description":  "Biennale Yellow â€” Solar yellow on warm parchment with deep indigo serif and atmospheric sun-glow gradients. Anything that should feel like an art-biennale poster or a museum\u0027s annual programme: e..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-block-frame",
+        "description":  "BlockFrame â€” Neobrutalist deck with pastel-neon color blocks and chunky black borders. Anything that should feel pop-graphic and design-led: indie SaaS launches, agency credentials, creative revi..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-blue-professional",
+        "description":  "Blue Professional â€” Cream paper background with electric cobalt blue accents; clean modern professional. Anything that should feel modern-considered and lightly authoritative: B2B SaaS pitches, c..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-bold-poster",
+        "description":  "Bold Poster â€” Editorial poster aesthetic with massive Shrikhand display and a single fire-engine red accent. Anything that should land like a magazine cover: brand manifestos, founder vision deck..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-broadside",
+        "description":  "Broadside â€” Dark editorial canvas with a single fire orange accent and bilingual Latin/Chinese type stack. Anything that should land like a broadside newspaper headline: brand manifestos, magazin..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-capsule",
+        "description":  "Capsule â€” Modular pill-shaped cards on warm bone with a full pastel-pop palette. Anything that should feel modular, modern, and a little Y2K: lifestyle brands, creator portfolios, DTC launches, b..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-cartesian",
+        "description":  "Cartesian â€” Quiet warm-neutral palette with classical Playfair serifs; tasteful and unhurried. Anything that should feel quiet, considered, and grown-up: investment theses, white papers, advisory..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-cobalt-grid",
+        "description":  "Cobalt Grid â€” Electric cobalt italic serifs on a graph-paper canvas, anchored by stair-stepped pixel-glitch decorations and slim hairline rules. Anything that should feel like a quietly serious d..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-coral",
+        "description":  "Coral â€” Cream and coral on near-black, set in oversized Bebas Neue. Anything that should feel warm-graphic and editorial: fashion, beauty, fitness, F\u0026B, lifestyle brands, agency credentials."
+    },
+    {
+        "name":  "html-ppt-zhangzara-creative-mode",
+        "description":  "Creative Mode â€” Cream paper canvas with confident multi-color (green, pink, orange, yellow) accents and Archivo Black display. Anything that should feel design-led and confident: creative agency ..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-daisy-days",
+        "description":  "Daisy Days â€” Cheerful pastel deck with hand-drawn daisies, stars, and rainbows. Friendly, soft, and warm. Anything that should feel friendly, soft, and joyful: educational content, kids and famil..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-editorial-tri-tone",
+        "description":  "Editorial Tri-Tone â€” Three-color editorial system: dusty pink, mustard cream, and deep burgundy, set in Bricolage + Instrument Serif. Anything that should feel like a fashion-magazine spread: edi..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-grove",
+        "description":  "Grove â€” Forest-green canvas with cream type, classical Playfair serifs, and a single rust accent. Anything that should feel organic, considered, and grown-up: sustainability and wellness brands, ..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-long-table",
+        "description":  "Long Table â€” Warm cream and rust-red supper-club aesthetic with bold uppercase grotesk headlines, italic Fraunces, and pill-shaped outlined buttons. Anything that should feel like a warm, intimat..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-mat",
+        "description":  "Mat â€” Dark sage canvas with bone paper and burnt-orange accent; mid-century modern with wood undertones. Anything that should feel mid-century, tactile, and intentional: design studio credentials..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-monochrome",
+        "description":  "Monochrome â€” Ivory ledger paper with all-black type; Lora serif headlines, Jost body, no color at all. Anything that should feel like a hand-typeset ledger: user research synthesis, white papers,..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-neo-grid-bold",
+        "description":  "Neo-Grid Bold â€” Editorial neo-brutalism with a single neon yellow accent on off-white paper. Anything that should feel confident and editorial-graphic: design-led pitches, brand work, founder tal..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-peoples-platform",
+        "description":  "People\u0027s Platform (Block \u0026 Bold) â€” Activist poster energy: blue, orange, red on cream, with Alfa Slab + Caveat Brush. Anything that should feel honest, loud, and graphic: cultural commentary, man..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-pin-and-paper",
+        "description":  "Pin \u0026 Paper â€” Yellow paper with safety-pin illustrations, ink-blue handwritten Caveat, paper-grain texture. Anything that should feel hand-crafted, warm, and literary: qualitative research findin..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-pink-script",
+        "description":  "Pink Script â€” After Hours â€” Black canvas, hot pink accent, pearl-cream paper, Instrument Serif headlines: late-night editorial luxury. Anything that should feel nocturnal, intentional, and a li..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-playful",
+        "description":  "Playful â€” Sun-warm peach background with Syne display: a friendly indie launch deck. Anything that should feel warm, indie, and approachable: creator portfolios, indie product launches, lifestyle..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-raw-grid",
+        "description":  "Raw Grid â€” Neo-brutalist deck with thick borders, offset shadows, and a pink/sage/ink palette. Anything that should feel direct and graphic-confident: founder pitches, accelerator demos, brand de..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-retro-windows",
+        "description":  "Retro Windows â€” Windows 95 chrome: gray title bars, MS Sans Serif, pixel typography, full nostalgia. Anything that should feel knowingly nostalgic: retro gaming, Y2K-aesthetic brands, creator por..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-retro-zine",
+        "description":  "Retro Zine â€” Beige paper with green accent and Bebas Neue + Caveat: a riso-printed zine in HTML form. Anything that should feel printed, lo-fi, and crafted: indie zines and publications, music / ..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-sakura-chroma",
+        "description":  "Sakura Chroma â€” Vintage Japanese cassette-package aesthetic: cream paper, diagonal rainbow ribbons, condensed bold type, JIS-style spec checkboxes. Anything that should feel like a vintage Japane..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-scatterbrain",
+        "description":  "Scatterbrain â€” Post-it inspired: pastel sticky notes, Caveat handwriting, Shrikhand and Zilla Slab type stack. Anything that should feel like a designer\u0027s whiteboard: brainstorms, workshops, crea..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-signal",
+        "description":  "Signal â€” Deep navy canvas with bone paper and a single muted-gold accent; institutional with quiet weight. Anything that should feel weighty, considered, and credibly institutional: investor deck..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-soft-editorial",
+        "description":  "Soft Editorial â€” Cormorant Garamond serif on warm paper with sage, blush, and lemon accents. Anything that should feel literary, elegant, and unhurried: editorial features, longform brand stories..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-stencil-tablet",
+        "description":  "Stencil \u0026 Tablet â€” Bone paper with stencil-cut headlines and a six-color earth palette: archaeology meets brand. Anything that should feel archival, tactile, and weighty-graphic: museum and cultu..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-studio",
+        "description":  "Studio â€” Black canvas with electric-yellow type; high-voltage design studio aesthetic. Anything that should feel electric and design-led: studio credentials, creative agency pitches, brand showca..."
+    },
+    {
+        "name":  "html-ppt-zhangzara-vellum",
+        "description":  "Vellum â€” Deep navy canvas with warm-yellow italic Cormorant serifs and a single dusty teal accent. A quiet, scholarly aesthetic. Anything that should feel scholarly, literary, and quietly intelli..."
+    },
+    {
+        "name":  "ib-pitch-book",
+        "description":  "Investment-banking pitch book for strategic alternatives â€” trading comps,\r precedent transactions, valuation football field, DCF sensitivity,\r strategic-options matrix, process recommendation. Bu..."
+    },
+    {
+        "name":  "kami-deck",
+        "description":  "\u003e"
+    },
+    {
+        "name":  "open-design-landing-deck",
+        "description":  "\u003e"
+    }
+]

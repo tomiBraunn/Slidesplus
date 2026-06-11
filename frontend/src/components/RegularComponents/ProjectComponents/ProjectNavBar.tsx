@@ -29,6 +29,13 @@ type Props = {
   onShareClick?: () => void;
   useLegacyVisualEditor?: boolean;
   onToggleLegacyEditor?: () => void;
+  // Edit / Tweak (shown when mode === "ai")
+  showEditPanel?: boolean;
+  onToggleEditPanel?: () => void;
+  tweakMode?: boolean;
+  onToggleTweakMode?: () => void;
+  isEditingSlide?: boolean;
+  hasCurrentSlide?: boolean;
 };
 
 type User = {
@@ -68,7 +75,13 @@ export default function ProjectNavBar({
   isCollaborationConnected = false,
   onShareClick,
   useLegacyVisualEditor = false,
-  onToggleLegacyEditor
+  onToggleLegacyEditor,
+  showEditPanel = false,
+  onToggleEditPanel,
+  tweakMode = false,
+  onToggleTweakMode,
+  isEditingSlide = false,
+  hasCurrentSlide = false,
 }: Props) {
   const [user, setUser] = useState<User | null>(null);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
@@ -243,7 +256,8 @@ export default function ProjectNavBar({
             >
               <span className="material-symbols-outlined text-base">history</span>
             </button>
-            {mode === "visual" && onToggleLegacyEditor && (
+            {/* VISUAL MODE TOGGLE - comentado temporalmente */}
+            {false && mode === "visual" && onToggleLegacyEditor && (
               <button
                 onClick={onToggleLegacyEditor}
                 className="flex items-center justify-center w-8 h-8 p-1 bg-theme-inverted text-theme-inverted rounded-full transition-colors text-sm"
@@ -259,6 +273,27 @@ export default function ProjectNavBar({
               refreshTrigger={spotifyRefreshTrigger}
               onColorChange={setSpotifyColor}
             />
+            {mode === "ai" && (
+              <div className="flex items-center gap-1 bg-theme-primary border border-theme-tertiary rounded-[20px] px-1 py-1">
+                <button
+                  onClick={onToggleEditPanel}
+                  disabled={isEditingSlide || !hasCurrentSlide}
+                  className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-[14px] border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${showEditPanel ? "border-blue-500 bg-blue-500/10 text-blue-400" : "border-transparent text-theme-secondary hover:text-theme-primary hover:bg-theme-quaternary"}`}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: 14 }}>edit</span>
+                  Edit
+                </button>
+                <button
+                  onClick={onToggleTweakMode}
+                  disabled={isEditingSlide || !hasCurrentSlide}
+                  className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-[14px] border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${tweakMode ? "border-blue-500 bg-blue-500/10 text-blue-400 animate-pulse" : "border-transparent text-theme-secondary hover:text-theme-primary hover:bg-theme-quaternary"}`}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: 14 }}>ads_click</span>
+                  {tweakMode ? "Click…" : "Tweak"}
+                </button>
+              </div>
+            )}
+
             <div className="flex items-center justify-between w-auto bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300 rounded-[20px]">
               <span
                 onClick={() => onChangeMode("code")}
@@ -269,16 +304,6 @@ export default function ProjectNavBar({
                 title="Code"
               >
                 code
-              </span>
-              <span
-                onClick={() => onChangeMode("visual")}
-                className={`material-symbols-outlined cursor-pointer w-[1.5em] aspect-square flex items-center justify-center transition ${mode === "visual"
-                  ? "text-theme-inverted bg-theme-inverted"
-                  : "text-theme-tertiary hover:text-theme-primary"
-                  }`}
-                title="Visual"
-              >
-                slide_library
               </span>
               <span
                 onClick={() => onChangeMode("ai")}

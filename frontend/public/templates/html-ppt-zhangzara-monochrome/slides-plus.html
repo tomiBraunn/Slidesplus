@@ -1,0 +1,921 @@
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;"><style>@import url('https://fonts.googleapis.com');
+@import url('https://fonts.googleapis.com/css2?family=Jost:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400;500&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Noto+Serif+SC:wght@300;400;500&family=Noto+Sans+SC:wght@200;300;400;500&display=swap');
+:root{/* ── Palette ──────────────────────────────────────────────────────── */
+        --c-bg: #fafadf; /* cream background for every slide       */
+        --c-bg-alt: #f2f2d2; /* cream inset surface                   */
+        --c-bg-light: #fafadf; /* title-slide cream                     */
+        --c-bg-light-alt: #f0f0d4; /* slightly deeper cream for insets      */
+        --c-bg-cream: #f5f0e4; /* warm cream variant                    */
+
+        --c-fg: #1a1a16; /* black ink text                         */
+        --c-fg-2: #5e5e54; /* secondary graphite text                */
+        --c-fg-3: #8a8a80; /* tertiary graphite text                 */
+        --c-fg-light: #1a1a16; /* black ink on cream                    */
+        --c-fg-light-2: #5e5e54; /* secondary graphite on cream           */
+        --c-fg-light-3: #8a8a80; /* tertiary graphite on cream            */
+
+        --c-accent: #1a1a16; /* accent collapsed to black ink         */
+        --c-border: #1a1a16; /* black dividers                        */
+        --c-border-light: #1a1a16; /* black dividers on cream               */
+
+        /* ── Insight cards: no accent colors, just cream paper surfaces ─── */
+        --c-card-a: #fafadf;
+        --c-card-b: #f5f0e4;
+        --c-card-c: #fafadf;
+
+        /* ── Typography ──────────────────────────────────────────────────── */
+        --f-display: "Jost", "Noto Sans SC", system-ui, sans-serif;
+        --f-heading: "Jost", "Noto Sans SC", system-ui, sans-serif;
+        --f-body: "Jost", "Noto Sans SC", system-ui, sans-serif;
+        --f-serif: "Lora", "Noto Serif SC", Georgia, serif;
+        --f-mono: "JetBrains Mono", monospace;
+
+        /* ── Type Scale ───────────────────────────────────────────────────── */
+        --sz-display: 8.5vw; /* hero/cover — very large, very light         */
+        --sz-h1: 5vw; /* chapter / statement headline                */
+        --sz-h2: 3.2vw; /* slide headline                              */
+        --sz-h3: 2vw; /* sub-headline                                */
+        --sz-lead: 1.5vw; /* generous lead text                          */
+        --sz-body: 1.1vw; /* body text                                   */
+        --sz-caption: 0.85vw; /* captions, footnotes                         */
+        --sz-label: 0.72vw; /* chrome labels, sidebar labels               */
+
+        /* ── Spacing ─────────────────────────────────────────────────────── */
+        --pad-x: 8vw; /* generous horizontal padding — space is the design */
+        --pad-y: 6vh;
+        --gap-lg: 5vh;
+        --gap-md: 3vh;
+        --gap-sm: 1.5vh;
+
+        /* ── Motion ──────────────────────────────────────────────────────── */
+        --ease-slide: cubic-bezier(0.77, 0, 0.175, 1);
+        --dur-slide: 0.9s;
+        --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+        --dur-enter: 0.7s;}
+</style>
+<!-- Sidebar: research context above, date below -->
+        <div class="slide-sidebar" data-anim="fade-in" data-delay="0">
+          <span class="sidebar-label">Research Synthesis</span>
+          <span class="sidebar-label">[Month, Year]</span>
+        </div>
+
+        <!-- Top-right deck label: title and date -->
+        <div
+          style="position: absolute;top: var(--pad-y);right: var(--pad-x);text-align: right;"
+          data-anim="fade-in"
+          data-delay="1"
+        >
+          <span class="label muted"
+            >User Research Synthesis / [Month, Year]</span
+          >
+        </div>
+
+        <div class="cover-body">
+          <!-- Display headline: weight 200, two lines -->
+          <h1 class="display" data-anim="fade-up" data-delay="2">
+            User Research<br />Synthesis
+          </h1>
+
+          <!-- Thin rule between headline and lead -->
+          <div
+            class="rule"
+            data-anim="reveal-right"
+            data-delay="3"
+            style="margin: 16px 0"
+          ></div>
+
+          <!-- Lead: weight 300, muted, max 55% width -->
+          <p
+            class="lead muted"
+            data-anim="fade-up"
+            data-delay="4"
+            style="max-width: 55%"
+          >
+            What we learned from 24 interviews and what it means for the
+            product.
+          </p>
+        </div>
+
+        <!-- Bottom meta bar: team left, round right -->
+        <div class="cover-meta" data-anim="fade-in" data-delay="5">
+          <span class="label muted">Research Team · [Month, Year]</span>
+          <span class="label muted">Round [N] · Internal</span>
+        </div>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<!-- Sidebar on dark: adapts automatically via .dark .sidebar-label -->
+        <div class="slide-sidebar" data-anim="fade-in" data-delay="0">
+          <span class="sidebar-label">Context</span>
+          <span class="sidebar-label">Part One</span>
+        </div>
+
+        <!-- Chapter number: small mono, monochrome accent -->
+        <div class="chapter-num" data-anim="fade-in" data-delay="1">
+          01 · Context
+        </div>
+
+        <!-- Thin accent rule -->
+        <div class="chapter-rule" data-anim="reveal-right" data-delay="2"></div>
+
+        <!-- Chapter headline: weight 200, very large -->
+        <h2 class="h1" data-anim="fade-up" data-delay="3">
+          Why we went back<br />to users
+        </h2>
+
+        <!-- Short description: muted, capped at 50% width -->
+        <p
+          class="lead"
+          style="max-width: 50%;margin-top: var(--gap-md);color: var(--c-fg-3);"
+          data-anim="fade-up"
+          data-delay="4"
+        >
+          Three months after launch, retention numbers told us something the
+          metrics couldn't.
+        </p>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<!-- Sidebar: three contextual labels -->
+        <div class="slide-sidebar" data-anim="fade-in" data-delay="0">
+          <span class="sidebar-label">[Month, Year]</span>
+          <span class="sidebar-label">Round [N]</span>
+          <span class="sidebar-label">Objective</span>
+        </div>
+
+        <!-- Chrome header -->
+        <header class="slide-chrome">
+          <span class="label muted">Key Finding</span>
+          <span class="label muted">03</span>
+        </header>
+
+        <!-- Statement body: centered vertically -->
+        <div class="statement-body">
+          <!-- Objective label in mono muted at top of content area -->
+          <p class="kicker" data-anim="fade-in" data-delay="1">
+            Primary objective · Round [N] synthesis
+          </p>
+
+          <!-- The big claim: weight 200, sentence case, max 65% width -->
+          <h2
+            class="h1"
+            data-anim="fade-up"
+            data-delay="2"
+            style="max-width: 65%"
+          >
+            Users don't leave because they lose interest. They leave because
+            they don't know what to do next.
+          </h2>
+
+          <!-- Thin rule as a visual pause below the headline -->
+          <div
+            class="rule"
+            data-anim="reveal-right"
+            data-delay="3"
+            style="margin-top: var(--gap-sm)"
+          ></div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="slide-foot">
+          <span class="label muted">User Research Synthesis</span>
+          <span class="label muted">Research Team</span>
+        </footer>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<div class="slide-sidebar" data-anim="fade-in" data-delay="0">
+          <span class="sidebar-label">User Behavior</span>
+          <span class="sidebar-label">[Month, Year]</span>
+        </div>
+
+        <!-- Chrome header -->
+        <header class="slide-chrome">
+          <span class="label muted">User Behavior</span>
+          <span class="label muted">04</span>
+        </header>
+
+        <!-- Two-column body -->
+        <div class="slide-body">
+          <!-- Left: text content -->
+          <div class="split-text">
+            <p class="kicker" data-anim="fade-in" data-delay="1">The Pattern</p>
+            <h2 class="h2" data-anim="fade-up" data-delay="2">
+              The first 48 hours determine everything
+            </h2>
+            <p class="lead muted" data-anim="fade-up" data-delay="3">
+              Users who complete three core actions in their first two days have
+              a 4× higher 90-day retention rate. Most never get there.
+            </p>
+            <!-- Small bullet list below the lead -->
+            <ul
+              class="bullet-list"
+              style="margin-top: 0"
+              data-anim="fade-up"
+              data-delay="4"
+            >
+              <li>Onboarding drop-off peaks at step 3</li>
+              <li>"What do I do next?" is the most common exit trigger</li>
+              <li>Users who invite a teammate retain at 2× the rate</li>
+            </ul>
+          </div>
+
+          <!-- Right: image with caption -->
+          <div class="split-image" data-anim="fade-in" data-delay="3">
+            <div class="img-placeholder">Image placeholder</div>
+            <p class="img-caption">
+              Session recording review · [Month of study]
+            </p>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="slide-foot">
+          <span class="label muted">User Research Synthesis</span>
+          <span class="label muted">Research Team</span>
+        </footer>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<div class="slide-sidebar" data-anim="fade-in" data-delay="0">
+          <span class="sidebar-label">By the Numbers</span>
+          <span class="sidebar-label">[Month, Year]</span>
+        </div>
+
+        <!-- Chrome header -->
+        <header class="slide-chrome">
+          <span class="label muted">By the Numbers</span>
+          <span class="label muted">05</span>
+        </header>
+
+        <!-- Stats body: headline + three-col stat grid -->
+        <div class="slide-body">
+          <h2 class="h2" data-anim="fade-up" data-delay="1">
+            What the data showed
+          </h2>
+
+          <div
+            class="stats-grid"
+            style="margin-top: var(--gap-lg)"
+            data-anim="fade-up"
+            data-delay="2"
+          >
+            <!-- Stat 1: churn rate -->
+            <div class="stat-card">
+              <div class="stat-value">68%</div>
+              <p class="stat-label muted">
+                of users churned within 14 days — up from 54% in cohort 2
+              </p>
+              <p class="stat-note">[Analytics tool] · [Launch month]</p>
+            </div>
+
+            <!-- Stat 2: time to abandonment -->
+            <div class="stat-card">
+              <div class="stat-value">3.2min</div>
+              <p class="stat-label muted">
+                Average time before abandonment on the setup flow
+              </p>
+              <p class="stat-note">Session recordings · n=240</p>
+            </div>
+
+            <!-- Stat 3: retention multiplier -->
+            <div class="stat-card">
+              <div class="stat-value">4×</div>
+              <p class="stat-label muted">
+                Higher 90-day retention for users who complete onboarding fully
+              </p>
+              <p class="stat-note">Cohort analysis</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="slide-foot">
+          <span class="label muted">User Research Synthesis</span>
+          <span class="label muted">Research Team</span>
+        </footer>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<div class="slide-sidebar" data-anim="fade-in" data-delay="0">
+          <span class="sidebar-label">Recommendations</span>
+          <span class="sidebar-label">[Month, Year]</span>
+        </div>
+
+        <!-- Chrome header -->
+        <header class="slide-chrome">
+          <span class="label muted">Recommendations</span>
+          <span class="label muted">06</span>
+        </header>
+
+        <!-- List body: left head + right bullets -->
+        <div class="slide-body">
+          <div class="list-head">
+            <p class="kicker" data-anim="fade-in" data-delay="1">What to fix</p>
+            <h2 class="h2" data-anim="fade-up" data-delay="2">
+              Five changes, ordered by impact
+            </h2>
+            <p class="body muted" data-anim="fade-up" data-delay="3">
+              We recommend addressing these sequentially — later ones depend on
+              the first landing.
+            </p>
+          </div>
+
+          <!-- Five bullets: weight-300 lead size, em dash markers -->
+          <ul class="bullet-list" data-anim="fade-up" data-delay="3">
+            <li>Redesign the setup flow to three steps maximum</li>
+            <li>Add a "start here" prompt on day one based on user type</li>
+            <li>
+              Surface the collaboration invite after first meaningful action
+            </li>
+            <li>Replace feature tour with outcome demonstration</li>
+            <li>
+              Build a 7-day email sequence that mirrors in-product progress
+            </li>
+          </ul>
+        </div>
+
+        <!-- Footer -->
+        <footer class="slide-foot">
+          <span class="label muted">User Research Synthesis</span>
+          <span class="label muted">Research Team</span>
+        </footer>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<div class="slide-sidebar" data-anim="fade-in" data-delay="0">
+          <span class="sidebar-label">Current vs Proposed</span>
+          <span class="sidebar-label">[Month, Year]</span>
+        </div>
+
+        <!-- Chrome header -->
+        <header class="slide-chrome">
+          <span class="label muted">Current · Proposed</span>
+          <span class="label muted">07</span>
+        </header>
+
+        <!-- Two-panel body -->
+        <div class="slide-body">
+          <!-- Left panel: current state -->
+          <div class="compare-panel left" data-anim="fade-up" data-delay="1">
+            <div class="compare-label">Current Onboarding</div>
+            <h3 class="h3">9-step setup, any order</h3>
+            <p class="lead muted">
+              Users choose their own path through setup. Most choose wrong.
+            </p>
+            <ul class="bullet-list" style="font-size: var(--sz-body)">
+              <li>Average 3.2 minutes to first value</li>
+              <li>Step 6 is where 41% abandon</li>
+              <li>No adaptive logic based on user type</li>
+            </ul>
+          </div>
+
+          <!-- Right panel: proposed state -->
+          <div class="compare-panel right" data-anim="fade-up" data-delay="2">
+            <div class="compare-label after">Proposed Flow</div>
+            <h3 class="h3">3-step guided path, adaptive</h3>
+            <p class="lead muted">
+              User type detected at signup. Path adjusts. First value in under
+              90 seconds.
+            </p>
+            <ul class="bullet-list" style="font-size: var(--sz-body)">
+              <li>Target: 90 seconds to first value</li>
+              <li>Eliminate decision paralysis at step entry</li>
+              <li>Inline help triggered at abandonment signals</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="slide-foot">
+          <span class="label muted">User Research Synthesis</span>
+          <span class="label muted">Research Team</span>
+        </footer>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<div class="slide-sidebar" data-anim="fade-in" data-delay="0">
+          <span class="sidebar-label">Participant Voice</span>
+          <span class="sidebar-label">[Month of study]</span>
+        </div>
+
+        <!-- Quote text: Lora italic, large, no decoration -->
+        <p class="quote-text" data-anim="fade-up" data-delay="1">
+          "I kept opening the app and then closing it again. I didn't know what
+          I was supposed to do."
+        </p>
+
+        <!-- Attribution: two lines of small mono -->
+        <div class="quote-attr" data-anim="fade-in" data-delay="3">
+          <span
+            class="label"
+            style="color: var(--c-fg-3);letter-spacing: 2px"
+          >
+            Participant 14 · 28 years old, Product Designer
+          </span>
+          <span
+            class="label"
+            style="color: var(--c-fg-3);letter-spacing: 2px"
+          >
+            Interview · [Month of study]
+          </span>
+        </div>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<div class="slide-sidebar" data-anim="fade-in" data-delay="0">
+          <span class="sidebar-label">Analysis</span>
+          <span class="sidebar-label">[Month, Year]</span>
+        </div>
+
+        <!-- Chrome header -->
+        <header class="slide-chrome">
+          <span class="label muted">Analysis</span>
+          <span class="label muted">09</span>
+        </header>
+
+        <!-- Dense headline -->
+        <h2 class="dense-hl" data-anim="fade-up" data-delay="1">
+          Why onboarding problems compound over time
+        </h2>
+
+        <!-- Two-column analysis body -->
+        <div class="slide-body">
+          <div class="dense-cols" data-anim="fade-up" data-delay="2">
+            <!-- Left column: The Activation Trap -->
+            <div class="dense-col">
+              <h4>The Activation Trap</h4>
+              <p>
+                Activation is the moment a user experiences the core value of a
+                product for the first time. When that moment is delayed or never
+                arrives, the user's mental model of the product never fully
+                forms. They carry a vague, unresolved impression into every
+                subsequent session.
+              </p>
+              <p>
+                Each session that ends without activation reinforces the exit
+                pattern. The user doesn't consciously decide to leave — they
+                simply stop opening the app because it hasn't yet earned a place
+                in their routine. The gap between download and habit is where
+                most products lose users permanently.
+              </p>
+              <p>
+                Retention data confirms this: users who hit activation in
+                session one have a 3× higher probability of returning in week
+                two. The window is narrow. Products that front-load value
+                creation outperform those that distribute it across multiple
+                sessions.
+              </p>
+            </div>
+
+            <!-- Right column: The Network Effect Delay -->
+            <div class="dense-col">
+              <h4>The Network Effect Delay</h4>
+              <p>
+                Collaboration products face a compounding problem: the value of
+                the product increases with each additional teammate, but users
+                must cross the value threshold alone before they think to invite
+                anyone. Most never reach the threshold.
+              </p>
+              <p>
+                Our data shows that the median user does not discover the
+                invitation flow until session four — by which point 60% have
+                already churned. The product's most powerful retention mechanism
+                is invisible during the critical first-session window where the
+                keep-or-leave decision is made.
+              </p>
+              <p>
+                The solution is not to surface the invite prompt earlier in a
+                disruptive way, but to design the single-player experience as an
+                explicit bridge to the collaborative one. Every solo action
+                should feel like preparation for something that scales.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="slide-foot">
+          <span class="label muted">User Research Synthesis</span>
+          <span class="label muted">Research Team</span>
+        </footer>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<header class="slide-chrome">
+          <span class="label muted">Retention Analysis</span>
+          <span class="label muted">11</span>
+        </header>
+        <div class="slide-body">
+          <div class="chart-header">
+            <h2
+              class="h2"
+              style="font-weight: 200"
+              data-anim="fade-up"
+              data-delay="0"
+            >
+              90-day retention by onboarding cohort
+            </h2>
+            <span class="caption muted" data-anim="fade-in" data-delay="1"
+              >% retained · n=480 · [Q1 of study period]</span
+            >
+          </div>
+          <div class="chart-wrapper" data-anim="fade-up" data-delay="2">
+            <div class="bar-track">
+              <div class="bar-col">
+                <span class="bar-val">34%</span>
+                <div class="bar-fill" style="height: 108px"></div>
+                <span class="bar-x-label">Cohort 1</span>
+              </div>
+              <div class="bar-col">
+                <span class="bar-val">41%</span>
+                <div class="bar-fill" style="height: 140px"></div>
+                <span class="bar-x-label">Cohort 2</span>
+              </div>
+              <div class="bar-col">
+                <span class="bar-val">48%</span>
+                <div class="bar-fill" style="height: 173px"></div>
+                <span class="bar-x-label">Cohort 3</span>
+              </div>
+              <div class="bar-col">
+                <span class="bar-val hi">67%</span>
+                <div class="bar-fill accent" style="height: 238px"></div>
+                <span class="bar-x-label">Proposed</span>
+              </div>
+            </div>
+            <div class="chart-baseline"></div>
+          </div>
+          <p class="chart-source" data-anim="fade-in" data-delay="3">
+            Source: [Analytics tool] · Cohort analysis · Proposed target based
+            on redesigned onboarding flow
+          </p>
+        </div>
+        <footer class="slide-foot">
+          <span class="label muted">Research Team · [Month, Year]</span>
+          <span class="label muted">11 / 18</span>
+        </footer>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<header class="slide-chrome">
+          <span class="label muted">Methodology</span>
+          <span class="label muted">12</span>
+        </header>
+        <div class="slide-body">
+          <h2
+            class="h2"
+            style="font-weight: 200"
+            data-anim="fade-up"
+            data-delay="0"
+          >
+            How this research was conducted
+          </h2>
+          <div class="flow" data-anim="fade-up" data-delay="1">
+            <div class="flow-step">
+              <div class="flow-num">01</div>
+              <div class="flow-title">Recruit</div>
+              <div class="flow-desc">
+                24 participants screened from the active user base. Mix of power
+                users, casual users, and churned users within 90 days.
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="flow-num">02</div>
+              <div class="flow-title">Interview</div>
+              <div class="flow-desc">
+                60-minute moderated sessions. Cognitive walkthrough of key
+                flows. Think-aloud protocol throughout.
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="flow-num">03</div>
+              <div class="flow-title">Analyse</div>
+              <div class="flow-desc">
+                Affinity mapping across 340 observations. Pattern clustering by
+                behaviour type, not stated preference.
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="flow-num">04</div>
+              <div class="flow-title">Validate</div>
+              <div class="flow-desc">
+                Key findings stress-tested against session recordings and
+                support ticket data before synthesis.
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-foot">
+          <span class="label muted">Research Team · [Month, Year]</span>
+          <span class="label muted">12 / 18</span>
+        </footer>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<div class="slide-sidebar" data-anim="fade-in" data-delay="0">
+          <span class="sidebar-label">Participants</span>
+          <span class="sidebar-label">[Month, Year]</span>
+        </div>
+
+        <header class="slide-chrome">
+          <span class="label muted">Participant Breakdown</span>
+          <span class="label muted">13</span>
+        </header>
+
+        <div class="slide-body">
+          <h2
+            class="h2"
+            style="font-weight: 200"
+            data-anim="fade-up"
+            data-delay="1"
+          >
+            Who we spoke with
+          </h2>
+
+          <div class="pie-row" data-anim="fade-up" data-delay="2">
+            <!-- Donut chart: conic-gradient with 4 segments -->
+            <div
+              class="pie-donut"
+              style="background: conic-gradient(
+                  var(--c-accent) 0% 38%,
+                  color-mix(in srgb, var(--c-accent) 60%, var(--c-bg-light)) 38%
+                    63%,
+                  color-mix(in srgb, var(--c-accent) 34%, var(--c-bg-light)) 63%
+                    85%,
+                  var(--c-bg-light-alt) 85% 100%
+                );"
+            ></div>
+
+            <!-- Legend -->
+            <div class="pie-legend">
+              <div class="pie-item">
+                <div class="pie-swatch" style="background: var(--c-accent)"></div>
+                <span class="pie-item-label">Power Users</span>
+                <span class="pie-item-val">38%</span>
+              </div>
+              <div class="pie-item">
+                <div
+                  class="pie-swatch"
+                  style="background: color-mix(
+                      in srgb,
+                      var(--c-accent) 60%,
+                      var(--c-bg-light)
+                    );"
+                ></div>
+                <span class="pie-item-label">Casual Users</span>
+                <span class="pie-item-val">25%</span>
+              </div>
+              <div class="pie-item">
+                <div
+                  class="pie-swatch"
+                  style="background: color-mix(
+                      in srgb,
+                      var(--c-accent) 34%,
+                      var(--c-bg-light)
+                    );"
+                ></div>
+                <span class="pie-item-label">Churned Users</span>
+                <span class="pie-item-val">22%</span>
+              </div>
+              <div class="pie-item">
+                <div
+                  class="pie-swatch"
+                  style="background: var(--c-bg-light-alt)"
+                ></div>
+                <span class="pie-item-label">Prospects</span>
+                <span class="pie-item-val">15%</span>
+              </div>
+              <p class="pie-total">Total participants: [N] · [Study period]</p>
+            </div>
+          </div>
+
+          <p class="chart-source" data-anim="fade-in" data-delay="3">
+            Source: Recruitment screener · [Study period]
+          </p>
+        </div>
+
+        <footer class="slide-foot">
+          <span class="label muted">[Research Team] · [Month, Year]</span>
+        </footer>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<div class="slide-sidebar" data-anim="fade-in" data-delay="0">
+          <span class="sidebar-label">Process</span>
+          <span class="sidebar-label">[Month, Year]</span>
+        </div>
+
+        <header class="slide-chrome">
+          <span class="label muted">Process</span>
+          <span class="label muted">14</span>
+        </header>
+
+        <h2 class="vt-hl" data-anim="fade-up" data-delay="1">
+          From research to recommendation
+        </h2>
+
+        <div class="slide-body">
+          <div class="vtimeline" data-anim="fade-up" data-delay="2">
+            <!-- Row 1 -->
+            <div class="vt-date">[Week 1]</div>
+            <div class="vt-spine"></div>
+            <div class="vt-content">
+              <div class="vt-title">Recruitment</div>
+              <p class="vt-body">
+                Screened [N]+ applicants, selected [N] participants across user
+                segments.
+              </p>
+            </div>
+            <!-- Row 2 -->
+            <div class="vt-date">[Week 2–3]</div>
+            <div class="vt-spine"></div>
+            <div class="vt-content">
+              <div class="vt-title">Fieldwork</div>
+              <p class="vt-body">
+                [N] moderated sessions. Think-aloud protocol. All sessions
+                recorded and transcribed.
+              </p>
+            </div>
+            <!-- Row 3 -->
+            <div class="vt-date">[Week 4]</div>
+            <div class="vt-spine"></div>
+            <div class="vt-content">
+              <div class="vt-title">Synthesis</div>
+              <p class="vt-body">
+                Affinity mapping across [N]+ observations. Pattern clustering by
+                behaviour type.
+              </p>
+            </div>
+            <!-- Row 4 -->
+            <div class="vt-date">[Week 5]</div>
+            <div class="vt-spine"></div>
+            <div class="vt-content">
+              <div class="vt-title">Validation</div>
+              <p class="vt-body">
+                Findings stress-tested against [analytics tool] data and [N]
+                support ticket samples.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <footer class="slide-foot">
+          <span class="label muted">[Research Team] · [Month, Year]</span>
+          <span class="label muted">14</span>
+        </footer>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<div class="slide-sidebar" data-anim="fade-in" data-delay="0">
+          <span class="sidebar-label">Design Process</span>
+          <span class="sidebar-label">[Month, Year]</span>
+        </div>
+
+        <header class="slide-chrome">
+          <span class="label muted">Design Process</span>
+          <span class="label muted">15</span>
+        </header>
+
+        <div class="slide-body">
+          <h2
+            class="h2"
+            style="font-weight: 200"
+            data-anim="fade-up"
+            data-delay="1"
+          >
+            The design thinking cycle
+          </h2>
+
+          <div class="cycle-grid" data-anim="fade-up" data-delay="2">
+            <!-- Step 01: top-left -->
+            <div class="cycle-step">
+              <div class="cycle-num">01</div>
+              <div class="cycle-title">Empathise</div>
+              <p class="cycle-desc">
+                Understand users in their own context. Suspend assumptions.
+                Observe before interpreting.
+              </p>
+            </div>
+            <!-- Arrow right: top-center -->
+            <div class="cycle-arrow">→</div>
+            <!-- Step 02: top-right -->
+            <div class="cycle-step">
+              <div class="cycle-num">02</div>
+              <div class="cycle-title">Define</div>
+              <p class="cycle-desc">
+                Reframe the problem as a point of view. One sentence. Testable.
+                Grounded in observation.
+              </p>
+            </div>
+            <!-- Arrow down-left: mid-left -->
+            <div class="cycle-arrow">↓</div>
+            <!-- Center spacer: mid-center -->
+            <div></div>
+            <!-- Arrow down-right: mid-right -->
+            <div class="cycle-arrow">↓</div>
+            <!-- Step 04: bottom-left -->
+            <div class="cycle-step">
+              <div class="cycle-num">04</div>
+              <div class="cycle-title">Test</div>
+              <p class="cycle-desc">
+                Put prototypes in front of real users. Capture what they do, not
+                what they say.
+              </p>
+            </div>
+            <!-- Arrow left: bottom-center -->
+            <div class="cycle-arrow">←</div>
+            <!-- Step 03: bottom-right -->
+            <div class="cycle-step">
+              <div class="cycle-num">03</div>
+              <div class="cycle-title">Prototype</div>
+              <p class="cycle-desc">
+                Build to think, not to ship. The lowest fidelity that answers
+                the question.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <footer class="slide-foot">
+          <span class="label muted">[Research Team] · [Month, Year]</span>
+          <span class="label muted">15</span>
+        </footer>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<div class="slide-sidebar" data-anim="fade-in" data-delay="0">
+          <span class="sidebar-label">Research Framework</span>
+          <span class="sidebar-label">[Month, Year]</span>
+        </div>
+
+        <header class="slide-chrome">
+          <span class="label muted">Research Framework</span>
+          <span class="label muted">17</span>
+        </header>
+
+        <div class="slide-body">
+          <p class="kicker" data-anim="fade-in" data-delay="1">
+            Research Framework
+          </p>
+
+          <h2 class="h2" data-anim="fade-up" data-delay="2">
+            Analysis Hierarchy
+          </h2>
+
+          <p class="lead muted" data-anim="fade-up" data-delay="3">
+            From raw observations to strategic insight
+          </p>
+
+          <!-- Centered pyramid: narrowest at top, widest at bottom -->
+          <div class="pyr-wrap" data-anim="fade-up" data-delay="4">
+            <div class="pyr-level">Strategic Insight</div>
+            <div class="pyr-level">Behavioral Patterns</div>
+            <div class="pyr-level">Synthesized Themes</div>
+            <div class="pyr-level">Coded Observations</div>
+            <div class="pyr-level">Raw Field Notes</div>
+          </div>
+        </div>
+
+        <footer class="slide-foot">
+          <span class="label muted">User Research Synthesis</span>
+          <span class="label muted">Research Team</span>
+        </footer>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<div class="slide-sidebar" data-anim="fade-in" data-delay="0">
+          <span class="sidebar-label">Research Team</span>
+          <span class="sidebar-label">[Month, Year]</span>
+        </div>
+
+        <!-- Kicker: team attribution in muted mono -->
+        <p class="kicker" data-anim="fade-in" data-delay="1">Research Team</p>
+
+        <!-- Thin rule -->
+        <div
+          class="rule"
+          data-anim="reveal-right"
+          data-delay="2"
+          style="margin: var(--gap-sm) 0"
+        ></div>
+
+        <!-- Closing headline: weight 200, max 55% width -->
+        <h2
+          class="h1"
+          data-anim="fade-up"
+          data-delay="3"
+          style="max-width: 55%"
+        >
+          Questions, feedback, and next steps
+        </h2>
+
+        <!-- Contact lead: muted, links styled as plain text -->
+        <p
+          class="lead muted"
+          data-anim="fade-up"
+          data-delay="4"
+          style="max-width: 42%;margin-top: var(--gap-md)"
+        >
+          [research@org.com] · [Slack #research] · Full report at [link]
+        </p>
+</section>

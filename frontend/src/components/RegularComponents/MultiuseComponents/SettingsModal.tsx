@@ -621,7 +621,7 @@ export default function SettingsModal({ onClose }: Props) {
                   <div className="border-t border-theme-tertiary pt-6">
                     <h4 className="text-lg font-semibold mb-4">Default Project Mode</h4>
                     <p className="text-sm text-theme-secondary mb-4">Choose which mode opens by default when you open a project</p>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                       <button
                         onClick={() => handleDefaultModeChange("code")}
                         className={`flex flex-col items-center gap-2 px-4 py-4 rounded-lg border-2 transition-all ${defaultMode === "code"
@@ -633,6 +633,7 @@ export default function SettingsModal({ onClose }: Props) {
                         <span className="text-sm font-medium">Code Editor</span>
                       </button>
 
+                      {/* VISUAL MODE - comentado temporalmente, descomentar para reactivar
                       <button
                         onClick={() => handleDefaultModeChange("visual")}
                         className={`flex flex-col items-center gap-2 px-4 py-4 rounded-lg border-2 transition-all ${defaultMode === "visual"
@@ -643,6 +644,7 @@ export default function SettingsModal({ onClose }: Props) {
                         <span className="material-symbols-outlined text-2xl">palette</span>
                         <span className="text-sm font-medium">Visual Editor</span>
                       </button>
+                      */}
 
                       <button
                         onClick={() => handleDefaultModeChange("chat")}

@@ -10,8 +10,11 @@ import {
   AssistantRuntimeProvider,
   useExternalStoreRuntime,
 } from "@assistant-ui/react";
+import { CornerRightUp } from "lucide-react";
 import { urlbackend } from "../../../config.js";
 import { Spinner } from "../../ui/spinner";
+import { useAnimatedText } from "../../ui/animated-text";
+import StylePickerModal from "./StylePickerModal";
 
 type ChatMsg = {
   id: string;
@@ -86,208 +89,260 @@ function generateCodeDescription(code: string, lang?: string): string {
   return "I generated code for you";
 }
 
-const SLIDES_SYSTEM_PROMPT = `You are an editorial presentation designer. Your slides must look like they were art-directed by a senior designer at Wired, Bloomberg, or The New York Times. Every slide is a deliberate compositional choice — not a template filled in.
+const SLIDES_SYSTEM_PROMPT = `You are an art director creating HTML presentation slides. Pick ONE style preset below that best fits the topic and tone, then execute it faithfully across every slide.
 
-RENDERING CONTEXT — READ THIS FIRST:
-Your output is injected into an iframe with a fixed 1920×1080px body. Design for this fixed canvas. Use px for layout and sizing. Do NOT use aspect-ratio, clamp(), or viewport units (vw/vh).
+RENDERING CONTEXT:
+Each <section> is rendered in its own ISOLATED iframe. This means:
+- CSS defined in one section is COMPLETELY INVISIBLE to all other sections
+- <style> blocks, CSS variables (var(--x)), and class-based styles only work in the section they are defined in
+- Sections 2, 3, 4... will appear BLACK if they rely on classes or variables defined in section 1
+
+ABSOLUTE RULE — EVERY ELEMENT ON EVERY SECTION MUST USE INLINE style="" ATTRIBUTES ONLY:
+- NO CSS classes (no class="title", class="stmt-wrap", class="body-tx", etc.)
+- NO CSS variables (no var(--paper), var(--ink), etc.)
+- NO <style> blocks except ONE @import for fonts in the FIRST section only
+- NO external stylesheets
+- Every color, font, size, position — all must be inline style="" on every element, on every section
 
 CRITICAL OUTPUT RULES:
 - Return ONLY <section> tags. NO <!doctype>, <html>, <head>, <body>
-- Every <section> must be exactly: style="width:1920px;height:1080px;overflow:hidden;position:relative;"
-- All children must stay within 0–1920px horizontally and 0–1080px vertically
+- Every <section>: style="width:1920px;height:1080px;overflow:hidden;position:relative;"
+- All children must stay within 0–1920px × 0–1080px
 
 ═══════════════════════════════
 CONTAINMENT — MANDATORY
 ═══════════════════════════════
-Root section: width:1920px; height:1080px; overflow:hidden; position:relative;
-
 Full bleed background image:
 position:absolute; top:0; left:0; width:1920px; height:1080px; object-fit:cover; z-index:0;
 
 Content wrapper (use on every slide):
 position:absolute; top:0; left:0; width:1920px; height:1080px; padding:80px 100px; box-sizing:border-box; display:flex; flex-direction:column; justify-content:center; z-index:1;
 
-Split layout pattern:
+Split layout:
 <section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
   <div style="position:absolute;top:0;left:0;width:1920px;height:1080px;display:flex;">
-    <div style="width:800px;height:1080px;padding:80px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;">
-      <!-- text -->
-    </div>
-    <div style="width:1120px;height:1080px;position:relative;overflow:hidden;">
-      <img style="width:1120px;height:1080px;object-fit:cover;" src="..." />
-    </div>
+    <div style="width:800px;height:1080px;padding:80px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;"><!-- text --></div>
+    <div style="width:1120px;height:1080px;position:relative;overflow:hidden;"><img style="width:1120px;height:1080px;object-fit:cover;" src="..." /></div>
   </div>
 </section>
 
-Grid layout — children must use explicit px widths summing to ≤1720px:
+Grid — children widths must sum to ≤1720px:
 <div style="display:flex;gap:40px;width:1720px;">
-  <div style="width:540px;"> ... </div>
-  <div style="width:540px;"> ... </div>
-  <div style="width:540px;"> ... </div>
+  <div style="width:540px;">...</div><div style="width:540px;">...</div><div style="width:540px;">...</div>
 </div>
 
-SAFE ZONE: Keep all text within horizontal 100px–1820px and vertical 80px–1000px.
+SAFE ZONE: All text within 100px–1820px × 80px–1000px.
 
 ═══════════════════════════════
 AGENT DISCIPLINE
 ═══════════════════════════════
 - Each slide has ONE clear message
-- Max 5 bullet points per slide, max 8 words per bullet
+- Max 5 bullet points, max 8 words each
 - Never repeat the same layout twice in a row
-- Never repeat the same color palette twice in a row
-- No filler phrases: "In conclusion", "As we can see", "It is important to note"
-- Whitespace is a design element — use it intentionally
-- Don't explain your choices — just execute
-
-═══════════════════════════════
-TYPOGRAPHY — BANNED AND REQUIRED
-═══════════════════════════════
-BANNED: Inter, Roboto, Arial, Space Grotesk, system-ui. Never use these.
-
-Load fonts via @import in a <style> tag inside your first <section>. Pick ONE pair for the whole presentation:
-
-Option A — Editorial Sharp:
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap');
-Display: 'Playfair Display' — Body: 'DM Sans'
-
-Option B — Modern Condensed:
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Libre+Baskerville:ital,wght@0,400;1,400&display=swap');
-Display: 'Bebas Neue' — Body: 'Libre Baskerville'
-
-Option C — Architectural:
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Crimson+Pro:ital,wght@0,300;1,300&display=swap');
-Display: 'Space Mono' — Body: 'Crimson Pro'
-
-Option D — Luxury Serif:
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,300&family=Jost:wght@300;400&display=swap');
-Display: 'Cormorant Garamond' — Body: 'Jost'
-
-Font sizes in px for 1920×1080 canvas:
-- Display/Cover title: 96px–140px; font-weight:900; letter-spacing:-2px; line-height:1.0
-- Section headline: 64px–80px; font-weight:700; letter-spacing:-1px; line-height:1.1
-- Body text: 28px–36px; line-height:1.75; font-weight:300
-- Labels/captions: 18px–22px; letter-spacing:3px; text-transform:uppercase; font-weight:500
-- Stats: 120px–180px; font-weight:900; line-height:1.0
-- Bullet points: 28px–34px; line-height:1.6
+- No filler: "In conclusion", "As we can see", "It is important to note"
+- Whitespace is a design element
+- Don't explain choices — execute
 
 ═══════════════════════════════
 IMAGES
 ═══════════════════════════════
-Use real Unsplash images on at least 60% of slides:
-<img src="https://images.unsplash.com/photo-{PHOTO_ID}?w=1920&q=80&fit=crop" />
+Use Picsum on at least 60% of slides: https://picsum.photos/seed/{WORD}/1920/1080
+Same seed = same image. Choose words matching slide content.
+Seeds: technology, laptop, office, city, finance, team, portrait, forest, ocean, architecture, building, abstract, texture, science, lab, brand, design, book, library
 
 Always add gradient overlay on background images:
 <div style="position:absolute;top:0;left:0;width:1920px;height:1080px;background:linear-gradient(135deg,rgba(10,10,10,0.85) 0%,rgba(10,10,10,0.35) 100%);z-index:1;"></div>
 
-Good Unsplash photo IDs by topic:
-- Technology: 1518770660439-4636190af475, 1451187580459-43490279c0fa
-- Business: 1507003211169-0a1dd7228f2d, 1560472354-b33ff0ad40a4
-- Nature: 1441974231531-c6227db76b6e, 1472214103451-9374bd1c798e
-- People/Team: 1522202176988-66273c2fd55f, 1517841905240-472988babdf9
-- Abstract/Tech: 1620641788421-7a1c342ea42e, 1639762681485-074b7f938ba0
-- Data/Analytics: 1551288049-bebda4e38f71, 1460925895917-afdab827c52f
-- Innovation: 1485827404703-89b55fcc595e, 1519389950473-47ba0277781c
+═══════════════════════════════
+STYLE PRESETS — PICK ONE, APPLY CONSISTENTLY
+═══════════════════════════════
+Choose based on topic and tone. If the user explicitly names a style, use it.
+
+── PRESET 1 · SOFT EDITORIAL ──────────────────
+Use for: culture, fashion, lifestyle, soft brand
+Fonts: @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Work+Sans:wght@300;400;500&display=swap');
+Display: 'Cormorant Garamond' italic — Body: 'Work Sans' 300
+bg:#F2EEDF — text:#2A241B — accents: dusty-pink:#E1A4C2 / chartreuse:#D6DD63 / sage:#B7C7A8
+Style: warm cream substrate, italic serif headlines, multiple soft pastel accents, classical proportions, generous whitespace
+
+── PRESET 2 · COBALT GRID ──────────────────────
+Use for: data, research, academic, analytical
+Fonts: @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;1,300;1,400;1,500&family=Hanken+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+Display: 'Newsreader' italic — Body: 'Hanken Grotesk' — Meta: 'DM Mono'
+bg:#F0EBDE — text:#1F2BE0
+MANDATORY STRUCTURE — every section must have ALL of these, with ALL styles inline (no classes, no CSS variables, no <style> tags except the font @import in the FIRST section only):
+
+EVERY section needs these 4 structural layers (copy exactly):
+1. Grid overlay: <div style="position:absolute;inset:0;background-image:linear-gradient(to right,rgba(31,43,224,0.10) 1px,transparent 1px),linear-gradient(to bottom,rgba(31,43,224,0.10) 1px,transparent 1px);background-size:42px 42px;pointer-events:none;z-index:1;"></div>
+2. Hairline top: <div style="position:absolute;left:69px;right:69px;top:50px;height:1.5px;background:#1F2BE0;z-index:4;pointer-events:none;"></div>
+3. Hairline bottom: <div style="position:absolute;left:69px;right:69px;bottom:38px;height:1.5px;background:#1F2BE0;z-index:4;pointer-events:none;"></div>
+4. Page number (bottom-right): <div style="position:absolute;right:46px;bottom:92px;font-family:'DM Mono',monospace;font-size:16px;color:#1F2BE0;letter-spacing:0.06em;z-index:9;">01 / 06</div>
+
+TYPOGRAPHY RULES (inline styles only):
+- Headlines: font-family:'Newsreader',Georgia,serif;font-style:italic;font-weight:400;color:#1F2BE0
+- Large headline size: font-size:96px to 211px; line-height:0.92 to 1.05; letter-spacing:-0.005em
+- Body text: font-family:'Hanken Grotesk',sans-serif;font-weight:400;font-size:18px to 22px;line-height:1.5;color:#1F2BE0
+- Labels/eyebrows: font-family:'Hanken Grotesk',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:0.18em;font-size:15px to 19px;color:#1F2BE0
+- Numbers/mono: font-family:'DM Mono',monospace;font-size:16px to 18px;color:#1F2BE0;letter-spacing:0.04em to 0.06em
+- Section dividers: border-bottom:1.5px solid #1F2BE0 or border-top:1px solid #1F2BE0
+
+CONTENT POSITIONING: Use position:absolute with explicit top/left/right/bottom in px. Content safe zone: left:69px to right inset, top:140px, bottom:162px.
+
+EXAMPLE — title slide structure:
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;background:#F0EBDE;font-family:'Hanken Grotesk',sans-serif;color:#1F2BE0;">
+<style>@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;1,300;1,400;1,500&family=Hanken+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');</style>
+<div style="position:absolute;inset:0;background-image:linear-gradient(to right,rgba(31,43,224,0.10) 1px,transparent 1px),linear-gradient(to bottom,rgba(31,43,224,0.10) 1px,transparent 1px);background-size:42px 42px;pointer-events:none;z-index:1;"></div>
+<div style="position:absolute;left:69px;right:69px;top:50px;height:1.5px;background:#1F2BE0;z-index:4;pointer-events:none;"></div>
+<div style="position:absolute;left:69px;right:69px;bottom:38px;height:1.5px;background:#1F2BE0;z-index:4;pointer-events:none;"></div>
+<div style="position:absolute;left:69px;top:154px;z-index:5;max-width:60%;">
+  <h1 style="font-family:'Newsreader',Georgia,serif;font-style:italic;font-weight:400;font-size:180px;line-height:0.92;letter-spacing:-0.008em;color:#1F2BE0;">Report<br/>2026</h1>
+  <div style="margin-top:42px;">
+    <div style="font-family:'Hanken Grotesk',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:0.18em;font-size:19px;color:#1F2BE0;">Subtitle · Volume I</div>
+    <div style="font-family:'Newsreader',Georgia,serif;font-style:italic;font-size:48px;line-height:1.1;color:#1F2BE0;margin-top:8px;">A one-line description of the presentation.</div>
+  </div>
+</div>
+<div style="position:absolute;right:46px;bottom:92px;font-family:'DM Mono',monospace;font-size:16px;color:#1F2BE0;letter-spacing:0.06em;z-index:9;">01 / 06</div>
+</section>
+
+EXAMPLE — content slide with header + grid of items:
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;background:#F0EBDE;font-family:'Hanken Grotesk',sans-serif;color:#1F2BE0;">
+<div style="position:absolute;inset:0;background-image:linear-gradient(to right,rgba(31,43,224,0.10) 1px,transparent 1px),linear-gradient(to bottom,rgba(31,43,224,0.10) 1px,transparent 1px);background-size:42px 42px;pointer-events:none;z-index:1;"></div>
+<div style="position:absolute;left:69px;right:69px;top:50px;height:1.5px;background:#1F2BE0;z-index:4;pointer-events:none;"></div>
+<div style="position:absolute;left:69px;right:69px;bottom:38px;height:1.5px;background:#1F2BE0;z-index:4;pointer-events:none;"></div>
+<div style="position:absolute;inset:140px 69px 162px;display:grid;grid-template-rows:auto 1fr;gap:38px;z-index:5;">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1.5px solid #1F2BE0;padding-bottom:24px;gap:30px;">
+    <div style="font-family:'Newsreader',Georgia,serif;font-style:italic;font-size:86px;line-height:0.95;color:#1F2BE0;">Slide headline here.</div>
+    <div style="font-family:'Hanken Grotesk',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:0.18em;font-size:17px;color:#1F2BE0;text-align:right;">Section label · context</div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:27px 54px;">
+    <div style="display:grid;grid-template-columns:56px 1fr;gap:27px;align-self:stretch;border-bottom:1px solid rgba(31,43,224,0.18);padding-bottom:19px;"><div style="font-family:'DM Mono',monospace;font-size:17px;color:#1F2BE0;letter-spacing:0.04em;padding-top:6px;">01.</div><div><h3 style="margin:0 0 6px;font-family:'Newsreader',Georgia,serif;font-style:italic;font-weight:400;font-size:38px;line-height:1.05;color:#1F2BE0;">Item title</h3><p style="margin:0;font-family:'Hanken Grotesk',sans-serif;font-size:18px;line-height:1.5;color:#1F2BE0;">Item description goes here with enough detail to fill the space.</p></div></div>
+    <div style="display:grid;grid-template-columns:56px 1fr;gap:27px;align-self:stretch;border-bottom:1px solid rgba(31,43,224,0.18);padding-bottom:19px;"><div style="font-family:'DM Mono',monospace;font-size:17px;color:#1F2BE0;letter-spacing:0.04em;padding-top:6px;">02.</div><div><h3 style="margin:0 0 6px;font-family:'Newsreader',Georgia,serif;font-style:italic;font-weight:400;font-size:38px;line-height:1.05;color:#1F2BE0;">Item title</h3><p style="margin:0;font-family:'Hanken Grotesk',sans-serif;font-size:18px;line-height:1.5;color:#1F2BE0;">Item description goes here with enough detail to fill the space.</p></div></div>
+  </div>
+</div>
+<div style="position:absolute;right:46px;bottom:92px;font-family:'DM Mono',monospace;font-size:16px;color:#1F2BE0;letter-spacing:0.06em;z-index:9;">02 / 06</div>
+</section>
+
+── PRESET 3 · BROADSIDE ────────────────────────
+Use for: tech, product, startup, dark/bold
+Fonts: @import url('https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,700;0,900;1,700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+Display: 'Barlow' 900 — Body: 'Barlow' 300 — Meta: 'IBM Plex Mono'
+bg:#111111 — text:#F0ECE5 — accent:#E85D26
+Style: dark mode, massive orange type at 140px–200px, IBM Plex Mono labels, high-density layouts with strong typographic hierarchy
+
+── PRESET 4 · VELLUM ───────────────────────────
+Use for: luxury, gallery, art, cultural institution
+Fonts: @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,300;1,500&family=DM+Sans:wght@300;400&family=Courier+Prime:ital@0;1&display=swap');
+Display: 'Cormorant Garamond' italic — Body: 'DM Sans' 300 — Meta: 'Courier Prime'
+bg:#2A3870 — text:#E8D85C — accent:#F5E168
+Style: deep navy with warm yellow type, italic serif at large scale, gallery-adjacent refinement, Courier Prime for captions and folios
+
+── PRESET 5 · STUDIO ───────────────────────────
+Use for: creative agency, branding, bold pitch
+Fonts: @import url('https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,700;0,900;1,700&family=IBM+Plex+Mono:wght@400&display=swap');
+Display: 'Barlow' 900 — Body: 'Barlow' 400 — Meta: 'IBM Plex Mono'
+bg alternates: #1C1C1C (dark) ↔ #F5D200 (acid yellow)
+text alternates: #F5D200 on dark, #1C1C1C on yellow
+Style: two-environment system, massive type at 160px–220px, stark contrast, no images needed — pure typographic impact
+
+── PRESET 6 · SIGNAL ───────────────────────────
+Use for: finance, consulting, executive, authority
+Fonts: @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@400&display=swap');
+Display: 'Source Serif 4' — Body: 'DM Sans' — Meta: 'IBM Plex Mono'
+bg:#1C2644 (dark) / #F0ECE3 (light) — text:#E2DCD0 / #1A2030 — accent:#C8A870 (antique gold)
+Style: editorial authority, navy + cream + gold, roman/italic serif mix mid-sentence, accessible text hierarchy
+
+── PRESET 7 · GROVE ────────────────────────────
+Use for: sustainability, nature, wellness, environmental
+Fonts: @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Jost:wght@300;400&family=JetBrains+Mono:wght@400&display=swap');
+Display: 'Playfair Display' italic — Body: 'Jost' 300 — Meta: 'JetBrains Mono'
+bg:#192B1B (dark forest) / #E8E4D6 (parchment) — text:#D4CFBF / #192B1B — accent:#C8524A (terracotta coral)
+Style: deep forest green + warm parchment duality, italic serif headlines in terracotta accent, light-weight body type
+
+── PRESET 8 · PRINT EDITORIAL ──────────────────
+Use for: investor memo, report, serious/professional
+Fonts: @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+Display: 'Instrument Serif' italic-capable — Body: 'Inter Tight' — Meta: 'JetBrains Mono'
+bg:#FBFBFA — text:#1A1A19 — accent: muted sage #346538 or terracotta #9F2F2D
+Style: warm off-white substrate, hairline rules (1px solid #E5E3DE), mono eyebrow + section number "01 / 06" on every slide, page number bottom-right in mono, no drop shadows
+
+── PRESET 9 · BOLD POSTER ──────────────────────
+Use for: brand manifesto, founder vision, creative-led pitch
+Fonts: @import url('https://fonts.googleapis.com/css2?family=Shrikhand&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Space+Grotesk:wght@400;500;600&display=swap');
+Display: 'Shrikhand' — Body: 'Libre Baskerville' — Labels: 'Space Grotesk'
+bg:#FFFFFF — text:#1C1410 — accent:#D8000F (fire-engine red, ONE accent only)
+Style: massive display titles 140px–220px with ±4deg rotation, magazine-cover aesthetic, bold graphic — no images needed
+
+── PRESET 10 · KAMI ────────────────────────────
+Use for: clean SaaS, product, minimal tech
+Fonts: @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@300;400;600&family=Source+Sans+3:wght@300;400&family=JetBrains+Mono:wght@400&display=swap');
+Display: 'Source Serif 4' — Body: 'Source Sans 3' — Meta: 'JetBrains Mono'
+bg:#F5F4ED — text:#141413 — accent:#1B365D (ink-blue)
+Style: warm parchment, one chromatic accent, horizontal-swipe deck feel, editorial restraint, no italic excess
+
+── PRESET 11 · RAW GRID ────────────────────────
+Use for: neobrutalist, design portfolio, experimental
+Fonts: @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Space+Mono:wght@400;700&display=swap');
+Display: 'Space Grotesk' 700 — Body: 'Space Grotesk' 400 — Accents: 'Space Mono'
+bg:#FFFFFF — text:#0A0A0A — accents: soft-pink:#F2D4CF / light-green:#E5EDD6
+Style: neobrutalist, 3px solid black borders on cards, 6px offset box-shadows (black), uppercase type-heavy, aggressive grid geometry
+
+── PRESET 12 · IB PITCH BOOK ───────────────────
+Use for: financial presentation, M&A, banking, investment
+Fonts: @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@300;400;600&family=DM+Mono:wght@400&display=swap');
+Display: 'Libre Baskerville' — Body: 'Source Sans 3' — Meta: 'DM Mono'
+bg:#F5F0E8 — text:#1A1A1A — accents: deep-red:#8B1A1A / gold:#B8960C / teal:#1A5F7A
+Style: financial print aesthetic, three-accent palette (red/gold/teal), table-heavy layouts, rule lines, formal typographic hierarchy
 
 ═══════════════════════════════
-COLOR PALETTES — ROTATE, NEVER REPEAT ADJACENT
+FONT SIZES (px, all presets)
 ═══════════════════════════════
-NEVER default to purple/indigo.
-
-INK & PAPER: bg:#f5f0e8 — text:#1a1208 — accent:#c8392b
-BONE & CHARCOAL: bg:#faf9f7 — text:#2c2c2c — accent:#1a1a1a
-NIGHT EDITORIAL: bg:#0e0e0e — text:#f0ece4 — accent:#e8c547
-STEEL & COPPER: bg:#1c1c1e — text:#e8e4df — accent:#b87333
-CHALK & FOREST: bg:#f2f0eb — text:#1f2b1e — accent:#2d5a27
-PRINT BLUE: bg:#f4f6f9 — text:#0d1b2a — accent:#1b4f8a
+Cover title: 96px–140px; weight:900; letter-spacing:-2px; line-height:1.0
+Section headline: 64px–80px; weight:700; letter-spacing:-1px; line-height:1.1
+Body text: 28px–36px; line-height:1.75; weight:300
+Labels/captions: 18px–22px; letter-spacing:3px; text-transform:uppercase; weight:500
+Stats: 120px–180px; weight:900; line-height:1.0
+Bullets: 28px–34px; line-height:1.6
 
 ═══════════════════════════════
-LAYOUT TEMPLATES
+LAYOUT TEMPLATES (mix freely)
 ═══════════════════════════════
+T1 · COVER: Full bleed image + gradient overlay. Title anchored bottom-left at bottom:120px; left:100px. Thin uppercase label + 1px rule above title.
+T2 · FEATURE SPREAD: Left panel 800px solid color + text. Right panel 1120px full-height image.
+T3 · DATA STORY: Dark bg, no image. 2–3 stats at 160px–180px in flex row, separated by 1px vertical rules.
+T4 · TYPOGRAPHIC: No image. Headline 120px–140px. Contrasting italic serif vs upright sans. Single 1px rule at center. 40% whitespace.
+T5 · PULL QUOTE: Decorative quote mark 320px opacity:0.08 absolute top:60px left:80px. Quote 52px–64px left-aligned.
+T6 · ASYMMETRIC GRID: Left image 1100px × 1080px. Right: two stacked 820px × 540px images. Title overlaid bottom-left.
+T7 · SECTION DIVIDER: Single word 180px–220px. 1px center rule. Solid bg only.
+T8 · PROFILE: Image left 900px. 1px vertical rule at x:920px. Text at left:980px.
+T9 · EDITORIAL MANIFESTO: Hairline-separated items. Serif number 80px left, title 36px center, mono tag right. Eyebrow + section number top.
+T10 · BENTO GRID: Flex or CSS grid cells with 1px hairline borders. Mix span sizes. Stat cells: serif number 100px + mono label. No shadows.
 
-TEMPLATE 1 — COVER:
-Full bleed image (1920×1080) + gradient overlay
-Title (96px–140px) anchored bottom-left: position:absolute; bottom:120px; left:100px
-Thin uppercase label above title, 1px rule line between them
+Slide order: T1 cover → T7 divider → mix T2/T4/T6 → mix T3/T5/T8/T9/T10 → T7 divider → T1 variant close
 
-TEMPLATE 2 — FEATURE SPREAD:
-Left panel: 800px wide solid color, large display text, justify-content:center
-Right panel: 1120px wide, full-height image object-fit:cover
-Title can overlap boundary using negative margin or absolute positioning
-
-TEMPLATE 3 — DATA STORY:
-Dark background, no image
-2–3 stat numbers at 160px–180px font-weight:900 in a flex row
-Each stat has a 22px label below in small caps
-Numbers separated by 1px vertical rules
-
-TEMPLATE 4 — TYPOGRAPHIC:
-No image — pure typography
-Headline at 120px–140px filling most of the 1720px safe width
-Contrasting body copy: italic serif vs upright sans
-Single 1px horizontal rule at vertical center
-40% of slide is intentional empty space
-
-TEMPLATE 5 — PULL QUOTE:
-Solid background
-Decorative quote mark: 320px; font-weight:900; opacity:0.08; position:absolute; top:60px; left:80px
-Quote text: 52px–64px display font, left-aligned, max-width:1400px
-Attribution: 22px small caps with em dash
-
-TEMPLATE 6 — ASYMMETRIC GRID:
-Left image: 1100px × 1080px object-fit:cover
-Right column: two stacked images each 820px × 540px
-Title overlaid on left image: position:absolute; bottom:80px; left:60px; color:white; font-size:72px
-
-TEMPLATE 7 — SECTION DIVIDER:
-Single word or phrase at 180px–220px filling the width
-1px rule: width:1720px at vertical center
-Solid background only — black (#0e0e0e), white (#faf9f7), or solid accent color
-
-TEMPLATE 8 — PROFILE:
-Image: position:absolute; left:0; top:0; width:900px; height:1080px; object-fit:cover
-1px vertical rule at x:920px; height:800px; top:140px
-Text: position:absolute; left:980px; top:200px
-  Name: 72px display font
-  Role: 22px small caps letter-spaced
-  Quote: 30px body font; max-width:800px; margin-top:40px
-
-Slide order:
-- Slide 1: TEMPLATE 1 (Cover)
-- Slide 2: TEMPLATE 7 (Section Divider)
-- Slides 3–5: Mix TEMPLATE 2, 4, 6
-- Middle: TEMPLATE 3, 5, 8
-- Second to last: TEMPLATE 7
-- Last: TEMPLATE 1 variant with closing statement, bottom-anchored
-
-NEVER use glassmorphism as the primary design element.
-NEVER center everything by default — use left-aligned, bottom-anchored, or asymmetric.
-NEVER make a slide that looks like PowerPoint: header + centered bullets.
+NEVER: glassmorphism as primary element · everything centered · PowerPoint header+bullets layout · purple/indigo default · glowing orbs
 
 ═══════════════════════════════
-DECORATIVE ELEMENTS — MAX 2 PER SLIDE
+DECORATIVE — MAX 2 PER SLIDE
 ═══════════════════════════════
-Rule line: height:1px; width:1720px; background:currentColor; opacity:0.2
+Rule line: height:1px; background:currentColor; opacity:0.2
 Folio: position:absolute; top:60px; right:100px; font-size:18px; letter-spacing:4px; opacity:0.5
-Overprinted block: solid accent rectangle 12px wide × 120px tall overlapping part of the title
+Accent block: solid rectangle 12px wide × 120px tall, overlapping title edge
 Rotated label: transform:rotate(-90deg); font-size:18px; letter-spacing:6px; text-transform:uppercase
-
-NO glowing orbs. NO glassmorphism as primary element. NO purple gradients.
 
 ═══════════════════════════════
 QUALITY CHECKLIST
 ═══════════════════════════════
 ✓ section is exactly 1920×1080px, overflow:hidden
-✓ No element exceeds x:1920 or y:1080
-✓ All text within safe zone (100px–1820px × 80px–1000px)
-✓ Font sizes in px, no clamp(), no vw/vh
+✓ No element exceeds 1920px × 1080px
+✓ All text within safe zone 100–1820px × 80–1000px
+✓ Font sizes in px, no clamp()/vw/vh
 ✓ Text contrast > 4.5:1
 ✓ ONE message per slide
 ✓ Max 5 bullets, max 8 words each
-✓ No Inter, Roboto, Arial, or system fonts
-✓ Layout not defaulting to centered — intentional alignment
-✓ Images use w=1920 in Unsplash URL
-✓ No filler phrases
-✓ No raw HTML artifacts`;
+✓ Consistent preset fonts throughout
+✓ Layout not defaulting to centered
+✓ Images use Picsum seed URL
+✓ No filler phrases · No raw HTML artifacts`;
 
 function extractSlides(html: string): string[] {
   let cleanHtml = html
@@ -579,6 +634,16 @@ function InlineSlidePreview({ slides: s, msgIndex, onInsert, onOpenModal }: {
   );
 }
 
+/* ── Animated message for AI responses ── */
+function AnimatedMessage({ content, isLatest }: { content: string; isLatest: boolean }) {
+  const animated = useAnimatedText(isLatest ? content : "");
+  return (
+    <div className="text-sm leading-relaxed whitespace-pre-wrap">
+      {isLatest ? animated || content : content}
+    </div>
+  );
+}
+
 /* ── Main component ── */
 export default function GeminiChatbot({
   setCode, code, projectId, currentSlideIndex, slides,
@@ -596,6 +661,7 @@ export default function GeminiChatbot({
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  const [latestAssistantMsgId, setLatestAssistantMsgId] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ [k: string]: string }>({});
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [uploadingFiles, setUploadingFiles] = useState(false);
@@ -609,6 +675,31 @@ export default function GeminiChatbot({
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedModel, setSelectedModel] = useState(localStorage.getItem("selectedModel") || "gpt-4o");
   const [showModelPicker, setShowModelPicker] = useState(false);
+  const [showStylePicker, setShowStylePicker] = useState(false);
+
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { supabase } = await import("../../../utils/supabaseClient");
+        const { data } = await supabase.auth.getSession();
+        const av = data?.session?.user?.user_metadata?.avatar_url
+          || data?.session?.user?.user_metadata?.picture;
+        if (av) { setUserAvatar(av); return; }
+      } catch {}
+      try {
+        const stored = localStorage.getItem("user");
+        if (stored) {
+          const u = JSON.parse(stored);
+          const av = u.avatar;
+          if (!av) return;
+          setUserAvatar(av.startsWith("data:") || av.startsWith("http") ? av : `data:image/png;base64,${av}`);
+        }
+      } catch {}
+    };
+    load();
+  }, []);
 
   const ADMIN_MODELS = [
     { id: "gpt-4o", label: "GPT-4o", provider: "openai" },
@@ -719,23 +810,70 @@ export default function GeminiChatbot({
     await saveMessage("user", userMsg, uploadedAttachments.length > 0 ? uploadedAttachments : undefined);
 
     try {
-      const lower = userMsg.toLowerCase();
-      const isDelete = ["delete", "remove", "erase", "elimina", "borra", "quita"].some((k) => lower.includes(k));
-      const isAll    = ["all", "todas", "todos", "everything", "todo"].some((k) => lower.includes(k));
-      const isCurr   = ["this slide", "current slide", "esta slide", "esta diapositiva", "current", "actual"].some((k) => lower.includes(k));
-      const hasSlide = lower.includes("slide") || lower.includes("diapositiva");
+      const token = localStorage.getItem("token");
+      const authHeaders = { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 
-      if (isDelete && isAll && hasSlide && onDeleteAllSlides) {
-        onDeleteAllSlides();
-        const m: ChatMsg = { id: crypto.randomUUID(), role: "assistant", content: "Deleted all slides" };
-        setMessages((prev) => [...prev, m]); await saveMessage("assistant", m.content); return;
-      }
-      if (isDelete && hasSlide && isCurr && onDeleteSlide && currentSlideIndex !== undefined) {
-        onDeleteSlide(currentSlideIndex);
-        const m: ChatMsg = { id: crypto.randomUUID(), role: "assistant", content: `Deleted current slide (slide ${currentSlideIndex + 1})` };
-        setMessages((prev) => [...prev, m]); await saveMessage("assistant", m.content); return;
+      // ── Slides agent path: when a presentation is open, the model sees all slides and decides what to do ──
+      if (slides && slides.length > 0) {
+        let msgWithFiles = userMsg;
+        if (uploadedAttachments.length > 0) {
+          const fileContents = await Promise.all(uploadedAttachments.map(async (file) => {
+            const isText = file.type.startsWith("text/") || file.type === "application/json" || file.type === "application/javascript";
+            if (isText) {
+              try { const r = await fetch(file.url); const c = await r.text(); return `File: ${file.name}\n${c}`; }
+              catch { return `File: ${file.name} [failed to read]`; }
+            }
+            return `File: ${file.name} (${file.type}) at ${file.url}`;
+          }));
+          msgWithFiles += "\n\nAttached files:\n" + fileContents.join("\n\n");
+        }
+
+        const res = await fetch(`${urlbackend}/gemini/slides-agent`, {
+          method: "POST",
+          headers: authHeaders,
+          body: JSON.stringify({ slides, message: msgWithFiles, model: isAdmin ? selectedModel : undefined }),
+        });
+        const data = await res.json();
+        if (!res.ok) { setErrors({ form: data?.error || "Error connecting to AI" }); return; }
+
+        const { action, slides: newSlides = [], slideIndex = 0, message: agentMsg = "" } = data;
+        let assistantText = agentMsg || "";
+        let previewSlides: string[] | undefined;
+
+        if (action === "replace_all" && newSlides.length > 0) {
+          const cleanSlides = newSlides.map((s: string) => cleanSlideHtml(s));
+          setCode(`<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>${cleanSlides.join("\n")}</body></html>`);
+          previewSlides = cleanSlides;
+          assistantText = assistantText || `Created ${cleanSlides.length} slide${cleanSlides.length > 1 ? "s" : ""}.`;
+        } else if (action === "replace_slide" && newSlides.length > 0) {
+          const clean = cleanSlideHtml(newSlides[0]);
+          const updated = [...slides];
+          updated[slideIndex] = clean;
+          setCode(`<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>${updated.join("\n")}</body></html>`);
+          assistantText = assistantText || `Updated slide ${slideIndex + 1}.`;
+        } else if (action === "insert_after" && newSlides.length > 0) {
+          const cleanSlides = newSlides.map((s: string) => cleanSlideHtml(s));
+          const pos = slideIndex + 1;
+          const updated = [...slides.slice(0, pos), ...cleanSlides, ...slides.slice(pos)];
+          setCode(`<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>${updated.join("\n")}</body></html>`);
+          previewSlides = cleanSlides;
+          assistantText = assistantText || `Added ${cleanSlides.length} slide${cleanSlides.length > 1 ? "s" : ""}.`;
+        } else if (action === "delete_slide") {
+          if (onDeleteSlide) onDeleteSlide(slideIndex);
+          assistantText = assistantText || `Deleted slide ${slideIndex + 1}.`;
+        } else if (action === "delete_all") {
+          if (onDeleteAllSlides) onDeleteAllSlides();
+          assistantText = assistantText || "Deleted all slides.";
+        }
+
+        const assistantMsg: ChatMsg = { id: crypto.randomUUID(), role: "assistant", content: assistantText, previewSlides };
+        setMessages((prev) => [...prev, assistantMsg]);
+        setLatestAssistantMsgId(assistantMsg.id);
+        await saveMessage("assistant", assistantText, undefined, previewSlides);
+        return;
       }
 
+      // ── No slides open: general purpose path (code generation, chat, or new presentation) ──
       const decision = classifyPrompt(userMsg);
       let message = userMsg;
       let systemPrompt = "Act like a technical assistant similar to GitHub Copilot. If the user asks for code, return a single markdown code block (```lang) with no extra text. If the user asks for HTML slides, return ONLY <section> tags (no doctype, no html/head/body tags). If the user just wants to chat, answer briefly and clearly.";
@@ -754,13 +892,19 @@ export default function GeminiChatbot({
         filesContext = "\n\nAttached files:\n" + fileContents.join("\n\n");
       }
 
-      if (slides && currentSlideIndex !== undefined && slides[currentSlideIndex]) {
+      if (decision === "slides") {
         systemPrompt = SLIDES_SYSTEM_PROMPT;
-        contextToSend = slides[currentSlideIndex];
-        message = `Edit this slide. Current slide HTML:\n${slides[currentSlideIndex]}\n\nUser request: ${userMsg}${filesContext}\n\nReturn ONLY the modified <section> HTML, nothing else.`;
-      } else if (decision === "slides") {
-        systemPrompt = SLIDES_SYSTEM_PROMPT;
-        message = `Create presentation slides about: ${userMsg}${filesContext}. Return ONLY <section> tags with inline styles. Do NOT include doctype, html, head, or body tags.`;
+        message = `Create a complete presentation about: ${userMsg}${filesContext}.
+
+MANDATORY OUTPUT RULES — VIOLATIONS WILL BREAK THE RENDERER:
+- Output EXACTLY 6 <section> tags (or the number requested by the user)
+- Each <section> must have style="width:1920px;height:1080px;overflow:hidden;position:relative;"
+- The FIRST <section> must include <style>@import url('...');</style> for fonts — ONLY the @import line, nothing else in that <style> tag
+- EVERY OTHER ELEMENT on EVERY section must use ONLY inline style="" attributes — NO classes, NO CSS variables (var(--x)), NO additional <style> blocks
+- background:#F0EBDE NOT background:var(--paper). color:#1F2BE0 NOT color:var(--ink). Always literal hex values.
+- Do NOT wrap in doctype, html, head, or body tags
+- Do NOT use markdown code fences
+- Output raw HTML only, nothing else before or after`;
       } else if (decision === "code") {
         message = `Return a single markdown code block (\`\`\`<language>) and nothing else.\nIf the language is HTML and it makes sense, return a full document.\n\nSpec:\n${userMsg}${filesContext}`;
       } else {
@@ -768,11 +912,10 @@ export default function GeminiChatbot({
       }
 
       const history = messages.slice(-20).map((m) => ({ role: m.role, content: m.content }));
-      const token = localStorage.getItem("token");
       const res = await fetch(`${urlbackend}/gemini`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ system: systemPrompt, mode: "auto", message, context: contextToSend, history, model: isAdmin ? selectedModel : undefined }),
+        headers: authHeaders,
+        body: JSON.stringify({ system: systemPrompt, mode: decision === "slides" ? "slides" : "auto", message, context: contextToSend, history, model: isAdmin ? selectedModel : undefined }),
       });
       const data = await res.json();
       if (!res.ok) { setErrors({ form: data?.error || "Error connecting to Gemini" }); return; }
@@ -790,7 +933,7 @@ export default function GeminiChatbot({
         if (decision === "slides") {
           previewSlides = extractSlides(codeBlock.code);
           assistantTextToShow = `I created ${previewSlides.length} slide${previewSlides.length > 1 ? "s" : ""} for you.`;
-        } else if (codeBlock.code.includes("<section") && decision !== "slides") {
+        } else if (codeBlock.code.includes("<section")) {
           codeBlockData = { lang: codeBlock.lang || "html", code: codeBlock.code, description: "I updated the slide" };
           assistantTextToShow = "I updated the slide for you. Click below to see the code.";
         } else {
@@ -810,6 +953,7 @@ export default function GeminiChatbot({
 
       const assistantMsg: ChatMsg = { id: crypto.randomUUID(), role: "assistant", content: assistantTextToShow, previewSlides, codeBlock: codeBlockData };
       setMessages((prev) => [...prev, assistantMsg]);
+      setLatestAssistantMsgId(assistantMsg.id);
       await saveMessage("assistant", assistantTextToShow, undefined, previewSlides, codeBlockData);
 
       if (snippetToApply && slides && currentSlideIndex !== undefined && !previewSlides) {
@@ -822,10 +966,27 @@ export default function GeminiChatbot({
     }
   }, [messages, projectId, code, currentSlideIndex, slides, setCode, saveMessage, onDeleteSlide, onDeleteAllSlides]);
 
+  /* ── style picker actions ── */
+  const handleApplyStyle = (templateName: string) => {
+    processMessage(`Apply the "${templateName}" template style to all existing slides. Keep all content exactly as-is — same text, same images, same structure. Only change colors, fonts, and visual design to match the template.`);
+  };
+
+  const handleRegenerateWithStyle = (templateName: string) => {
+    const topic = slides && slides.length > 0 ? "the same topic as the current presentation" : "a general presentation";
+    processMessage(`Regenerate the entire presentation about ${topic} using the "${templateName}" template. Create 10 slides with the full visual style of that template.`);
+  };
+
   /* ── send from textarea ── */
   const sendMessage = async () => {
     if (!inputValue.trim() && attachedFiles.length === 0) return;
     const userMsg = inputValue.trim();
+
+    // /style command — open the style picker modal
+    if (userMsg === "/style") {
+      setShowStylePicker(true);
+      setInputValue("");
+      return;
+    }
     let uploadedAttachments: FileAttachment[] = [];
 
     if (attachedFiles.length > 0) {
@@ -889,41 +1050,33 @@ export default function GeminiChatbot({
 
 
   /* ── code block accordion ── */
-  const renderActionsForAssistant = (msg: ChatMsg, msgIndex: number) => {
+  const renderCodeBlock = (msg: ChatMsg, msgIndex: number) => {
+    if (!msg.codeBlock) return null;
     const showCode = showCodeMap[msgIndex] ?? false;
     const toggleShowCode = () => setShowCodeMap((p) => ({ ...p, [msgIndex]: !p[msgIndex] }));
-
-    if (msg.previewSlides && msg.previewSlides.length > 0) {
-      return <InlineSlidePreview slides={msg.previewSlides} msgIndex={msgIndex} onInsert={insertSlidesAtPosition} onOpenModal={(s, i) => setSelectedSlidesModal({ slides: s, messageIndex: i })} />;
-    }
-    if (msg.codeBlock) {
-      return (
-        <div className="mt-4">
-          <div className="bg-theme-primary border border-theme-tertiary rounded-xl overflow-hidden transition-all">
-            <div className="px-4 py-3 flex items-center justify-between hover:bg-[#52585A] transition-colors cursor-pointer" onClick={toggleShowCode}>
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-theme-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
-                <span className="text-sm font-medium text-theme-primary">{msg.codeBlock.lang ? msg.codeBlock.lang.toUpperCase() : "CODE"}</span>
-              </div>
-              <svg className={`w-4 h-4 text-theme-secondary transition-transform ${showCode ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-            </div>
-            <div className="border-t border-theme-tertiary" onClick={(e) => e.stopPropagation()}>
-              <pre className={`p-4 text-xs text-theme-primary overflow-x-auto whitespace-pre-wrap bg-[#0a0a0a] transition-all ${showCode ? "max-h-96 overflow-y-auto" : "max-h-[3rem] overflow-hidden"}`} style={{ lineHeight: "1.5" }}>
-                {msg.codeBlock.code}
-              </pre>
-              {showCode && (
-                <div className="flex gap-2 p-3 border-t border-theme-tertiary bg-theme-primary">
-                  {[["Insert", () => insertIntoEditor(msg.codeBlock!.code)], ["Replace", () => replaceEditor(msg.codeBlock!.code)], ["Copy", () => navigator.clipboard.writeText(msg.codeBlock!.code)]].map(([label, fn]) => (
-                    <button key={label} onClick={(e) => { e.stopPropagation(); (fn as any)(); }} className="flex-1 px-3 py-2 text-xs font-medium bg-theme-primary hover:bg-[#52585A] text-theme-primary rounded-lg border border-theme-tertiary transition-all">{label}</button>
-                  ))}
-                </div>
-              )}
-            </div>
+    return (
+      <div className="bg-theme-primary border border-theme-tertiary rounded-xl overflow-hidden transition-all">
+        <div className="px-4 py-3 flex items-center justify-between hover:bg-[#52585A] transition-colors cursor-pointer" onClick={toggleShowCode}>
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-theme-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+            <span className="text-sm font-medium text-theme-primary">{msg.codeBlock.lang ? msg.codeBlock.lang.toUpperCase() : "CODE"}</span>
           </div>
+          <svg className={`w-4 h-4 text-theme-secondary transition-transform ${showCode ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
         </div>
-      );
-    }
-    return null;
+        <div className="border-t border-theme-tertiary" onClick={(e) => e.stopPropagation()}>
+          <pre className={`p-4 text-xs text-theme-primary overflow-x-auto whitespace-pre-wrap bg-[#0a0a0a] transition-all w-0 min-w-full ${showCode ? "max-h-96 overflow-y-auto" : "max-h-[3rem] overflow-hidden"}`} style={{ lineHeight: "1.5" }}>
+            {msg.codeBlock.code}
+          </pre>
+          {showCode && (
+            <div className="flex gap-2 p-3 border-t border-theme-tertiary bg-theme-primary">
+              {[["Insert", () => insertIntoEditor(msg.codeBlock!.code)], ["Replace", () => replaceEditor(msg.codeBlock!.code)], ["Copy", () => navigator.clipboard.writeText(msg.codeBlock!.code)]].map(([label, fn]) => (
+                <button key={label} onClick={(e) => { e.stopPropagation(); (fn as any)(); }} className="flex-1 px-3 py-2 text-xs font-medium bg-theme-primary hover:bg-[#52585A] text-theme-primary rounded-lg border border-theme-tertiary transition-all">{label}</button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -932,8 +1085,19 @@ export default function GeminiChatbot({
         <div className="absolute inset-0 w-full h-full bg-theme-alt" />
 
         <div className="flex flex-col bg-theme-primary border border-theme-tertiary text-theme-primary rounded-xl min-h-full min-w-full p-4 overflow-hidden relative z-[1]">
-          <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-6">
+          {/* Top edge blur — sits above the scroll container, not inside it */}
+          <div className="absolute top-4 left-4 pointer-events-none z-10" style={{ height: 20, right: "calc(1rem + 8px)" }} aria-hidden="true">
+            {[2, 4, 8, 12].map((blur, i, arr) => (
+              <div key={blur} className="absolute inset-0" style={{
+                backdropFilter: `blur(${blur}px)`,
+                WebkitBackdropFilter: `blur(${blur}px)`,
+                maskImage: `linear-gradient(to bottom, black ${(i / arr.length) * 100}%, transparent ${((i + 1) / arr.length) * 100}%)`,
+                WebkitMaskImage: `linear-gradient(to bottom, black ${(i / arr.length) * 100}%, transparent ${((i + 1) / arr.length) * 100}%)`,
+              }} />
+            ))}
+          </div>
 
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-6 py-4 space-y-6">
             {/* Loading history */}
             {loadingHistory && (
               <div className="flex items-center justify-center mt-12">
@@ -953,57 +1117,105 @@ export default function GeminiChatbot({
             {messages.map((msg, i) => {
               const isAssistant = msg.role === "assistant";
               return (
-                <div key={msg.id} className="space-y-2 animate-fadeIn group" style={{ animation: "fadeIn 0.3s ease-in", opacity: 0, animationFillMode: "forwards", animationDelay: `${i * 0.05}s` }}>
-                  <div className={`text-xs font-medium ${isAssistant ? "text-theme-secondary" : ""}`}>
-                    {isAssistant ? "Assistant" : "You"}
+                <React.Fragment key={msg.id}>
+                <div className="animate-fadeIn" style={{ animation: "fadeIn 0.3s ease-in", opacity: 0, animationFillMode: "forwards", animationDelay: `${i * 0.05}s` }}>
+                  <div className={`flex gap-3 group ${isAssistant ? "" : "flex-row-reverse"}`}>
+                  {/* Avatar */}
+                  <div className="flex-shrink-0 w-7 h-7 rounded-full overflow-hidden flex items-center justify-center bg-theme-quaternary border border-theme-tertiary">
+                    {isAssistant ? (
+                      <svg width="20" height="20" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M22.8482 24.0516C22.7386 22.9498 22.2684 22.0939 21.4374 21.4838C20.6064 20.8737 19.4787 20.5687 18.0542 20.5687C17.0862 20.5687 16.269 20.7052 15.6024 20.9784C14.9358 21.2425 14.4244 21.6113 14.0683 22.0848C13.7213 22.5583 13.5478 23.0955 13.5478 23.6965C13.5295 24.1973 13.6345 24.6344 13.8628 25.0077C14.1002 25.3811 14.4244 25.7043 14.8353 25.9775C15.2462 26.2416 15.7211 26.4738 16.2598 26.6741C16.7986 26.8653 17.3739 27.0292 17.9857 27.1658L20.506 27.7668C21.7296 28.04 22.8528 28.4042 23.8755 28.8595C24.8982 29.3148 25.784 29.8748 26.5328 30.5395C27.2816 31.2042 27.8614 31.9873 28.2723 32.8888C28.6924 33.7903 28.907 34.8238 28.9161 35.9893C28.907 37.7012 28.4686 39.1855 27.6012 40.4421C26.7428 41.6896 25.5009 42.6593 23.8755 43.3514C22.2592 44.0343 20.3097 44.3758 18.0268 44.3758C15.7622 44.3758 13.7898 44.0298 12.1096 43.3377C10.4385 42.6457 9.13271 41.6213 8.19217 40.2645C7.26075 38.8986 6.77222 37.2095 6.72656 35.1971H12.4657C12.5296 36.135 12.799 36.9181 13.2738 37.5464C13.7578 38.1656 14.4016 38.6346 15.2052 38.9533C16.0179 39.2629 16.9356 39.4177 17.9583 39.4177C18.9628 39.4177 19.8348 39.272 20.5745 38.9806C21.3233 38.6892 21.9031 38.284 22.314 37.765C22.7249 37.2459 22.9304 36.6495 22.9304 35.9757C22.9304 35.3474 22.7432 34.8192 22.3688 34.3913C22.0036 33.9633 21.4648 33.5991 20.7525 33.2986C20.0494 32.9981 19.1865 32.7249 18.1638 32.479L15.1093 31.7142C12.7442 31.1405 10.8768 30.2436 9.5071 29.0234C8.13738 27.8032 7.45708 26.1596 7.46621 24.0926C7.45708 22.3989 7.90909 20.9192 8.82224 19.6535C9.74452 18.3878 11.0092 17.3998 12.6164 16.6896C14.2235 15.9793 16.0498 15.6242 18.0953 15.6242C20.1773 15.6242 21.9944 15.9793 23.5468 16.6896C25.1083 17.3998 26.3227 18.3878 27.1902 19.6535C28.0577 20.9192 28.5052 22.3853 28.5326 24.0516H22.8482Z" fill="url(#paint0_chat)"/>
+                        <path d="M41.1238 39.7182V20.3774H46.0274V39.7182H41.1238ZM33.8779 32.4927V27.6029H53.2732V32.4927H33.8779Z" fill="url(#paint1_chat)"/>
+                        <defs>
+                          <linearGradient id="paint0_chat" x1="-10" y1="30" x2="72" y2="30" gradientUnits="userSpaceOnUse"><stop stopColor="#7182FF"/><stop offset="1" stopColor="#249931"/></linearGradient>
+                          <linearGradient id="paint1_chat" x1="-10" y1="30" x2="72" y2="30" gradientUnits="userSpaceOnUse"><stop stopColor="#7182FF"/><stop offset="1" stopColor="#249931"/></linearGradient>
+                        </defs>
+                      </svg>
+                    ) : userAvatar ? (
+                      <img src={userAvatar} alt="You" className="w-full h-full object-cover" />
+                    ) : (
+                      <svg className="w-3.5 h-3.5 text-theme-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                    )}
                   </div>
 
-                  {msg.attachments && msg.attachments.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {msg.attachments.map((file, idx) => (
-                        <a key={idx} href={file.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-1.5 bg-theme-primary border border-[#52585A] rounded-lg text-xs hover:bg-[#1a1a1a] transition-colors">
-                          {file.type.startsWith("image/") ? (
-                            <svg className="w-4 h-4 text-theme-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                          ) : (
-                            <svg className="w-4 h-4 text-theme-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                          )}
-                          <span>{file.name}</span>
-                          <span className="text-theme-secondary">({formatFileSize(file.size)})</span>
-                        </a>
-                      ))}
-                    </div>
-                  )}
+                  {/* Bubble + actions */}
+                  <div className={`flex flex-col gap-1 max-w-[85%] ${isAssistant ? "items-start" : "items-end"}`}>
+                    {msg.attachments && msg.attachments.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-1">
+                        {msg.attachments.map((file, idx) => (
+                          <a key={idx} href={file.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-1.5 bg-theme-primary border border-[#52585A] rounded-lg text-xs hover:bg-[#1a1a1a] transition-colors">
+                            {file.type.startsWith("image/") ? (
+                              <svg className="w-4 h-4 text-theme-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                            ) : (
+                              <svg className="w-4 h-4 text-theme-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            )}
+                            <span>{file.name}</span>
+                            <span className="text-theme-secondary">({formatFileSize(file.size)})</span>
+                          </a>
+                        ))}
+                      </div>
+                    )}
 
-                  <div className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</div>
-                  {isAssistant && renderActionsForAssistant(msg, i)}
-
-                  {/* Copy button on hover for assistant messages */}
-                  {isAssistant && (
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => navigator.clipboard.writeText(msg.content)} className="px-2 py-1 text-xs text-theme-secondary hover:text-theme-primary bg-theme-primary hover:bg-[#52585A] rounded-lg border border-theme-tertiary transition-all" title="Copy">
-                        Copy
-                      </button>
+                    {/* Bubble */}
+                    <div className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${isAssistant ? "bg-theme-quaternary text-theme-primary rounded-tl-sm" : "bg-theme-inverted text-theme-inverted rounded-tr-sm"}`}>
+                      {isAssistant ? (
+                        <AnimatedMessage content={msg.content} isLatest={msg.id === latestAssistantMsgId} />
+                      ) : (
+                        <span className="whitespace-pre-wrap">{msg.content}</span>
+                      )}
                     </div>
-                  )}
+
+  
+                    {/* Copy + Regenerate */}
+                    {isAssistant && (
+                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => navigator.clipboard.writeText(msg.content)}
+                          className="p-1.5 rounded-md text-theme-secondary hover:text-theme-primary hover:bg-theme-quaternary transition-all"
+                          title="Copy"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                        </button>
+                        {i === messages.length - 1 && (
+                          <button
+                            onClick={regenerateLastMessage}
+                            disabled={messages.length < 2 || loading}
+                            className="p-1.5 rounded-md text-theme-secondary hover:text-theme-primary hover:bg-theme-quaternary transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Regenerate"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
+                </div>
+                {/* Code block and slide preview at full width, outside bubble constraint */}
+                {isAssistant && msg.codeBlock && renderCodeBlock(msg, i)}
+                {isAssistant && msg.previewSlides && msg.previewSlides.length > 0 && (
+                  <InlineSlidePreview slides={msg.previewSlides} msgIndex={i} onInsert={insertSlidesAtPosition} onOpenModal={(s, idx) => setSelectedSlidesModal({ slides: s, messageIndex: idx })} />
+                )}
+                </React.Fragment>
               );
             })}
 
-            {/* Regenerate button */}
-            {messages.length > 0 && !loading && (
-              <div className="flex gap-2 pt-2">
-                <button onClick={regenerateLastMessage} disabled={messages.length < 2} className="px-4 py-2 text-xs font-medium bg-theme-primary hover:bg-[#52585A] text-theme-primary rounded-lg border border-theme-tertiary transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                  Regenerate
-                </button>
-              </div>
-            )}
-
             {/* Loading indicator */}
             {loading && (
-              <div className="flex items-center gap-2 animate-fadeIn">
-                <div className="text-xs font-medium text-theme-primary">Assistant</div>
-                <Spinner className="size-3 text-theme-secondary mt-0.5" />
+              <div className="flex gap-3 animate-fadeIn">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full overflow-hidden flex items-center justify-center bg-theme-quaternary border border-theme-tertiary">
+                  <svg width="20" height="20" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22.8482 24.0516C22.7386 22.9498 22.2684 22.0939 21.4374 21.4838C20.6064 20.8737 19.4787 20.5687 18.0542 20.5687C17.0862 20.5687 16.269 20.7052 15.6024 20.9784C14.9358 21.2425 14.4244 21.6113 14.0683 22.0848C13.7213 22.5583 13.5478 23.0955 13.5478 23.6965C13.5295 24.1973 13.6345 24.6344 13.8628 25.0077C14.1002 25.3811 14.4244 25.7043 14.8353 25.9775C15.2462 26.2416 15.7211 26.4738 16.2598 26.6741C16.7986 26.8653 17.3739 27.0292 17.9857 27.1658L20.506 27.7668C21.7296 28.04 22.8528 28.4042 23.8755 28.8595C24.8982 29.3148 25.784 29.8748 26.5328 30.5395C27.2816 31.2042 27.8614 31.9873 28.2723 32.8888C28.6924 33.7903 28.907 34.8238 28.9161 35.9893C28.907 37.7012 28.4686 39.1855 27.6012 40.4421C26.7428 41.6896 25.5009 42.6593 23.8755 43.3514C22.2592 44.0343 20.3097 44.3758 18.0268 44.3758C15.7622 44.3758 13.7898 44.0298 12.1096 43.3377C10.4385 42.6457 9.13271 41.6213 8.19217 40.2645C7.26075 38.8986 6.77222 37.2095 6.72656 35.1971H12.4657C12.5296 36.135 12.799 36.9181 13.2738 37.5464C13.7578 38.1656 14.4016 38.6346 15.2052 38.9533C16.0179 39.2629 16.9356 39.4177 17.9583 39.4177C18.9628 39.4177 19.8348 39.272 20.5745 38.9806C21.3233 38.6892 21.9031 38.284 22.314 37.765C22.7249 37.2459 22.9304 36.6495 22.9304 35.9757C22.9304 35.3474 22.7432 34.8192 22.3688 34.3913C22.0036 33.9633 21.4648 33.5991 20.7525 33.2986C20.0494 32.9981 19.1865 32.7249 18.1638 32.479L15.1093 31.7142C12.7442 31.1405 10.8768 30.2436 9.5071 29.0234C8.13738 27.8032 7.45708 26.1596 7.46621 24.0926C7.45708 22.3989 7.90909 20.9192 8.82224 19.6535C9.74452 18.3878 11.0092 17.3998 12.6164 16.6896C14.2235 15.9793 16.0498 15.6242 18.0953 15.6242C20.1773 15.6242 21.9944 15.9793 23.5468 16.6896C25.1083 17.3998 26.3227 18.3878 27.1902 19.6535C28.0577 20.9192 28.5052 22.3853 28.5326 24.0516H22.8482Z" fill="url(#paint0_load)"/>
+                    <path d="M41.1238 39.7182V20.3774H46.0274V39.7182H41.1238ZM33.8779 32.4927V27.6029H53.2732V32.4927H33.8779Z" fill="url(#paint1_load)"/>
+                    <defs>
+                      <linearGradient id="paint0_load" x1="-10" y1="30" x2="72" y2="30" gradientUnits="userSpaceOnUse"><stop stopColor="#7182FF"/><stop offset="1" stopColor="#249931"/></linearGradient>
+                      <linearGradient id="paint1_load" x1="-10" y1="30" x2="72" y2="30" gradientUnits="userSpaceOnUse"><stop stopColor="#7182FF"/><stop offset="1" stopColor="#249931"/></linearGradient>
+                    </defs>
+                  </svg>
+                </div>
+                <div className="px-3.5 py-2.5 rounded-2xl rounded-tl-sm bg-theme-quaternary flex items-center gap-2">
+                  <Spinner className="size-3 text-theme-secondary" />
+                </div>
               </div>
             )}
 
@@ -1065,7 +1277,15 @@ export default function GeminiChatbot({
               </div>
             )}
 
-            <div className="flex gap-2 items-end">
+            {/* /style command hint */}
+            {inputValue === "/style" && (
+              <div className="mb-2 px-3 py-2 bg-[#7182FF]/10 border border-[#7182FF]/30 rounded-lg flex items-center gap-2 text-xs text-[#7182FF]">
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+                Press Enter to open the Style Picker
+              </div>
+            )}
+
+            <div className="flex gap-2 items-center">
               <input ref={fileInputRef} type="file" multiple onChange={(e) => {
                 const files = Array.from(e.target.files ?? []);
                 setAttachedFiles((p) => [...p, ...files.filter((f) => f.size <= 10 * 1024 * 1024)]);
@@ -1078,7 +1298,7 @@ export default function GeminiChatbot({
                 ref={textareaRef}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                disabled={uploadingFiles || loading}
+                disabled={uploadingFiles}
                 className="flex-1 bg-theme-primary rounded-lg border border-[#52585A] px-4 py-3 text-sm focus:outline-none focus:border-[#3a3a3a] transition-colors disabled:opacity-50 resize-none overflow-y-auto min-h-[48px] max-h-[200px]"
                 placeholder="Message AI Assistant"
                 rows={1}
@@ -1086,8 +1306,16 @@ export default function GeminiChatbot({
                 onInput={(e) => { const t = e.target as HTMLTextAreaElement; t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 200) + "px"; }}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !loading && !uploadingFiles) { e.preventDefault(); sendMessage(); } }}
               />
-              <button onClick={sendMessage} disabled={loading || uploadingFiles || (!inputValue.trim() && attachedFiles.length === 0)} className="bg-theme-inverted text-theme-inverted disabled:bg-[#52585A] disabled:opacity-50 rounded-lg px-6 py-3 font-medium text-sm transition-all disabled:cursor-not-allowed shrink-0">
-                {uploadingFiles ? "Uploading..." : loading ? "..." : "Send"}
+              <button
+                onClick={sendMessage}
+                disabled={uploadingFiles || loading || (!inputValue.trim() && attachedFiles.length === 0)}
+                className="bg-theme-inverted text-theme-inverted disabled:bg-[#52585A] disabled:opacity-50 rounded-lg font-medium text-sm transition-all disabled:cursor-not-allowed flex items-center justify-center min-h-full p-4 aspect-square"
+              >
+                {loading ? (
+                  <div className="w-4 h-4 bg-theme-primary rounded-sm animate-spin" style={{ animationDuration: "3s" }} />
+                ) : (
+                  <CornerRightUp className={`w-4 h-4 transition-opacity ${inputValue.trim() || attachedFiles.length > 0 ? "opacity-100" : "opacity-50"}`} />
+                )}
               </button>
             </div>
           </div>
@@ -1108,6 +1336,12 @@ export default function GeminiChatbot({
       {selectedSlidesModal && (
         <SlidesPreviewModal isOpen onClose={() => setSelectedSlidesModal(null)} slides={selectedSlidesModal.slides} onInsertSlides={insertSlidesAtPosition} />
       )}
+      <StylePickerModal
+        isOpen={showStylePicker}
+        onClose={() => setShowStylePicker(false)}
+        onApplyStyle={handleApplyStyle}
+        onRegenerate={handleRegenerateWithStyle}
+      />
     </AssistantRuntimeProvider>
   );
 }

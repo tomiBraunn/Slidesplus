@@ -1,0 +1,565 @@
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;"><style>@import url('https://fonts.googleapis.com');
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;700;800;900&family=IBM+Plex+Mono:wght@300;400;500&family=Noto+Sans+SC:wght@400;500;700;900&display=swap');
+:root{/* ── Palette ──────────────────────────────────────────────────────── */
+        /* Near-black: the dark slide background — warm dark, not cold neutral */
+        --c-bg: #1c1c1c;
+        /* Slightly lighter near-black for secondary dark surfaces */
+        --c-bg-alt: #242422;
+        /* Acid yellow: THE light slide background — yellow is the environment, not an accent */
+        --c-bg-light: #f5d200;
+        /* Slightly cooler yellow for secondary light surfaces */
+        --c-bg-light-alt: #f0cc00;
+
+        /* Primary text on dark: acid yellow — the only colour on dark slides */
+        --c-fg: #f5d200;
+        /* Secondary text on dark: yellow at 58% opacity — muted but still warm */
+        --c-fg-2: rgba(245, 210, 0, 0.58);
+        /* Tertiary / hint text on dark: yellow at 32% */
+        --c-fg-3: rgba(245, 210, 0, 0.32);
+        /* Primary text on light: near-black on yellow */
+        --c-fg-light: #1c1c1c;
+        /* Secondary text on light: near-black at 62% */
+        --c-fg-light-2: rgba(28, 28, 28, 0.62);
+        /* Tertiary text on light */
+        --c-fg-light-3: rgba(28, 28, 28, 0.35);
+
+        /* Accent: yellow on dark / same yellow (var reused by engine) */
+        --c-accent: #f5d200;
+        /* Dividers on dark: very dark warm border */
+        --c-border: #2e2e2c;
+        /* Dividers on light: near-black at 18% opacity on yellow */
+        --c-border-light: rgba(28, 28, 28, 0.18);
+
+        /* ── Typography ──────────────────────────────────────────────────── */
+        /* Display + Heading: Barlow 900 — grotesque at max weight becomes a graphic object */
+        --f-display: "Barlow", "Noto Sans SC", sans-serif;
+        --f-heading: "Barlow", "Noto Sans SC", sans-serif;
+        /* Body: Barlow 400/500 — same family, steps back as weight drops */
+        --f-body: "Barlow", "Noto Sans SC", system-ui, sans-serif;
+        /* Mono: IBM Plex Mono — metadata, counters, footer columns */
+        --f-mono: "IBM Plex Mono", monospace;
+
+        /* ── Type Scale ───────────────────────────────────────────────────── */
+        /* Studio runs type LARGER than Signal — the headline IS the layout */
+        --sz-display: 12vw; /* cover hero — type at maximum scale */
+        --sz-h1: 7.5vw; /* chapter titles, statement headlines */
+        --sz-h2: 4.8vw; /* section headers */
+        --sz-h3: 2.8vw; /* sub-headlines */
+        --sz-lead: 1.6vw; /* intro paragraphs */
+        --sz-body: 1.15vw; /* body text, bullets */
+        --sz-caption: 0.85vw; /* captions, footnotes */
+        --sz-label: 0.72vw; /* mono metadata, chrome */
+
+        /* ── Spacing ─────────────────────────────────────────────────────── */
+        /* Studio pads tighter than Signal — type runs to near-edge */
+        --pad-x: 5vw;
+        --pad-y: 5vh;
+        --gap-lg: 3.5vh;
+        --gap-md: 2vh;
+        --gap-sm: 1vh;
+
+        /* ── Motion ──────────────────────────────────────────────────────── */
+        /* Harder, sharper transitions — agency urgency, not editorial grace */
+        --ease-slide: cubic-bezier(0.77, 0, 0.175, 1);
+        --dur-slide: 0.75s;
+        --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+        --dur-enter: 0.5s;}
+</style>
+<!-- Full-bleed image placeholder: sits behind all content -->
+        <div class="cover-img-area" data-anim="fade-in" data-delay="0">
+          IMAGE PLACEHOLDER
+        </div>
+
+        <!-- Type block: "PROPOSAL" at display scale — type over image -->
+        <div class="cover-type">
+          <h1
+            class="display"
+            style="color: var(--c-fg)"
+            data-anim="fade-up"
+            data-delay="1"
+          >
+            PROPOSAL
+          </h1>
+        </div>
+
+        <!-- Three-column footer: studio × client · presentation title · studio name -->
+        <div class="cover-meta" data-anim="fade-in" data-delay="3">
+          <div class="cover-meta-col">
+            [Studio Name] × [Client Name]<br />
+            [Date]
+          </div>
+          <div class="cover-meta-col" style="text-align: center">
+            [Presentation Title]
+          </div>
+          <div class="cover-meta-col" style="text-align: right">
+            [Studio Name]
+          </div>
+        </div>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<!-- Section number: mono label in muted near-black -->
+        <div class="chapter-num" data-anim="fade-in" data-delay="0">
+          01 / WHO WE ARE
+        </div>
+
+        <!-- Chapter title: maximum weight, runs wide -->
+        <h1
+          class="h1"
+          style="max-width: 90%;color: var(--c-fg-light)"
+          data-anim="fade-up"
+          data-delay="1"
+        >
+          WHO WE ARE
+        </h1>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<div
+          class="statement-body"
+          style="justify-content: flex-end;height: 100%;display: flex;flex-direction: column;padding-bottom: calc(var(--pad-y) * 0.5);"
+        >
+          <h1
+            class="h1"
+            style="max-width: 90%"
+            data-anim="fade-up"
+            data-delay="0"
+          >
+            GREAT WORK DOESN'T HAPPEN BY ACCIDENT
+          </h1>
+        </div>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<!-- Chrome bar -->
+        <div class="slide-chrome">
+          <span
+            class="label"
+            style="color: var(--c-fg-light-2)"
+            data-anim="fade-in"
+            data-delay="0"
+            >Our Work</span
+          >
+          <span
+            class="label"
+            style="color: var(--c-fg-light-2)"
+            data-anim="fade-in"
+            data-delay="0"
+            >04 / 12</span
+          >
+        </div>
+
+        <div class="slide-body">
+          <!-- Left: text content -->
+          <div class="split-text" data-anim="fade-up" data-delay="1">
+            <p
+              class="label"
+              style="color: var(--c-fg-light-2);letter-spacing: 2px"
+            >
+              APPROACH
+            </p>
+            <h2 class="h2" style="color: var(--c-fg-light)">
+              WE BUILD WHAT OTHERS PLAN
+            </h2>
+            <p
+              class="lead"
+              style="color: var(--c-fg-light-2);font-weight: 400;text-transform: none;"
+            >
+              Our studio pairs strategic thinking with craft-level execution.
+              Every project begins with a question: what needs to be true for
+              this to work? We answer it in the work itself.
+            </p>
+            <ul class="bullet-list">
+              <li>Strategy before aesthetics</li>
+              <li>Constraints as creative fuel</li>
+              <li>Delivery on schedule, not on someday</li>
+            </ul>
+          </div>
+
+          <!-- Right: image placeholder -->
+          <div
+            data-anim="fade-in"
+            data-delay="3"
+            style="display: flex;flex-direction: column;gap: var(--gap-sm);height: 100%;"
+          >
+            <div class="img-placeholder" style="min-height: 432px">
+              IMAGE PLACEHOLDER
+            </div>
+            <p
+              class="caption"
+              style="color: var(--c-fg-light-3);font-family: var(--f-mono)"
+            >
+              [Caption — project name, year]
+            </p>
+          </div>
+        </div>
+
+        <div class="slide-foot">
+          <span class="label" style="color: var(--c-fg-light-3)"
+            >[Studio Name] · [Date]</span
+          >
+          <span class="label" style="color: var(--c-fg-light-2)">04 / 12</span>
+        </div>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<!-- Chrome bar -->
+        <div class="slide-chrome">
+          <span
+            class="label"
+            style="color: var(--c-fg-light-2)"
+            data-anim="fade-in"
+            data-delay="0"
+            >By the Numbers</span
+          >
+          <span
+            class="label"
+            style="color: var(--c-fg-light-2)"
+            data-anim="fade-in"
+            data-delay="0"
+            >05 / 12</span
+          >
+        </div>
+
+        <div class="slide-body">
+          <!-- Section label above stats -->
+          <h2
+            class="h2"
+            style="color: var(--c-fg-light)"
+            data-anim="fade-up"
+            data-delay="1"
+          >
+            THE STUDIO
+          </h2>
+
+          <!-- 3-column stat grid: numbers at display scale -->
+          <div class="stats-grid" data-anim="fade-up" data-delay="2">
+            <div class="stat-card">
+              <div class="stat-value">12</div>
+              <div class="stat-label" style="color: var(--c-fg-light)">
+                Years of practice
+              </div>
+              <div class="stat-note">[Studio Name] founded [Year]</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">200+</div>
+              <div class="stat-label" style="color: var(--c-fg-light)">
+                Projects delivered
+              </div>
+              <div class="stat-note">Across [N] industries</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">3</div>
+              <div class="stat-label" style="color: var(--c-fg-light)">
+                Continents active
+              </div>
+              <div class="stat-note">[City A], [City B], [City C]</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-foot">
+          <span class="label" style="color: var(--c-fg-light-3)"
+            >[Studio Name] · [Date]</span
+          >
+          <span class="label" style="color: var(--c-fg-light-2)">05 / 12</span>
+        </div>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<!-- Chrome bar -->
+        <div class="slide-chrome">
+          <span class="label muted" data-anim="fade-in" data-delay="0"
+            >Services</span
+          >
+          <span class="label muted" data-anim="fade-in" data-delay="0"
+            >06 / 12</span
+          >
+        </div>
+
+        <div class="slide-body">
+          <!-- Left: heading -->
+          <div class="list-head" data-anim="fade-up" data-delay="1">
+            <h2 class="h2" style="color: var(--c-fg)">WHAT WE OFFER</h2>
+            <p
+              class="lead muted"
+              style="text-transform: none;font-weight: 400;max-width: 90%"
+            >
+              A focused set of services built for ambitious creative and
+              commercial challenges.
+            </p>
+          </div>
+
+          <!-- Right: bullet list -->
+          <ul
+            class="bullet-list"
+            style="font-size: var(--sz-lead);font-weight: 500"
+            data-anim="fade-up"
+            data-delay="2"
+          >
+            <li>Brand strategy and identity systems</li>
+            <li>Campaign and content direction</li>
+            <li>Digital experience design and build</li>
+            <li>Motion and video production</li>
+            <li>Ongoing creative partnership and retainer</li>
+          </ul>
+        </div>
+
+        <div class="slide-foot">
+          <span class="label muted">[Studio Name] · [Date]</span>
+          <span class="label muted">06 / 12</span>
+        </div>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<!-- Quote body: uppercase grotesque, no quote marks needed -->
+        <p
+          class="quote-text"
+          style="color: var(--c-fg)"
+          data-anim="fade-up"
+          data-delay="0"
+        >
+          THEY DON'T JUST MAKE THINGS LOOK GOOD. THEY MAKE THINGS WORK.
+        </p>
+
+        <!-- Attribution: mono label -->
+        <div class="quote-attr" data-anim="fade-in" data-delay="2">
+          <span class="label" style="color: var(--c-fg);letter-spacing: 2px"
+            >[CLIENT NAME]</span
+          >
+          <span class="label muted">CMO · [Company] · [Year]</span>
+        </div>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<!-- Chrome bar -->
+        <div class="slide-chrome">
+          <span
+            class="label"
+            style="color: var(--c-fg-light-2)"
+            data-anim="fade-in"
+            data-delay="0"
+            >Before / After</span
+          >
+          <span
+            class="label"
+            style="color: var(--c-fg-light-2)"
+            data-anim="fade-in"
+            data-delay="0"
+            >08 / 12</span
+          >
+        </div>
+
+        <div class="slide-body">
+          <!-- Left panel: Before -->
+          <div class="compare-panel left" data-anim="fade-up" data-delay="1">
+            <div class="compare-label" style="color: var(--c-fg-light-2)">
+              BEFORE
+            </div>
+            <h3 class="h3" style="color: var(--c-fg-light)">
+              GENERIC IDENTITY, FORGETTABLE CAMPAIGNS
+            </h3>
+            <p
+              class="lead"
+              style="color: var(--c-fg-light-2);text-transform: none;font-weight: 400;"
+            >
+              A brand built by committee, refined to inoffensiveness. Nothing
+              wrong. Nothing memorable. Indistinguishable from category norms.
+            </p>
+            <ul class="bullet-list">
+              <li>No clear point of view</li>
+              <li>Inconsistent execution across touchpoints</li>
+              <li>Campaigns that launched and disappeared</li>
+            </ul>
+          </div>
+
+          <!-- Right panel: After -->
+          <div class="compare-panel right" data-anim="fade-up" data-delay="2">
+            <div class="compare-label after" style="font-weight: 700">
+              AFTER
+            </div>
+            <h3 class="h3" style="color: var(--c-fg-light)">
+              A DISTINCTIVE VOICE PEOPLE RECOGNIZE
+            </h3>
+            <p
+              class="lead"
+              style="color: var(--c-fg-light-2);text-transform: none;font-weight: 400;"
+            >
+              A brand with a defined perspective. Work that accumulates — each
+              campaign reinforces the one before, building memory and trust.
+            </p>
+            <ul class="bullet-list">
+              <li>Ownable visual and verbal territory</li>
+              <li>System that scales without diluting</li>
+              <li>Campaigns that created lasting recall</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="slide-foot">
+          <span class="label" style="color: var(--c-fg-light-3)"
+            >[Studio Name] · [Date]</span
+          >
+          <span class="label" style="color: var(--c-fg-light-2)">08 / 12</span>
+        </div>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<!-- Section number -->
+        <div class="chapter-num" data-anim="fade-in" data-delay="0">
+          02 / THE WORK
+        </div>
+
+        <!-- Chapter title: yellow on dark at h1 scale -->
+        <h1
+          class="h1"
+          style="max-width: 90%;color: var(--c-fg)"
+          data-anim="fade-up"
+          data-delay="1"
+        >
+          THE WORK
+        </h1>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<div
+          class="statement-body"
+          style="justify-content: flex-end;height: 100%;display: flex;flex-direction: column;padding-bottom: calc(var(--pad-y) * 0.5);"
+        >
+          <h1
+            class="h1"
+            style="max-width: 95%;color: var(--c-fg-light)"
+            data-anim="fade-up"
+            data-delay="0"
+          >
+            BOLD IDEAS DESERVE BOLD EXECUTION
+          </h1>
+        </div>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<!-- Chrome bar -->
+        <div class="slide-chrome">
+          <span class="label muted" data-anim="fade-in" data-delay="0"
+            >Project Output</span
+          >
+          <span class="label muted" data-anim="fade-in" data-delay="0"
+            >11 / 12</span
+          >
+        </div>
+
+        <div class="slide-body">
+          <div class="chart-header">
+            <h2
+              class="h2"
+              style="color: var(--c-fg)"
+              data-anim="fade-up"
+              data-delay="0"
+            >
+              PROJECTS BY YEAR
+            </h2>
+            <span
+              class="caption muted"
+              style="font-family: var(--f-mono);text-transform: uppercase;letter-spacing: 1px;"
+              data-anim="fade-in"
+              data-delay="1"
+            >
+              Count · [Studio Name] Portfolio
+            </span>
+          </div>
+
+          <div class="chart-wrapper" data-anim="fade-up" data-delay="2">
+            <div class="bar-track">
+              <div class="bar-col">
+                <span class="bar-val">14</span>
+                <div class="bar-fill" style="height: 86px"></div>
+                <span class="bar-x-label">[Y-4]</span>
+              </div>
+              <div class="bar-col">
+                <span class="bar-val">21</span>
+                <div class="bar-fill" style="height: 130px"></div>
+                <span class="bar-x-label">[Y-3]</span>
+              </div>
+              <div class="bar-col">
+                <span class="bar-val">28</span>
+                <div class="bar-fill" style="height: 184px"></div>
+                <span class="bar-x-label">[Y-2]</span>
+              </div>
+              <div class="bar-col">
+                <span class="bar-val">35</span>
+                <div class="bar-fill" style="height: 238px"></div>
+                <span class="bar-x-label">[Y-1]</span>
+              </div>
+              <div class="bar-col">
+                <!-- Accent bar: the highlighted year -->
+                <span class="bar-val hi">47</span>
+                <div class="bar-fill accent" style="height: 324px"></div>
+                <span class="bar-x-label">[Year]</span>
+              </div>
+            </div>
+            <div class="chart-baseline"></div>
+          </div>
+
+          <p class="chart-source" data-anim="fade-in" data-delay="3">
+            Source: [Studio Name] internal tracking · [Year]
+          </p>
+        </div>
+
+        <div class="slide-foot">
+          <span class="label muted">[Studio Name] · [Date]</span>
+          <span class="label muted">11 / 12</span>
+        </div>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<!-- Main closing statement: display scale, fills the top of the slide -->
+        <h1
+          class="h1"
+          style="max-width: 85%;line-height: 0.9;font-size: var(--sz-display);color: var(--c-fg-light);"
+          data-anim="fade-up"
+          data-delay="0"
+        >
+          ANY QUESTIONS OR THOUGHTS?
+        </h1>
+
+        <!-- Two-column contact info below the statement -->
+        <div
+          style="display: grid;grid-template-columns: 1fr 1fr;gap: var(--gap-lg);margin-top: var(--gap-lg);"
+          data-anim="fade-up"
+          data-delay="2"
+        >
+          <div>
+            <p class="body" style="color: var(--c-fg-light-2)">
+              Contact [Name A] via email on [name@studio.com]<br />
+              or via phone on [+00 000 000 000]
+            </p>
+          </div>
+          <div>
+            <p class="body" style="color: var(--c-fg-light-2)">
+              Contact [Name B] via email on [name@studio.com]<br />
+              or via phone on [+00 000 000 000]
+            </p>
+          </div>
+        </div>
+
+        <!-- Three-column footer: the Studio signature cover footer pattern -->
+        <div
+          class="cover-footer"
+          style="border-top-color: var(--c-border-light)"
+          data-anim="fade-in"
+          data-delay="4"
+        >
+          <span class="cover-footer-col" style="color: var(--c-fg-light-2)">
+            Page 12<br />[Studio Name] × [Client Name]
+          </span>
+          <span
+            class="cover-footer-col"
+            style="text-align: center;color: var(--c-fg-light-2)"
+          >
+            [Presentation title]
+          </span>
+          <span class="cover-footer-col" style="color: var(--c-fg-light-2)">
+            [Studio Name]
+          </span>
+        </div>
+</section>

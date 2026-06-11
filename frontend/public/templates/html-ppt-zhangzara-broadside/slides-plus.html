@@ -1,0 +1,749 @@
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;"><style>@import url('https://fonts.googleapis.com');
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;700;800;900&family=IBM+Plex+Mono:wght@300;400;500&family=Noto+Sans+SC:wght@400;500;700;900&display=swap');
+:root{/* ── Palette ──────────────────────────────────────────────────────── */
+        --c-bg: #111111; /* near-black — the default slide background  */
+        --c-bg-alt: #1a1a18; /* secondary surface on dark slides            */
+
+        /* Broadside has NO light slides. These vars are overridden to dark
+           so any accidental .light class still renders dark. */
+        --c-bg-light: #111111;
+        --c-bg-light-alt: #1a1a18;
+
+        /* The signature: orange is not an accent here — it is the ENVIRONMENT.
+           Cover and chapter slides use this as their full background fill. */
+        --c-bg-orange: #e85d26;
+
+        --c-fg: #f0ece5; /* primary text on dark slides                 */
+        --c-fg-2: #888880; /* secondary / muted text on dark              */
+        --c-fg-3: #505048; /* tertiary / hint text on dark                */
+
+        /* Text colours for orange slides — ink on fire */
+        --c-fg-light: #111111; /* primary text on orange                */
+        --c-fg-light-2: #2a1810; /* muted text on orange                  */
+        --c-fg-light-3: rgba(
+          17,
+          17,
+          17,
+          0.55
+        ); /* hint text on orange               */
+
+        --c-accent: #e85d26; /* orange = accent everywhere on dark slides   */
+        --c-border: #282826; /* divider lines on dark slides                */
+        --c-border-light: #282826; /* same dark border even on "light" (overridden)*/
+
+        /* ── Typography ──────────────────────────────────────────────────── */
+        /* Barlow: the defining typeface. Condensed grotesque. Always heavy.
+           Used at max weight — 900 for display, 800 for h1, 700 for h2.
+           Noto Sans SC provides full CJK coverage at matching weights. */
+        --f-display: "Barlow", "Noto Sans SC", sans-serif;
+        --f-heading: "Barlow", "Noto Sans SC", sans-serif;
+        --f-body: "Barlow", "Noto Sans SC", system-ui, sans-serif;
+        /* Mono: IBM Plex Mono for chrome labels, metadata, slide numbers */
+        --f-mono: "IBM Plex Mono", monospace;
+
+        /* ── Type Scale ───────────────────────────────────────────────────── */
+        /* Broadside's defining trait: TYPE IS MASSIVE. Display is 13vw —
+           on a 1440px screen that is ~187px. Words become graphic elements. */
+        --sz-display: 13vw; /* the whole point — nearly abstract at full size */
+        --sz-h1: 7.5vw; /* chapter title — still enormous                */
+        --sz-h2: 4.5vw; /* slide headline                                */
+        --sz-h3: 2.8vw; /* sub-headline                                  */
+        --sz-lead: 1.6vw; /* lead paragraph                                */
+        --sz-body: 1.2vw; /* body text                                     */
+        --sz-caption: 0.9vw; /* captions, footnotes                           */
+        --sz-label: 0.72vw; /* chrome labels, slide numbers, metadata        */
+
+        /* ── Spacing ─────────────────────────────────────────────────────── */
+        --pad-x: 5.5vw; /* tighter than skeleton — type fills the space  */
+        --pad-y: 5.5vh;
+        --gap-lg: 3.5vh;
+        --gap-md: 2vh;
+        --gap-sm: 1vh;
+
+        /* ── Motion ──────────────────────────────────────────────────────── */
+        --ease-slide: cubic-bezier(0.77, 0, 0.175, 1);
+        --dur-slide: 0.8s;
+        --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+        --dur-enter: 0.5s;}
+</style>
+<!-- Top chrome: slide number left, section label right -->
+        <div class="broadside-top-chrome">
+          <span class="broadside-num" data-anim="fade-in" data-delay="0"
+            >01</span
+          >
+          <span class="corner-label" data-anim="fade-in" data-delay="0"
+            >Broadside</span
+          >
+        </div>
+
+        <!-- Main content: fills the slide, anchored to bottom -->
+        <div class="cover-body">
+          <h1
+            class="display"
+            data-anim="fade-up"
+            data-delay="1"
+            style="max-width: 95%"
+          >
+            this is the broadside style
+          </h1>
+          <p
+            class="lead"
+            data-anim="fade-up"
+            data-delay="2"
+            style="opacity: 0.65;max-width: 55%"
+          >
+            Protest poster meets publication cover. Type so large it becomes
+            image.
+          </p>
+        </div>
+
+        <!-- Bottom meta: author left, date right -->
+        <div class="cover-meta" data-anim="fade-in" data-delay="3">
+          <span class="broadside-num">[[Author Name]]</span>
+          <span class="broadside-num">[Year] · Context</span>
+        </div>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<!-- Chapter number: top-left, same small mono as cover -->
+        <div
+          class="broadside-num"
+          data-anim="fade-in"
+          data-delay="0"
+          style="margin-bottom: var(--gap-lg)"
+        >
+          02 / Chapter
+        </div>
+
+        <h2 class="h1" data-anim="fade-up" data-delay="1">
+          the next chapter begins here
+        </h2>
+
+        <p
+          class="lead"
+          data-anim="fade-up"
+          data-delay="2"
+          style="max-width: 50%;margin-top: var(--gap-md);opacity: 0.65"
+        >
+          One optional sentence that frames what this section is about.
+        </p>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<header class="slide-chrome">
+          <span class="label muted">The Argument</span>
+          <span class="label muted">03</span>
+        </header>
+
+        <div class="statement-body">
+          <p class="kicker" data-anim="fade-in" data-delay="0">Core Thesis</p>
+          <div
+            class="rule"
+            data-anim="reveal-right"
+            data-delay="1"
+            style="margin: 19px 0"
+          ></div>
+          <!-- The .accent class makes this orange — the punchline -->
+          <h2
+            class="h1 accent"
+            data-anim="fade-up"
+            data-delay="2"
+            style="max-width: 75%"
+          >
+            orange is not an accent. it is the room.
+          </h2>
+        </div>
+
+        <footer class="slide-foot">
+          <span class="label muted">Broadside</span>
+          <span class="label muted">[Author Name]</span>
+        </footer>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<header class="slide-chrome">
+          <span class="label muted">Details</span>
+          <span class="label muted">04</span>
+        </header>
+
+        <div class="slide-body">
+          <div class="split-text">
+            <p class="kicker" data-anim="fade-in" data-delay="0">Context</p>
+            <div
+              class="rule"
+              data-anim="reveal-right"
+              data-delay="1"
+              style="margin: 16px 0"
+            ></div>
+            <h2 class="h2" data-anim="fade-up" data-delay="2">
+              when content needs image support
+            </h2>
+            <p
+              class="lead muted"
+              data-anim="fade-up"
+              data-delay="3"
+              style="max-width: 90%"
+            >
+              One or two sentences of supporting context. Short. Dense. No
+              padding.
+            </p>
+            <!-- Broadside list: max 3 items, forward-slash bullet -->
+            <ul class="bullet-list" data-anim="fade-up" data-delay="4">
+              <li>First key supporting point</li>
+              <li>Second point, equally direct</li>
+              <li>Third and final — end strong</li>
+            </ul>
+          </div>
+
+          <div class="split-image" data-anim="reveal-right" data-delay="2">
+            <div class="img-placeholder">Image Placeholder</div>
+            <p class="img-caption">Image caption or source · Year</p>
+          </div>
+        </div>
+
+        <footer class="slide-foot">
+          <span class="label muted">Broadside</span>
+          <span class="label muted">[Author Name]</span>
+        </footer>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<header class="slide-chrome">
+          <span class="broadside-num">05</span>
+          <span class="corner-label">By the numbers</span>
+        </header>
+        <div class="slide-body">
+          <div class="stats-grid" data-anim="fade-up" data-delay="1">
+            <div class="stat-card">
+              <div class="stat-value" data-anim="scale-in" data-delay="1">
+                $3.5B
+              </div>
+              <div class="stat-label body">
+                Series E closed at $61.5B valuation
+              </div>
+              <div class="stat-note">[Source] · [Year]</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" data-anim="scale-in" data-delay="2">
+                3×
+              </div>
+              <div class="stat-label body">
+                Enterprise deployments up quarter over quarter
+              </div>
+              <div class="stat-note">Primary research</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" data-anim="scale-in" data-delay="3">
+                #1
+              </div>
+              <div class="stat-label body">
+                App Store ranking · [Product Name] · [Date]
+              </div>
+              <div class="stat-note">App Store Charts</div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-foot">
+          <span class="broadside-num" style="opacity: 0.4">Broadside</span>
+          <span class="broadside-num" style="opacity: 0.4">[Author Name]</span>
+        </footer>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<div class="fadelist-top">
+          <span class="broadside-num" data-anim="fade-in" data-delay="0"
+            >01</span
+          >
+          <div class="fadelist-items" data-anim="fade-up" data-delay="1">
+            <span class="fadelist-item">Before</span>
+            <span class="fadelist-item">During</span>
+            <span class="fadelist-item">After</span>
+          </div>
+        </div>
+        <div class="fadelist-title" data-anim="fade-up" data-delay="2">
+          the<br />session
+        </div>
+        <div
+          style="display: flex;justify-content: space-between;align-items: flex-end;padding-top: var(--gap-sm);border-top: 1px solid rgba(17, 17, 17, 0.15);"
+        >
+          <span class="broadside-num" style="opacity: 0.4"
+            >[Studio X] Guidelines</span
+          >
+          <span class="broadside-num" style="opacity: 0.4">06 / 10</span>
+        </div>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<header class="slide-chrome">
+          <span class="label muted">The Framework</span>
+          <span class="label muted">07</span>
+        </header>
+        <div class="slide-body">
+          <div class="list-head">
+            <p class="kicker" data-anim="fade-in" data-delay="0">Four rules</p>
+            <h2 class="h2" data-anim="fade-up" data-delay="1">
+              what separates<br />signal from noise
+            </h2>
+          </div>
+          <ul class="bullet-list" data-anim="fade-up" data-delay="2">
+            <li>Ship before it's ready — learn faster than you plan</li>
+            <li>
+              One metric that matters — ignore everything else this quarter
+            </li>
+            <li>
+              The customer is always wrong about solutions, never about problems
+            </li>
+            <li>
+              Speed is a feature — slow companies don't get a second chance
+            </li>
+          </ul>
+        </div>
+        <footer class="slide-foot">
+          <span class="label muted">Broadside</span>
+          <span class="label muted">[Author Name]</span>
+        </footer>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<p
+          class="kicker accent"
+          data-anim="fade-in"
+          data-delay="0"
+          style="margin-bottom: var(--gap-lg)"
+        >
+          On speed
+        </p>
+        <div class="quote-text" data-anim="fade-up" data-delay="1">
+          "Move fast and you'll break things. Move slow and something else will
+          break you."
+        </div>
+        <div class="quote-attr" data-anim="fade-up" data-delay="2">
+          <span class="label accent">[Industry Leader]</span>
+          <span class="label muted">[Source] · [Year]</span>
+        </div>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<header class="slide-chrome">
+          <span class="label muted">Before · After</span>
+          <span class="label muted">09</span>
+        </header>
+        <div class="slide-body">
+          <div class="compare-panel left">
+            <div class="compare-label" data-anim="fade-in" data-delay="0">
+              Before
+            </div>
+            <h3 class="h3" data-anim="fade-up" data-delay="1">
+              six-month build cycles
+            </h3>
+            <p class="lead muted" data-anim="fade-up" data-delay="2">
+              Teams planned for months before shipping anything. By launch, the
+              market had moved.
+            </p>
+            <ul
+              class="bullet-list"
+              data-anim="fade-up"
+              data-delay="3"
+              style="--sz-lead: 23px"
+            >
+              <li>Waterfall planning, quarterly roadmaps</li>
+              <li>User testing at the end, not the start</li>
+              <li>Success measured by features shipped</li>
+            </ul>
+          </div>
+          <div class="compare-panel panel-orange">
+            <div class="compare-label after" data-anim="fade-in" data-delay="0">
+              After
+            </div>
+            <h3
+              class="h3"
+              data-anim="fade-up"
+              data-delay="1"
+              style="color: #111"
+            >
+              two-week iteration loops
+            </h3>
+            <p
+              class="lead"
+              data-anim="fade-up"
+              data-delay="2"
+              style="color: rgba(17, 17, 17, 0.65)"
+            >
+              Ship a rough version. Watch what users actually do. Rebuild. Ship
+              again.
+            </p>
+            <ul
+              class="bullet-list"
+              data-anim="fade-up"
+              data-delay="3"
+              style="--sz-lead: 23px"
+            >
+              <li>Weekly user sessions, continuous discovery</li>
+              <li>Metrics reviewed daily, not quarterly</li>
+              <li>Success measured by behavior change</li>
+            </ul>
+          </div>
+        </div>
+        <footer class="slide-foot">
+          <span class="label muted">Broadside</span>
+          <span class="label muted">[Author Name]</span>
+        </footer>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<header class="slide-chrome">
+          <span class="label muted">Growth Metrics</span>
+          <span class="label muted">11</span>
+        </header>
+        <div class="slide-body">
+          <div class="chart-header">
+            <h2 class="h2" data-anim="fade-up" data-delay="0">
+              revenue by quarter
+            </h2>
+            <span class="caption muted" data-anim="fade-in" data-delay="1"
+              >USD · Millions · FY 2025</span
+            >
+          </div>
+          <div class="chart-wrapper" data-anim="fade-up" data-delay="2">
+            <div class="bar-track">
+              <div class="bar-col">
+                <span class="bar-val">$1.2M</span>
+                <div class="bar-fill" style="height: 130px"></div>
+                <span class="bar-x-label">Q1</span>
+              </div>
+              <div class="bar-col">
+                <span class="bar-val">$1.7M</span>
+                <div class="bar-fill" style="height: 184px"></div>
+                <span class="bar-x-label">Q2</span>
+              </div>
+              <div class="bar-col">
+                <span class="bar-val">$2.1M</span>
+                <div class="bar-fill" style="height: 227px"></div>
+                <span class="bar-x-label">Q3</span>
+              </div>
+              <div class="bar-col">
+                <span class="bar-val hi">$2.8M</span>
+                <div class="bar-fill accent" style="height: 302px"></div>
+                <span class="bar-x-label">Q4</span>
+              </div>
+            </div>
+            <div class="chart-baseline"></div>
+          </div>
+          <p class="chart-source" data-anim="fade-in" data-delay="3">
+            Source: Internal finance data · Q4 2025 Annual Report
+          </p>
+        </div>
+        <footer class="slide-foot">
+          <span class="label muted">Broadside</span>
+          <span class="label muted">[Author Name]</span>
+        </footer>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<header class="slide-chrome">
+          <span class="broadside-num">12</span>
+          <span class="corner-label">The Process</span>
+        </header>
+        <div class="slide-body">
+          <h2
+            class="h2"
+            style="color: #111;letter-spacing: -0px"
+            data-anim="fade-up"
+            data-delay="0"
+          >
+            how it works
+          </h2>
+          <div class="flow" data-anim="fade-up" data-delay="1">
+            <div class="flow-step">
+              <div class="flow-num">01</div>
+              <div class="flow-title">Discover</div>
+              <div class="flow-desc">
+                Talk to users. Read the data. Surface what's actually true vs.
+                what the team assumes.
+              </div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">
+              <div class="flow-num">02</div>
+              <div class="flow-title">Define</div>
+              <div class="flow-desc">
+                Narrow to one problem worth solving. Write it as a testable
+                hypothesis, not a feature request.
+              </div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">
+              <div class="flow-num">03</div>
+              <div class="flow-title">Design</div>
+              <div class="flow-desc">
+                Build the simplest thing that could prove or disprove the
+                hypothesis. Skip the polish.
+              </div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">
+              <div class="flow-num">04</div>
+              <div class="flow-title">Deploy</div>
+              <div class="flow-desc">
+                Ship to real users. Measure behavior, not opinions. Repeat from
+                step one with new data.
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-foot" style="border-color: rgba(17, 17, 17, 0.15)">
+          <span class="broadside-num" style="opacity: 0.4">Broadside</span>
+          <span class="broadside-num" style="opacity: 0.4">[Author Name]</span>
+        </footer>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<header class="slide-chrome">
+          <span class="label muted">Market Share</span>
+          <span class="label muted">13</span>
+        </header>
+        <div class="slide-body">
+          <h2
+            class="h2"
+            data-anim="fade-up"
+            data-delay="0"
+            style="font-weight: 900"
+          >
+            where the market sits
+          </h2>
+          <div class="pie-row" data-anim="fade-up" data-delay="1">
+            <!-- Donut: conic-gradient segments match legend order -->
+            <div
+              class="pie-donut"
+              style="background: conic-gradient(
+                  var(--c-accent) 0% 40%,
+                  #3a3a38 40% 68%,
+                  #555550 68% 88%,
+                  #282826 88% 100%
+                );"
+            ></div>
+            <div class="pie-legend">
+              <div class="pie-item">
+                <div
+                  class="pie-swatch"
+                  style="background: var(--c-accent)"
+                ></div>
+                <span class="pie-item-label">Leader</span>
+                <span class="pie-item-val">40%</span>
+              </div>
+              <div class="pie-item">
+                <div class="pie-swatch" style="background: #3a3a38"></div>
+                <span class="pie-item-label">Challenger</span>
+                <span class="pie-item-val">28%</span>
+              </div>
+              <div class="pie-item">
+                <div class="pie-swatch" style="background: #555550"></div>
+                <span class="pie-item-label">Followers</span>
+                <span class="pie-item-val">20%</span>
+              </div>
+              <div class="pie-item">
+                <div class="pie-swatch" style="background: #282826"></div>
+                <span class="pie-item-label">Other</span>
+                <span class="pie-item-val">12%</span>
+              </div>
+              <div class="pie-total">TOTAL MARKET: $[X]B · [Year] ESTIMATE</div>
+            </div>
+          </div>
+          <p class="chart-source" data-anim="fade-in" data-delay="2">
+            Source: [Industry report] · [Year] · Estimates only
+          </p>
+        </div>
+        <footer class="slide-foot">
+          <span class="label muted">[Author]</span>
+          <span class="label muted">[Year]</span>
+        </footer>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<header class="slide-chrome">
+          <span class="label muted">The Hierarchy</span>
+          <span class="label muted">14</span>
+        </header>
+        <div class="slide-body">
+          <h2
+            class="h2"
+            data-anim="fade-up"
+            data-delay="0"
+            style="font-weight: 900"
+          >
+            what actually matters
+          </h2>
+          <div class="pyramid" data-anim="fade-up" data-delay="1">
+            <div class="pyr-level">
+              <span class="pyr-name">mission</span>
+              <span class="pyr-desc">why this exists</span>
+            </div>
+            <div class="pyr-level">
+              <span class="pyr-name">strategy</span>
+              <span class="pyr-desc">what we're betting on</span>
+            </div>
+            <div class="pyr-level">
+              <span class="pyr-name">product</span>
+              <span class="pyr-desc">what we're building</span>
+            </div>
+            <div class="pyr-level">
+              <span class="pyr-name">growth</span>
+              <span class="pyr-desc">how we reach people</span>
+            </div>
+            <div class="pyr-level">
+              <span class="pyr-name">operations</span>
+              <span class="pyr-desc">how we run the day-to-day</span>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-foot">
+          <span class="label muted">[Author]</span>
+          <span class="label muted">[Year]</span>
+        </footer>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<header class="slide-chrome">
+          <span class="label muted">The Story</span>
+          <span class="label muted">15</span>
+        </header>
+        <div class="vt-hl" data-anim="fade-up" data-delay="0">
+          how we got here
+        </div>
+        <div class="vtimeline" data-anim="fade-up" data-delay="1">
+          <!-- Event 1 -->
+          <div class="vt-date">[Year −3]</div>
+          <div class="vt-spine"></div>
+          <div class="vt-content">
+            <div class="vt-title">the idea</div>
+            <div class="vt-body">
+              One slide. Three slides. Nineteen rejections. One yes.
+            </div>
+          </div>
+          <!-- Event 2 -->
+          <div class="vt-date">[Year −2]</div>
+          <div class="vt-spine"></div>
+          <div class="vt-content">
+            <div class="vt-title">first product</div>
+            <div class="vt-body">
+              Launched to [N] users. [X]% used it daily after week one.
+            </div>
+          </div>
+          <!-- Event 3 -->
+          <div class="vt-date">[Year −1]</div>
+          <div class="vt-spine"></div>
+          <div class="vt-content">
+            <div class="vt-title">the pivot</div>
+            <div class="vt-body">
+              Killed [X] features. Found the one thing that changed retention.
+            </div>
+          </div>
+          <!-- Event 4 -->
+          <div class="vt-date">[Year 0]</div>
+          <div class="vt-spine"></div>
+          <div class="vt-content">
+            <div class="vt-title">now</div>
+            <div class="vt-body">
+              [N]k users. $[X]M ARR. The hard part starts here.
+            </div>
+          </div>
+        </div>
+        <footer class="slide-foot">
+          <span class="label muted">[Author] / [Year]</span>
+          <span class="label muted">15</span>
+        </footer>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<header class="slide-chrome">
+          <span class="label muted">The Loop</span>
+          <span class="label muted">16</span>
+        </header>
+        <div class="slide-body">
+          <h2
+            class="h2"
+            data-anim="fade-up"
+            data-delay="0"
+            style="font-weight: 900"
+          >
+            build · measure · learn
+          </h2>
+          <div class="cycle-grid" data-anim="fade-up" data-delay="1">
+            <!-- Row 1 -->
+            <div class="cycle-step">
+              <div class="cycle-num">01</div>
+              <div class="cycle-title">build</div>
+              <div class="cycle-desc">
+                Ship the smallest version that could prove the idea wrong.
+              </div>
+            </div>
+            <div class="cycle-arrow">→</div>
+            <div class="cycle-step">
+              <div class="cycle-num">02</div>
+              <div class="cycle-title">measure</div>
+              <div class="cycle-desc">
+                What did users actually do? Not what they said — what they did.
+              </div>
+            </div>
+            <!-- Row 2: arrows -->
+            <div class="cycle-arrow">↓</div>
+            <div></div>
+            <div class="cycle-arrow">↓</div>
+            <!-- Row 3 (reversed: left=04, right=03 to form clockwise loop) -->
+            <div class="cycle-step">
+              <div class="cycle-num">04</div>
+              <div class="cycle-title">learn</div>
+              <div class="cycle-desc">
+                Update the hypothesis. Kill what didn't work. Double what did.
+              </div>
+            </div>
+            <div class="cycle-arrow">←</div>
+            <div class="cycle-step">
+              <div class="cycle-num">03</div>
+              <div class="cycle-title">decide</div>
+              <div class="cycle-desc">
+                Ship to more users or go back to step one. There is no third
+                option.
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-foot">
+          <span class="label muted">[Author] / [Year]</span>
+          <span class="label muted">16</span>
+        </footer>
+</section>
+
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;">
+<div class="broadside-top-chrome">
+          <span class="broadside-num" data-anim="fade-in" data-delay="0"
+            >10</span
+          >
+          <span class="corner-label" data-anim="fade-in" data-delay="0"
+            >End</span
+          >
+        </div>
+        <h1
+          class="display"
+          data-anim="fade-up"
+          data-delay="1"
+          style="color: #111;max-width: 80%;line-height: 0.9;letter-spacing: -1px;"
+        >
+          let's<br />talk.
+        </h1>
+        <div
+          style="display: flex;flex-direction: column;gap: var(--gap-sm)"
+          data-anim="fade-up"
+          data-delay="2"
+        >
+          <p class="lead" style="color: rgba(17, 17, 17, 0.65);max-width: 45%">
+            [hello@company.com] · [@handle] · [company.com]
+          </p>
+        </div>
+        <div
+          style="display: flex;justify-content: space-between;align-items: flex-end;margin-top: auto;padding-top: var(--gap-sm);border-top: 1px solid rgba(17, 17, 17, 0.15);"
+        >
+          <span class="broadside-num" style="opacity: 0.4">[Author Name]</span>
+          <span class="broadside-num" style="opacity: 0.4">[Year]</span>
+        </div>
+</section>
