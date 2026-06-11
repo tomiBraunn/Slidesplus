@@ -447,7 +447,7 @@ export const postChat = async (req, res) => {
 	if (!pool) return res.status(500).json({ message: "Database not configured" })
 	try {
 		const projectId = req.params.id
-		const { role, content, attachments, previewSlides } = req.body ?? {}
+		const { role, content, attachments, previewSlides, codeBlock } = req.body ?? {}
 
 		const { hasAccess, isViewer, exists } = await checkProjectAccess(projectId, req.user.sub, true)
 
@@ -467,6 +467,7 @@ export const postChat = async (req, res) => {
 			content,
 			attachments: attachments || null,
 			previewSlides: previewSlides || null,
+			codeBlock: codeBlock || null,
 			created_at: new Date().toISOString()
 		}
 

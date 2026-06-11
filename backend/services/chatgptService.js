@@ -37,8 +37,7 @@ export async function generateWithChatGPT({ system, message, history, context, m
 		instructions: system ? String(system) : undefined,
 		input,
 		temperature: 0.7,
-		max_output_tokens: 16000,
-		tools: [{ type: "web_search_preview" }],
+		max_output_tokens: 32000,
 	}
 
 	const r = await fetch(url, {
