@@ -81,7 +81,7 @@ const LivePreview = forwardRef<HTMLIFrameElement, Props>(({
                 width: 1920px;
                 height: 1080px;
                 overflow: hidden;
-                background: #000;
+                background: #fff;
               }
               body {
                 transform: scale(${scale});
@@ -99,7 +99,7 @@ const LivePreview = forwardRef<HTMLIFrameElement, Props>(({
                 justify-content: center;
                 padding: 4rem;
                 text-align: center;
-                background: #000;
+                background: #fff;
               }
             </style>
           </head>

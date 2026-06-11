@@ -12,5 +12,9 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    watch: {
+      // Windows junctions inside these dirs crash chokidar; none of them are app source
+      ignored: ['**/.claude/**', '**/.agents/**', '**/.impeccable/**'],
+    },
   }
 })

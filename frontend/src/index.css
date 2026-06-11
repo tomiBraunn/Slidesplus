@@ -124,6 +124,26 @@
         background-size: 200% 200%;
         animation: gradient-shift 3s ease infinite;
     }
+
+    @keyframes marquee-x {
+        from {
+            transform: translateX(0);
+        }
+        to {
+            transform: translateX(-50%);
+        }
+    }
+
+    .marquee-track {
+        animation: marquee-x 75s linear infinite;
+        will-change: transform;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .marquee-track {
+            animation: none;
+        }
+    }
 }
 
 * {
@@ -145,7 +165,8 @@
     --bg-inverted: #EAEAEA;
     --bg-alt: #161616;
     --text-primary: #FFFFFF;
-    --text-secondary: #666666;
+    /* Contrast floor: secondary text must hit >=4.5:1 on #121212 (#666 was ~3.3:1) */
+    --text-secondary: #9C9C9C;
     --text-inverted: #000000;
 }
 

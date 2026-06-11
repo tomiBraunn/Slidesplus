@@ -375,7 +375,12 @@ function HomePage() {
           <NavBar user={user} />
           <div className="flex flex-col items-center justify-start text-white w-full max-w-[90vw] md:max-w-[70vw] px-4 md:px-0">
             <div className="searchbar flex flex-col items-center justify-start w-full gap-6">
-              <AppTextLogo size={isMobile ? 60 : 100} />
+              <div className="flex flex-col items-center gap-2">
+                <AppTextLogo size={isMobile ? 60 : 100} />
+                <p className="text-sm text-theme-secondary">
+                  {user?.first_name ? `Welcome back, ${user.first_name}.` : "Welcome back."}
+                </p>
+              </div>
 
               <div className="relative w-full md:w-[70vw] flex items-center justify-center">
                 {showAIPanel && (
@@ -483,40 +488,15 @@ function HomePage() {
                     : "text-theme-secondary hover:text-theme-primary"
                     } ${isMobile ? "p-2" : "px-4 py-2"}`}
                 >
-                  <div className="absolute inset-0 pointer-events-none">
-                    <svg
-                      style={{ position: "absolute", left: 0, top: 0, width: "100%", height: "100%" }}
-                      preserveAspectRatio="xMidYMid slice"
-                      width="839"
-                      height="400"
-                      viewBox="0 0 839 400"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <defs>
-                        <filter id="filter0_f_ai" x="-400" y="-300" width="1628" height="800" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
-                          <feFlood floodOpacity="0" result="BackgroundImageFix" />
-                          <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
-                          <feGaussianBlur stdDeviation="150" result="effect1_foregroundBlur" />
-                        </filter>
-                        <filter id="filter1_f_ai" x="-100" y="-100" width="1000" height="500" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
-                          <feFlood floodOpacity="0" result="BackgroundImageFix" />
-                          <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
-                          <feGaussianBlur stdDeviation="80" result="effect1_foregroundBlur" />
-                        </filter>
-                      </defs>
-                      <g filter="url(#filter0_f_ai)">
-                        <ellipse cx="420" cy="150" rx="300" ry="200" fill="#7182FF" fillOpacity="0.4" />
-                      </g>
-                      <g filter="url(#filter1_f_ai)">
-                        <ellipse cx="350" cy="200" rx="250" ry="150" fill="#249931" fillOpacity="0.5" />
-                      </g>
-                    </svg>
-                  </div>
                   {!isMobile && (
-                    <span className="relative z-10 text-sm font-medium text-theme-primary">Create with AI</span>
+                    <span className="text-sm font-medium">Create with AI</span>
                   )}
-                  <span className="relative z-10 material-symbols-outlined text-lg text-theme-primary">auto_awesome</span>
+                  <span
+                    className="material-symbols-outlined text-lg"
+                    style={{ color: showAIPanel ? "#5560E0" : "#7182FF" }}
+                  >
+                    auto_awesome
+                  </span>
                 </button>
                 <button
                   onClick={() => { setActiveTab("templates"); setShowAIPanel(false) }}
@@ -544,9 +524,16 @@ function HomePage() {
                 className="w-full md:max-w-7xl h-full flex flex-col"
               >
               <div className="flex items-center justify-between py-2 w-full flex-shrink-0">
-                <h2 className="text-2xl font-semibold text-theme-primary">
-                  {activeTab === "my-designs" ? sortOption : "Templates"}
-                </h2>
+                <div className="flex items-baseline gap-3">
+                  <h2 className="text-2xl font-semibold text-theme-primary">
+                    {activeTab === "my-designs" ? "My designs" : "Templates"}
+                  </h2>
+                  {activeTab === "my-designs" && !loading && !err && projects.length > 0 && (
+                    <span className="text-sm text-theme-secondary tabular-nums">
+                      {filteredProjects.length} {filteredProjects.length === 1 ? "project" : "projects"}
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center gap-3">
                   {!isMobile && activeTab === "my-designs" && (
                     <button
@@ -594,27 +581,68 @@ function HomePage() {
                           )}
                         </>
                       )
-                    if (err) return <div className="text-red-400 col-span-full">{err}</div>
+                    if (err)
+                      return (
+                        <div className="flex flex-col items-center justify-center gap-4 p-12 col-span-full text-center">
+                          <span className="material-symbols-outlined text-theme-secondary" style={{ fontSize: "32px" }}>
+                            cloud_off
+                          </span>
+                          <div>
+                            <p className="text-theme-primary font-medium">Couldn't load your projects</p>
+                            <p className="text-theme-secondary text-sm mt-1">{err}</p>
+                          </div>
+                          <button
+                            onClick={fetchProjects}
+                            className="px-4 py-2 rounded-full border border-theme-tertiary text-theme-primary text-sm font-medium hover:bg-theme-hover transition-colors"
+                          >
+                            Try again
+                          </button>
+                        </div>
+                      )
                     if (projects.length === 0)
                       return (
-                        <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-full">
-                          <span
-                            className="material-symbols-outlined mb-2 opacity-70"
-                            style={{ fontSize: "40px" }}
-                          >
-                            scan_delete
-                          </span>
-                          <p className="text-center text-sm max-w-xs">
-                            No projects available.
-                            <br /> Try creating one.
-                          </p>
+                        <div className="flex flex-col items-center justify-center gap-6 p-12 col-span-full text-center">
+                          <div className="w-44 aspect-[16/9] rounded-[10px] border border-dashed border-theme-tertiary flex items-center justify-center">
+                            <span className="material-symbols-outlined text-theme-secondary" style={{ fontSize: "28px" }}>
+                              co_present
+                            </span>
+                          </div>
+                          <div>
+                            <p className="text-theme-primary font-medium">Start your first deck</p>
+                            <p className="text-theme-secondary text-sm mt-1 max-w-xs">
+                              Describe an idea and let AI draft it, start from a template, or build it slide by slide.
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap items-center justify-center gap-2">
+                            <button
+                              onClick={handleAIPanelOpen}
+                              className="px-4 py-2 rounded-full bg-theme-inverted text-theme-inverted text-sm font-medium flex items-center gap-2 hover:opacity-90 transition-opacity"
+                            >
+                              <span className="material-symbols-outlined text-lg" style={{ color: "#5560E0" }}>
+                                auto_awesome
+                              </span>
+                              Create with AI
+                            </button>
+                            <button
+                              onClick={() => setShowCreate(true)}
+                              className="px-4 py-2 rounded-full border border-theme-tertiary text-theme-primary text-sm font-medium hover:bg-theme-hover transition-colors"
+                            >
+                              Blank project
+                            </button>
+                            <button
+                              onClick={() => { setActiveTab("templates"); setShowAIPanel(false) }}
+                              className="px-4 py-2 rounded-full border border-theme-tertiary text-theme-primary text-sm font-medium hover:bg-theme-hover transition-colors"
+                            >
+                              Browse templates
+                            </button>
+                          </div>
                         </div>
                       )
                     if (projects.length > 0 && filteredProjects.length === 0) {
                       return (
-                        <div className="flex flex-col items-center justify-center text-white/70 p-4 col-span-full">
-                          <span className="material-symbols-outlined">block</span>
-                          <p className="text-center text-sm max-w-xs">
+                        <div className="flex flex-col items-center justify-center gap-2 p-12 col-span-full text-center">
+                          <span className="material-symbols-outlined text-theme-secondary">search_off</span>
+                          <p className="text-theme-secondary text-sm max-w-xs">
                             No projects match your search.
                           </p>
                         </div>
@@ -660,7 +688,7 @@ function HomePage() {
                       placeholder="Search templates..."
                       value={templateSearch}
                       onChange={e => setTemplateSearch(e.target.value)}
-                      className="w-full sm:w-72 px-4 py-2 text-sm bg-theme-quaternary border border-theme-tertiary rounded-full text-theme-primary placeholder:text-theme-secondary focus:outline-none focus:border-[#7182FF] transition-colors"
+                      className="w-full sm:w-72 px-4 py-2 text-sm bg-theme-quaternary border border-theme-tertiary rounded-full text-theme-primary placeholder:text-theme-secondary focus:outline-none focus:border-[#9C9C9C] transition-colors"
                     />
                   </div>
 
@@ -700,7 +728,7 @@ function HomePage() {
                                 {/* Preview */}
                                 <div className="w-full aspect-[16/9] overflow-hidden relative rounded-[10px] border border-theme-tertiary bg-[#0a0a0a]">
                                   <iframe
-                                    src={`/templates/${t.name}/slides-plus.html`}
+                                    src={`/templates/${t.name}/example.html`}
                                     style={{
                                       transform: "scale(0.25)",
                                       transformOrigin: "top left",
@@ -712,7 +740,7 @@ function HomePage() {
                                       top: 0,
                                       left: 0,
                                     }}
-                                    sandbox="allow-same-origin"
+                                    sandbox="allow-scripts allow-same-origin"
                                     title={t.name}
                                     loading="lazy"
                                   />
@@ -762,7 +790,7 @@ function HomePage() {
               {/* Large preview */}
               <div className="relative w-full overflow-hidden rounded-[14px] border border-theme-tertiary bg-[#0a0a0a]" style={{ aspectRatio: "16/9" }}>
                 <iframe
-                  src={`/templates/${selectedTemplate.name}/slides-plus.html`}
+                  src={`/templates/${selectedTemplate.name}/example.html`}
                   style={{
                     transform: "scale(0.25)",
                     transformOrigin: "top left",
@@ -773,7 +801,7 @@ function HomePage() {
                     top: 0,
                     left: 0,
                   }}
-                  sandbox="allow-same-origin"
+                  sandbox="allow-scripts allow-same-origin"
                   title={selectedTemplate.name}
                 />
               </div>

@@ -1,4 +1,8 @@
+import { useRef } from "react";
 import Editor from "@monaco-editor/react";
+import { MonacoBinding } from "y-monaco";
+import * as Y from "yjs";
+import { Awareness } from "y-protocols/awareness";
 import { useTheme } from "../../../contexts/ThemeContext";
 import { editor } from "monaco-editor";
 
@@ -6,12 +10,46 @@ type Props = {
   code: string;
   setCode?: (val: string) => void;
   language?: string;
+  /** Si se pasan, el editor se bindea a Yjs para co-edición en vivo y deja de
+   * funcionar como input controlado (`code`/`setCode` se ignoran). */
+  yText?: Y.Text | null;
+  awareness?: Awareness | null;
+  readOnly?: boolean;
 };
 
-export default function CodeEditor({ code, setCode = () => { }, language = "html" }: Props) {
+export default function CodeEditor({
+  code,
+  setCode = () => { },
+  language = "html",
+  yText = null,
+  awareness = null,
+  readOnly = false,
+}: Props) {
   const { isDark } = useTheme();
+  const bindingRef = useRef<MonacoBinding | null>(null);
 
   const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor, monaco: any) => {
+    // Co-edición: enlazar el modelo de Monaco al Y.Text compartido.
+    if (yText) {
+      const model = editor.getModel();
+      if (model) {
+        // Limpiar cualquier binding previo (StrictMode / cambio de modo) antes de
+        // crear uno nuevo, para no duplicar listeners sobre el mismo Y.Text.
+        bindingRef.current?.destroy();
+        bindingRef.current = new MonacoBinding(
+          yText,
+          model,
+          new Set([editor]),
+          awareness ?? undefined
+        );
+        // Destruir el binding cuando Monaco se desmonta.
+        editor.onDidDispose(() => {
+          bindingRef.current?.destroy();
+          bindingRef.current = null;
+        });
+      }
+    }
+
     // Register Tailwind CSS classes for autocomplete
     monaco.languages.registerCompletionItemProvider('html', {
       provideCompletionItems: (model: any, position: any) => {
@@ -89,16 +127,20 @@ export default function CodeEditor({ code, setCode = () => { }, language = "html
     });
   };
 
+  // En modo Yjs el contenido lo gobierna el MonacoBinding; pasar `value`/`onChange`
+  // controlados pelearía con él. Solo se usan en modo no-colaborativo (fallback).
+  const collab = !!yText;
+
   return (
     <Editor
       height="100%"
       width="100%"
       theme={isDark ? "vs-dark" : "vs-light"}
       language={language}
-      value={code}
-      onChange={(v) => setCode(v || "")}
+      {...(collab ? {} : { value: code, onChange: (v: string | undefined) => setCode(v || "") })}
       onMount={handleEditorDidMount}
       options={{
+        readOnly,
         minimap: { enabled: true },
         automaticLayout: true,
         fontSize: 14,

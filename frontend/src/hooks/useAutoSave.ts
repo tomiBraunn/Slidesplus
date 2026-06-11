@@ -33,6 +33,13 @@ export function useAutoSave(
       return true
     }
 
+    // No guardar contenido vacío o sin slides: el backend lo rechaza con 400 y
+    // solo ensucia la consola. Ocurre durante la ventana inicial antes de que el
+    // documento colaborativo termine de sincronizar/sembrar.
+    if (!currentContent || !/<section/i.test(currentContent)) {
+      return true
+    }
+
     setIsSaving(true)
 
     try {

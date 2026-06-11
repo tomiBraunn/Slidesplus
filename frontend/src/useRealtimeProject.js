@@ -2,10 +2,12 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { supabase } from './utils/supabaseClient'
 
-async function getSupabase() {
-  return supabase
-}
-
+/**
+ * Presencia en tiempo real (avatares de colaboradores online) sobre el canal
+ * `project:{id}`. La co-edición del documento (Yjs) viaja por su propio
+ * provider/canal; este hook se ocupa SOLO de la lista de usuarios activos y del
+ * estado de conexión que muestra la navbar.
+ */
 export const useRealtimeCollaboration = (
   projectId,
   currentUserId,
@@ -15,60 +17,59 @@ export const useRealtimeCollaboration = (
   avatar
 ) => {
   const [activeUsers, setActiveUsers] = useState([])
-  const [lastChange, setLastChange] = useState(null)
   const [isConnected, setIsConnected] = useState(false)
   const channelRef = useRef(null)
-
-  const clearLastChange = useCallback(() => setLastChange(null), [])
-
-  const notifySlidesUpdated = useCallback(() => {
-    const channel = channelRef.current
-    if (!channel || !currentUserId) return
-    channel.send({
-      type: 'broadcast',
-      event: 'slides_updated',
-      payload: {
-        userId: currentUserId,
-        timestamp: Date.now(),
-      },
-    })
-  }, [currentUserId])
+  const joinedRef = useRef(false)
 
   useEffect(() => {
     if (!projectId || !currentUserId) return
 
     let cancelled = false
+    let retryTimer = null
+    let attempt = 0
 
-    const setup = async () => {
-      try {
-        const supabase = await getSupabase()
-        if (cancelled) return
+    const teardown = () => {
+      if (retryTimer) {
+        clearTimeout(retryTimer)
+        retryTimer = null
+      }
+      if (channelRef.current) {
+        try {
+          supabase.removeChannel(channelRef.current)
+        } catch (err) {
+          console.warn('[realtime] error removing presence channel:', err)
+        }
+        channelRef.current = null
+      }
+      joinedRef.current = false
+    }
 
-        const channel = supabase.channel(`project:${projectId}`, {
-          config: {
-            presence: { key: currentUserId },
-            broadcast: { self: false },
-          },
+    const setup = () => {
+      teardown()
+      if (cancelled) return
+
+      const channel = supabase.channel(`project:${projectId}:presence`, {
+        config: {
+          presence: { key: currentUserId },
+        },
+      })
+
+      channel
+        .on('presence', { event: 'sync' }, () => {
+          const state = channel.presenceState()
+          const users = Object.values(state)
+            .flat()
+            .filter((u) => u.userId !== currentUserId)
+          setActiveUsers(users)
         })
+        .subscribe(async (status, err) => {
+          if (cancelled) return
 
-        channel
-          .on('presence', { event: 'sync' }, () => {
-            const state = channel.presenceState()
-            const users = Object.values(state)
-              .flat()
-              .filter((u) => u.userId !== currentUserId)
-            setActiveUsers(users)
-          })
-          .on('broadcast', { event: 'slides_updated' }, ({ payload }) => {
-            if (!payload || payload.userId === currentUserId) return
-            setLastChange({
-              change_type: 'slides_updated',
-              change_data: payload,
-            })
-          })
-          .subscribe(async (status) => {
-            if (status === 'SUBSCRIBED') {
-              setIsConnected(true)
+          if (status === 'SUBSCRIBED') {
+            attempt = 0
+            joinedRef.current = true
+            setIsConnected(true)
+            try {
               await channel.track({
                 userId: currentUserId,
                 username: username || 'Anonymous',
@@ -77,24 +78,41 @@ export const useRealtimeCollaboration = (
                 avatar,
                 online_at: new Date().toISOString(),
               })
+            } catch (trackErr) {
+              console.warn('[realtime] presence track failed:', trackErr)
             }
-          })
+            return
+          }
 
-        channelRef.current = channel
-      } catch (err) {
-        console.warn('Realtime collaboration unavailable:', err)
-        setIsConnected(false)
-      }
+          if (
+            status === 'CHANNEL_ERROR' ||
+            status === 'TIMED_OUT' ||
+            status === 'CLOSED'
+          ) {
+            joinedRef.current = false
+            setIsConnected(false)
+            console.warn(
+              `[realtime] presence channel status=${status}`,
+              err || ''
+            )
+            // Reintento con backoff exponencial (cap 10s) salvo cierre limpio
+            // por desmontaje.
+            if (!cancelled && status !== 'CLOSED') {
+              const delay = Math.min(1000 * 2 ** attempt, 10000)
+              attempt += 1
+              retryTimer = setTimeout(setup, delay)
+            }
+          }
+        })
+
+      channelRef.current = channel
     }
 
     setup()
 
     return () => {
       cancelled = true
-      if (channelRef.current) {
-        channelRef.current.unsubscribe()
-        channelRef.current = null
-      }
+      teardown()
       setIsConnected(false)
       setActiveUsers([])
     }
@@ -102,15 +120,6 @@ export const useRealtimeCollaboration = (
 
   return {
     activeUsers,
-    lastChange,
-    chatMessages: [],
-    cursors: [],
     isConnected,
-    updatePresence: () => {},
-    updateCursor: () => {},
-    broadcastChange: () => {},
-    notifySlidesUpdated,
-    sendChatMessage: () => {},
-    clearLastChange,
   }
 }

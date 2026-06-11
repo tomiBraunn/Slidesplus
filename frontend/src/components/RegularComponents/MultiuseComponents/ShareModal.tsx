@@ -130,7 +130,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                 setCollaborators(data.collaborators || [])
                 setOwner(data.project?.owner || null)
                 setProjectName(data.project?.name || '')
-                setIsPublic(data.project?.is_public || false)
+                setIsPublic(data.project?.visibility === 'public')
             }
         } catch (err) {
             console.error('Error fetching access:', err)
@@ -221,19 +221,20 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
     const handleTogglePublic = async () => {
         try {
             const token = localStorage.getItem('token')
+            const nextPublic = !isPublic
             const res = await fetch(`${urlbackend}/projects/${projectId}/visibility`, {
-                method: 'PUT',
+                method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`
                 },
-                body: JSON.stringify({ is_public: !isPublic })
+                body: JSON.stringify({ visibility: nextPublic ? 'public' : 'private' })
             })
 
             const data = await res.json()
 
             if (data.ok) {
-                setIsPublic(!isPublic)
+                setIsPublic(nextPublic)
             } else {
                 setError(data.error || 'Failed to update visibility')
             }

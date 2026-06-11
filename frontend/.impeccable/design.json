@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-11T00:00:00Z",
+  "title": "Design System: slides+",
+  "extensions": {
+    "colorMeta": {
+      "ink-black": { "role": "neutral", "displayName": "Ink Black", "canonical": "#121212", "tonalRamp": ["#0a0a0a", "#121212", "#161616", "#282828", "#4A4A4A", "#666666", "#A8A8A8", "#EAEAEA"] },
+      "surface-raised": { "role": "neutral", "displayName": "Surface Raised", "canonical": "#282828", "tonalRamp": ["#121212", "#161616", "#1d1d1d", "#282828", "#333333", "#4A4A4A", "#666666", "#8a8a8a"] },
+      "paper-white": { "role": "neutral", "displayName": "Paper White", "canonical": "#EAEAEA", "tonalRamp": ["#666666", "#8a8a8a", "#a8a8a8", "#c4c4c4", "#d8d8d8", "#EAEAEA", "#f5f5f5", "#ffffff"] },
+      "ai-periwinkle": { "role": "primary", "displayName": "AI Periwinkle", "canonical": "#7182FF", "tonalRamp": ["#1a2052", "#2c3787", "#3f4eb8", "#5567e0", "#7182FF", "#94a1ff", "#b8c1ff", "#dde2ff"] },
+      "ai-green": { "role": "secondary", "displayName": "AI Green", "canonical": "#249931", "tonalRamp": ["#0a2e0e", "#114d18", "#187322", "#249931", "#3dbb4b", "#6cd178", "#a1e3a9", "#d4f3d8"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero statements on marketing surfaces only." },
+      "body": { "displayName": "Body", "purpose": "Copy at 65-75ch max, never below the contrast floor." }
+    },
+    "shadows": [
+      { "name": "ai-glow-subtle", "value": "0 0 15px rgba(36,153,49,0.15), 0 0 30px rgba(113,130,255,0.15)", "purpose": "Resting AI prompt input. Only AI elements glow." },
+      { "name": "ai-glow-active", "value": "0 0 30px rgba(36,153,49,0.4), 0 0 60px rgba(113,130,255,0.4), 0 0 90px rgba(36,153,49,0.2)", "purpose": "Expanded/engaged AI panel." }
+    ],
+    "motion": [
+      { "name": "ease-panel", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Panel expansion (AI input pill to panel), 0.5s." },
+      { "name": "ease-out-soft", "value": "cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "Hover slides and entrances." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Pill, paper-white on ink-black. Main call to action in-app.",
+      "html": "<button class=\"ds-btn-primary\">Create project</button>",
+      "css": ".ds-btn-primary { background: #EAEAEA; color: #121212; border: 1px solid #666666; border-radius: 9999px; padding: 8px 16px; font-weight: 500; font-size: 0.875rem; cursor: pointer; transition: opacity 0.2s; } .ds-btn-primary:hover { opacity: 0.9; } .ds-btn-primary:focus-visible { outline: 2px solid rgba(255,255,255,0.5); outline-offset: 2px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Quiet pill for secondary actions and inactive tabs.",
+      "html": "<button class=\"ds-btn-ghost\">Templates</button>",
+      "css": ".ds-btn-ghost { background: transparent; color: #8a8a8a; border: none; border-radius: 9999px; padding: 8px 24px; font-weight: 500; font-size: 0.875rem; cursor: pointer; transition: color 0.2s; } .ds-btn-ghost:hover { color: #ffffff; }"
+    },
+    {
+      "name": "Tab Pill Group",
+      "kind": "nav",
+      "description": "Segmented pill switcher; active tab inverts to paper-white.",
+      "html": "<div class=\"ds-tabs\"><button class=\"ds-tab ds-tab-active\">My designs</button><button class=\"ds-tab\">Create with AI</button><button class=\"ds-tab\">Templates</button></div>",
+      "css": ".ds-tabs { display: inline-flex; gap: 4px; background: #282828; border-radius: 9999px; padding: 4px; } .ds-tab { background: transparent; color: #8a8a8a; border: none; border-radius: 9999px; padding: 8px 24px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: color 0.2s; } .ds-tab:hover { color: #ffffff; } .ds-tab-active { background: #EAEAEA; color: #121212; }"
+    },
+    {
+      "name": "AI Prompt Input",
+      "kind": "input",
+      "description": "Signature input: pill with AI duotone glow. The only glowing element in the system.",
+      "html": "<div class=\"ds-ai-input\"><input class=\"ds-ai-field\" placeholder=\"Describe your presentation idea...\" /><span class=\"ds-ai-spark\">✦</span></div>",
+      "css": ".ds-ai-input { display: flex; align-items: center; gap: 8px; background: #282828; border: 1px solid #666666; border-radius: 9999px; padding: 12px 16px; box-shadow: 0 0 15px rgba(36,153,49,0.15), 0 0 30px rgba(113,130,255,0.15); } .ds-ai-field { flex: 1; background: transparent; border: none; color: #ffffff; font-size: 0.9375rem; outline: none; } .ds-ai-field::placeholder { color: #a8a8a8; } .ds-ai-spark { color: #7182FF; } .ds-ai-input:focus-within { box-shadow: 0 0 30px rgba(36,153,49,0.4), 0 0 60px rgba(113,130,255,0.4); }"
+    },
+    {
+      "name": "Project Card",
+      "kind": "card",
+      "refersTo": "card-project",
+      "description": "Raised tile with 16:9 preview area; tonal elevation, no shadow.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-preview\"></div><div class=\"ds-card-row\"><span class=\"ds-card-title\">Q3 Pitch Deck</span></div></div>",
+      "css": ".ds-card { background: #282828; border: 1px solid #666666; border-radius: 15px; padding: 6px; width: 240px; transition: background 0.2s; } .ds-card:hover { background: #333333; } .ds-card-preview { aspect-ratio: 16/9; background: #0a0a0a; border-radius: 10px; border: 1px solid #4A4A4A; } .ds-card-row { display: flex; align-items: center; padding: 6px 4px 2px; } .ds-card-title { color: #ffffff; font-size: 0.875rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }"
+    },
+    {
+      "name": "Search Input",
+      "kind": "input",
+      "refersTo": "input-search",
+      "description": "Quiet pill search; no glow (search is not AI).",
+      "html": "<div class=\"ds-search\"><input class=\"ds-search-field\" placeholder=\"Search for your projects\" /><svg class=\"ds-search-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg></div>",
+      "css": ".ds-search { display: flex; align-items: center; gap: 8px; background: #282828; border: 1px solid #4A4A4A; border-radius: 9999px; padding: 12px 16px; } .ds-search-field { flex: 1; background: transparent; border: none; color: #ffffff; font-size: 0.9375rem; outline: none; } .ds-search-field::placeholder { color: #a8a8a8; } .ds-search-icon { color: #a8a8a8; } .ds-search:focus-within { border-color: #8a8a8a; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Dark Stage",
+    "overview": "slides+ is a dark theater where the decks are the performers. The interface is matte near-black, quiet and flat, so every slide reads like a lit stage against it. Typography carries hierarchy, whitespace carries rhythm, and color is reserved for moments where AI is present.",
+    "keyCharacteristics": [
+      "Matte near-black canvas; content provides all the color",
+      "Single sans (Inter) at multiple weights",
+      "Pill-shaped controls; soft 15px radius containers",
+      "AI duotone (#7182FF + #249931) only where AI acts",
+      "Flat by default — tonal layering instead of shadows"
+    ],
+    "rules": [
+      { "name": "The AI Duotone Rule", "body": "Periwinkle and green belong to AI features exclusively. If a surface has no AI in it, it stays grayscale.", "section": "colors" },
+      { "name": "The Contrast Floor Rule", "body": "Body text never drops below 4.5:1. On #121212 that means white at >=62% opacity; white/40 is prohibited for copy.", "section": "colors" },
+      { "name": "The One Family Rule", "body": "Inter only. A second typeface is a redesign decision, not a page decision.", "section": "typography" },
+      { "name": "The Glow-Is-AI Rule", "body": "If it glows, AI is involved. Nothing else glows.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep the canvas matte #121212 and let slides provide the color",
+      "Do reserve #7182FF/#249931 for AI features",
+      "Do use tonal layering (#282828 + hairline border) for raised surfaces",
+      "Do keep body text at or above rgba(255,255,255,0.62) on dark",
+      "Do use real rendered decks/templates as hero content",
+      "Do give every animation a prefers-reduced-motion alternative"
+    ],
+    "donts": [
+      "Don't use uppercase tracked eyebrows or 01/02/03 numbered scaffolding",
+      "Don't build identical icon+heading+text card grids",
+      "Don't use gradient text (including .appColorFadeText)",
+      "Don't use decorative glassmorphism",
+      "Don't cast black drop shadows; step the gray ramp instead",
+      "Don't ship copy below the contrast floor (text-white/40 on black)",
+      "Don't let WebGL/gradient backgrounds compete with content"
+    ]
+  }
+}

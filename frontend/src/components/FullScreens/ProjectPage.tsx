@@ -13,6 +13,7 @@ import { ShareModal } from "../RegularComponents/MultiuseComponents/ShareModal"
 import ProjectAccessRoute from "../RegularComponents/ProjectComponents/ProjectAccessRoute"
 import { useAutoSave } from "../../hooks/useAutoSave"
 import { useRealtimeCollaboration } from "../../useRealtimeProject"
+import { useCollabDoc, pickUserColor } from "../../hooks/useCollabDoc"
 import { buildSlidesPayload } from "../../utils/projectDocument"
 import { urlbackend } from "../../config.js"
 import { Spinner } from "../ui/spinner"
@@ -408,13 +409,13 @@ function EditPanel({
 
 /* ─────────────────────────────────────────────────────────── */
 
-function ProjectPageContent() {
+function ProjectPageContent({ role }: { role: string | null }) {
+  const isViewer = role === 'viewer'
   const location = useLocation()
   const [mode, setMode] = useState<ProjectMode>(getDefaultMode())
   const [projectId, setProjectId] = useState<string | null>(null)
   const [name, setName] = useState<string>("Untitled")
   const [saveState, setSaveState] = useState<SaveState>("idle")
-  const [doc, setDoc] = useState<string>("")
   const [previewWidth, setPreviewWidth] = useState(55)
   const [currentSlide, setCurrentSlide] = useState(0)
   const [slides, setSlides] = useState<string[]>([])
@@ -435,14 +436,42 @@ function ProjectPageContent() {
   const isDragging = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const editorRef = useRef<HTMLDivElement>(null)
-  const isApplyingRemoteChange = useRef(false)
   const livePreviewRef = useRef<HTMLIFrameElement>(null)
   const saveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingDocRef = useRef<string | null>(null)
-  const docRef = useRef(doc)
-  const projectIdRef = useRef(projectId)
 
   const user = getUserFromStorage()
+
+  // El snapshot inicial para sembrar el Y.Doc se obtiene del backend. Se expone
+  // por ref porque loadProject se define más abajo y useCollabDoc necesita una
+  // función estable.
+  const loadSnapshotRef = useRef<() => Promise<string | undefined>>(async () => undefined)
+
+  const collabUser = user
+    ? {
+        name:
+          [user.firstName, user.lastName].filter(Boolean).join(' ') ||
+          user.username ||
+          'Anonymous',
+        color: pickUserColor(user.id || user.username || 'anon'),
+      }
+    : null
+
+  const {
+    doc,
+    setDocExternally,
+    ready: collabReady,
+    ytext: collabYText,
+    awareness: collabAwareness,
+  } = useCollabDoc({
+    projectId,
+    enabled: !!projectId && !!user?.id,
+    user: collabUser,
+    loadSnapshot: useCallback(() => loadSnapshotRef.current(), []),
+  })
+
+  const docRef = useRef(doc)
+  const projectIdRef = useRef(projectId)
 
   const { syncBaseline, runAutoSave } = useAutoSave(
     projectId || undefined,
@@ -451,10 +480,7 @@ function ProjectPageContent() {
 
   const {
     activeUsers,
-    lastChange,
     isConnected,
-    notifySlidesUpdated,
-    clearLastChange
   } = useRealtimeCollaboration(
     projectId,
     user?.id || '',
@@ -472,11 +498,13 @@ function ProjectPageContent() {
     projectIdRef.current = projectId
   }, [projectId])
 
-  const loadProject = async (id: string, options?: { applyToEditor?: boolean }) => {
+  // Carga el snapshot HTML del proyecto desde el backend. Ya NO aplica el doc al
+  // editor directamente: en modo colaborativo el Y.Doc es la fuente de verdad y
+  // solo se siembra con este snapshot cuando somos el primer usuario (lo decide
+  // useCollabDoc tras el handshake de sync). Devuelve el HTML para ese seed.
+  const loadProject = async (id: string): Promise<string | undefined> => {
     const token = localStorage.getItem("token")
-    if (!token) return
-
-    const applyToEditor = options?.applyToEditor !== false
+    if (!token) return undefined
 
     try {
       const projectRes = await fetch(`${urlbackend}/projects/${id}`, {
@@ -490,34 +518,22 @@ function ProjectPageContent() {
       })
       const slidesData = await slidesRes.json()
 
-      let loadedDoc: string
       if (slidesData.ok && slidesData.slides.length > 0) {
-        loadedDoc =
+        return (
           "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>" +
           slidesData.slides.map((s: any) => s.html).join("\n") +
           "</body></html>"
-      } else {
-        loadedDoc =
-          "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body><section class='slide'><h1>Slide 1</h1></section></body></html>"
+        )
       }
-
-      if (applyToEditor) {
-        isApplyingRemoteChange.current = true
-        setDoc(loadedDoc)
-        syncBaseline(loadedDoc)
-        pendingDocRef.current = null
-        setTimeout(() => {
-          isApplyingRemoteChange.current = false
-        }, 150)
-      }
-
-      return loadedDoc
+      return "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body><section class='slide'><h1>Slide 1</h1></section></body></html>"
     } catch (error) {
       console.error("Error loading project:", error)
-    } finally {
-      setProjectLoading(false)
+      return undefined
     }
   }
+
+  // Mantener la ref actualizada para que useCollabDoc use la última versión.
+  loadSnapshotRef.current = () => loadProject(projectIdRef.current || projectId || "")
 
   const saveSlidesToServer = async (finalDoc: string, options?: { keepalive?: boolean }) => {
     const id = projectIdRef.current
@@ -546,7 +562,6 @@ function ProjectPageContent() {
     }
 
     syncBaseline(finalDoc)
-    notifySlidesUpdated()
     return true
   }
 
@@ -573,6 +588,8 @@ function ProjectPageContent() {
     const id = parts[parts.length - 1]
     if (!id) return
     setProjectId(id)
+    // El nombre y demás metadata se cargan vía loadProject; el contenido del doc
+    // lo siembra useCollabDoc tras el handshake de sync (no aquí).
     loadProject(id)
 
     if (location.state?.openAIChat) {
@@ -583,15 +600,11 @@ function ProjectPageContent() {
     }
   }, [])
 
+  // Ocultar el loader una vez que el documento colaborativo está listo (sync +
+  // seed si corresponde).
   useEffect(() => {
-    if (!lastChange || !projectId) return
-
-    if (lastChange.change_type === "slides_updated") {
-      loadProject(projectId)
-    }
-
-    clearLastChange()
-  }, [lastChange, clearLastChange, projectId])
+    if (collabReady) setProjectLoading(false)
+  }, [collabReady])
 
   const flushPendingSaveRef = useRef(flushPendingSave)
   const runAutoSaveRef = useRef(runAutoSave)
@@ -674,17 +687,9 @@ function ProjectPageContent() {
   }, [doc, currentSlide])
 
 
-  const onChangeDoc = (next: string) => {
-    if (isApplyingRemoteChange.current) {
-      return
-    }
-
-    const minimalDoc = "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body><section class=\"slide\"></section></body></html>"
-
-    const hasContent = next.replace(/<[^>]*>/g, '').trim().length > 0
-    const finalDoc = hasContent ? next : minimalDoc
-
-    setDoc(finalDoc)
+  // Programa el guardado debounced del snapshot HTML al backend. La fuente de
+  // verdad en vivo es el Y.Doc; Postgres guarda el snapshot de cualquier editor.
+  const scheduleSave = (finalDoc: string) => {
     setSaveState("saving")
     pendingDocRef.current = finalDoc
 
@@ -710,13 +715,39 @@ function ProjectPageContent() {
     }, 500)
   }
 
-  const applySetDoc = (val: string | ((v: string) => string)) => {
-    setDoc((prev) => {
-      const next = typeof val === "function" ? val(prev) : val
-      onChangeDoc(next)
-      return next
-    })
+  // Mutaciones del doc que vienen de fuera de Monaco (añadir/borrar/reordenar
+  // slides, chat AI, edit panel). Se aplican como diff sobre el Y.Text; el espejo
+  // Y→React actualiza `doc` y el efecto de autosave persiste.
+  const onChangeDoc = (next: string) => {
+    const minimalDoc = "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body><section class=\"slide\"></section></body></html>"
+    const hasContent = next.replace(/<[^>]*>/g, '').trim().length > 0
+    const finalDoc = hasContent ? next : minimalDoc
+    setDocExternally(finalDoc)
   }
+
+  const applySetDoc = (val: string | ((v: string) => string)) => {
+    const next = typeof val === "function" ? val(docRef.current) : val
+    onChangeDoc(next)
+  }
+
+  // Persistir el snapshot cuando cambia el doc compartido (cubre tanto las
+  // ediciones directas en Monaco vía MonacoBinding como las mutaciones externas).
+  // Se salta hasta que el doc colaborativo está listo y el baseline del autosave
+  // se sincroniza con el contenido sembrado, para no re-guardar el seed.
+  const baselineSyncedRef = useRef(false)
+  useEffect(() => {
+    if (!collabReady || isViewer) return
+    if (!baselineSyncedRef.current) {
+      // Primer doc tras estar listo = contenido sincronizado/sembrado: es el
+      // baseline, no un cambio del usuario.
+      baselineSyncedRef.current = true
+      syncBaseline(doc)
+      return
+    }
+    if (!doc) return
+    scheduleSave(doc)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc, collabReady, isViewer])
 
   const handleMouseDown = () => {
     isDragging.current = true
@@ -1106,7 +1137,15 @@ Return ONLY the modified <section> HTML. Rules:
               height: "100%"
             }}
           >
-            {mode === "code" && <CodeEditorMode doc={doc} onChange={onChangeDoc} />}
+            {mode === "code" && (
+              <CodeEditorMode
+                doc={doc}
+                onChange={onChangeDoc}
+                yText={collabYText.current}
+                awareness={collabAwareness.current}
+                readOnly={isViewer}
+              />
+            )}
             {/* VISUAL MODE comentado temporalmente, descomentar para reactivar:
             {mode === "visual" && !useLegacyVisualEditor && <VisualEditorMode doc={doc} onChange={onChangeDoc} previewRef={livePreviewRef} projectId={projectId} />}
             {mode === "visual" && useLegacyVisualEditor && <VisualEditorModeLegacy doc={doc} onChange={onChangeDoc} />}
@@ -1179,7 +1218,7 @@ Return ONLY the modified <section> HTML. Rules:
 export default function ProjectPage() {
   return (
     <ProjectAccessRoute>
-      {() => <ProjectPageContent />}
+      {(_hasAccess, role) => <ProjectPageContent role={role} />}
     </ProjectAccessRoute>
   )
 }

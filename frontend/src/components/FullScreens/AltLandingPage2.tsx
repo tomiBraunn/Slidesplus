@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, MotionConfig } from "framer-motion";
 import SEO from "../SEO";
 import AppIconWithoutLink from "../RegularComponents/MultiuseComponents/AppIconWithoutLink";
 import Grainient from "../ThirdPartyComponents/Grainient/Grainient";
@@ -21,15 +21,14 @@ type ContentShape = {
   heroCta: string;
   heroSecondary: string;
   heroCopy: string;
+  showcaseTitle: string;
+  showcaseNote: string;
   featuresTitle: string;
-  featuresEyebrow: string;
   features: { title: string; copy: string }[];
   workflowTitle: string;
-  workflowEyebrow: string;
   steps: string[][];
   openEditor: string;
   faqTitle: string;
-  faqEyebrow: string;
   faqs: string[][];
   footerHeadline: string[];
   footerTagline: string;
@@ -53,8 +52,10 @@ const content: Record<Language, ContentShape> = {
     heroSecondary: "Explore features",
     heroCopy:
       "Slides+ gives you AI to get started, an editor to go deeper, and code when you need full control. From first idea to final slide — that's slides+.",
+    showcaseTitle: "This is what slides+ makes.",
+    showcaseNote:
+      "Real templates rendered live in HTML — not screenshots. Every deck below is running in the same engine you'll present with.",
     featuresTitle: "One workspace for the whole deck",
-    featuresEyebrow: "Features",
     features: [
       {
         title: "Start from an idea",
@@ -70,7 +71,6 @@ const content: Record<Language, ContentShape> = {
       },
     ],
     workflowTitle: "How Slides+ fits into your flow",
-    workflowEyebrow: "Workflow",
     steps: [
       [
         "Create a project",
@@ -91,7 +91,6 @@ const content: Record<Language, ContentShape> = {
     ],
     openEditor: "Open editor",
     faqTitle: "Frequently asked questions",
-    faqEyebrow: "FAQ",
     faqs: [
       [
         "What can I create with Slides+?",
@@ -129,8 +128,10 @@ const content: Record<Language, ContentShape> = {
     heroSecondary: "Ver funciones",
     heroCopy:
       "Slides+ te da IA para arrancar, un editor para profundizar y codigo cuando necesitas control total. De la primera idea al slide final — eso es slides+.",
+    showcaseTitle: "Esto es lo que hace slides+.",
+    showcaseNote:
+      "Plantillas reales renderizadas en vivo en HTML — no son capturas. Cada deck de abajo corre en el mismo motor con el que vas a presentar.",
     featuresTitle: "Un solo workspace para todo el deck",
-    featuresEyebrow: "Funciones",
     features: [
       {
         title: "Arranca desde una idea",
@@ -146,7 +147,6 @@ const content: Record<Language, ContentShape> = {
       },
     ],
     workflowTitle: "Como Slides+ encaja en tu flujo",
-    workflowEyebrow: "Flujo",
     steps: [
       [
         "Crea un proyecto",
@@ -167,7 +167,6 @@ const content: Record<Language, ContentShape> = {
     ],
     openEditor: "Abrir editor",
     faqTitle: "Preguntas frecuentes",
-    faqEyebrow: "FAQ",
     faqs: [
       [
         "Que puedo crear con Slides+?",
@@ -313,11 +312,86 @@ function GrainientBackground() {
   );
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+// Real template decks rendered live — the product showing itself
+const SHOWCASE_TEMPLATES = [
+  "html-ppt-zhangzara-cobalt-grid",
+  "html-ppt-zhangzara-bold-poster",
+  "html-ppt-zhangzara-8-bit-orbit",
+  "html-ppt-zhangzara-biennale-yellow",
+  "html-ppt-zhangzara-block-frame",
+  "html-ppt-zhangzara-retro-windows",
+  "html-ppt-zhangzara-sakura-chroma",
+  "html-ppt-zhangzara-neo-grid-bold",
+];
+
+function templateDisplayName(name: string) {
+  return name
+    .replace(/^html-ppt-zhangzara-|^html-ppt-/, "")
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+function TemplateCard({ name }: { name: string }) {
+  const displayName = templateDisplayName(name);
   return (
-    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-white/50">
-      {children}
-    </span>
+    <div className="mr-5 w-[300px] shrink-0 sm:mr-6 sm:w-[440px]">
+      <div className="relative aspect-video overflow-hidden rounded-xl border border-white/10 bg-[#0a0a0a]">
+        <iframe
+          src={`/templates/${name}/example.html`}
+          title={`${displayName} template`}
+          loading="lazy"
+          sandbox="allow-scripts allow-same-origin"
+          className="pointer-events-none absolute left-0 top-0 h-[1080px] w-[1920px] origin-top-left scale-[0.15625] border-0 sm:scale-[0.2292]"
+        />
+      </div>
+      <p className="mt-3 text-sm text-white/60">{displayName}</p>
+    </div>
+  );
+}
+
+function TemplateShowcase({ title, note }: { title: string; note: string }) {
+  return (
+    <motion.section
+      initial="hidden"
+      whileInView="visible"
+      viewport={ONCE_VIEWPORT}
+      variants={stagger}
+      id="showcase"
+      aria-labelledby="showcase-heading"
+      className="relative py-28 sm:py-36"
+    >
+      <div className="max-w-[1680px] mx-auto px-6 sm:px-10">
+        <motion.h2
+          id="showcase-heading"
+          variants={fadeUp}
+          className="max-w-[24ch] text-balance text-3xl sm:text-[clamp(2rem,3.8vw,3.75rem)] font-medium leading-[1.02] tracking-tight text-white"
+        >
+          {title}
+        </motion.h2>
+        <motion.p
+          variants={fadeUp}
+          className="mt-5 max-w-[58ch] text-base leading-relaxed text-white/65"
+        >
+          {note}
+        </motion.p>
+      </div>
+      <motion.div variants={fadeUp} className="relative mt-14 overflow-hidden">
+        <div className="marquee-track flex w-max">
+          {[...SHOWCASE_TEMPLATES, ...SHOWCASE_TEMPLATES].map((name, i) => (
+            <TemplateCard key={`${name}-${i}`} name={name} />
+          ))}
+        </div>
+        <div
+          className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-black to-transparent sm:w-28"
+          aria-hidden="true"
+        />
+        <div
+          className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-black to-transparent sm:w-28"
+          aria-hidden="true"
+        />
+      </motion.div>
+    </motion.section>
   );
 }
 
@@ -346,10 +420,7 @@ function FaqAccordion({ faqs }: { faqs: string[][] }) {
               onClick={() => setOpenIndex(isOpen ? -1 : i)}
               className="flex w-full cursor-pointer items-center gap-6 px-0 py-6 sm:py-7 text-left group"
             >
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/30 tabular-nums shrink-0 w-8 sm:w-10">
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <span className="flex-1 text-base sm:text-lg font-medium tracking-tight leading-snug text-white/80 group-hover:text-white transition-colors duration-200">
+              <span className="flex-1 text-base sm:text-lg font-medium tracking-tight leading-snug text-white/85 group-hover:text-white transition-colors duration-200">
                 {question}
               </span>
               <span
@@ -395,8 +466,7 @@ function FaqAccordion({ faqs }: { faqs: string[][] }) {
                   style={{ overflow: "hidden" }}
                 >
                   <div className="flex gap-6 pb-7 sm:pb-9">
-                    <span className="w-8 sm:w-10 shrink-0" aria-hidden="true" />
-                    <p className="max-w-[64ch] text-sm sm:text-[15px] leading-relaxed text-white/50">
+                    <p className="max-w-[64ch] text-sm sm:text-[15px] leading-relaxed text-white/65">
                       {answer}
                     </p>
                   </div>
@@ -411,30 +481,15 @@ function FaqAccordion({ faqs }: { faqs: string[][] }) {
 }
 
 // Shared section header layout
-function SectionHeader({
-  eyebrow,
-  title,
-  id,
-}: {
-  eyebrow: string;
-  title: string;
-  id: string;
-}) {
+function SectionHeader({ title, id }: { title: string; id: string }) {
   return (
-    <motion.div
+    <motion.h2
       variants={fadeUp}
-      className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6 sm:gap-16"
+      id={id}
+      className="max-w-[24ch] text-balance text-3xl sm:text-[clamp(2rem,3.8vw,3.75rem)] font-medium leading-[1.02] tracking-tight text-white"
     >
-      <div className="shrink-0 pt-1">
-        <SectionLabel>{eyebrow}</SectionLabel>
-      </div>
-      <h2
-        id={id}
-        className="flex-1 text-balance text-3xl sm:text-[clamp(2rem,3.8vw,3.75rem)] font-medium leading-[0.88] tracking-tight text-white"
-      >
-        {title}
-      </h2>
-    </motion.div>
+      {title}
+    </motion.h2>
   );
 }
 
@@ -488,6 +543,7 @@ export default function AltLandingPage2() {
         Un único overflow-y: el wrapper raíz contiene el scroll.
         Sin overflow-x ni overflow-hidden en ningún otro elemento.
       */}
+      <MotionConfig reducedMotion="user">
       <div
         className="relative min-h-screen bg-black text-white font-sans antialiased w-full"
         style={{ overflowY: "auto" }}
@@ -636,6 +692,14 @@ export default function AltLandingPage2() {
             </div>
           </section>
 
+          {/* ── SHOWCASE: the product showing itself ── */}
+          <TemplateShowcase title={t.showcaseTitle} note={t.showcaseNote} />
+
+          {/* Divider between Showcase and Features */}
+          <div className="max-w-[1680px] mx-auto px-6 sm:px-10">
+            <Divider />
+          </div>
+
           {/* ── FEATURES ── */}
           <motion.section
             initial="hidden"
@@ -657,59 +721,20 @@ export default function AltLandingPage2() {
             />
 
             <div className="max-w-[1680px] mx-auto px-6 sm:px-10">
-              <SectionHeader
-                eyebrow={t.featuresEyebrow}
-                title={t.featuresTitle}
-                id="features-heading"
-              />
+              <SectionHeader title={t.featuresTitle} id="features-heading" />
 
-              <motion.div
-                variants={fadeUp}
-                className="mt-16 sm:mt-20 grid grid-cols-1 sm:grid-cols-3 gap-px bg-white/[0.05] rounded-2xl"
-                style={{ isolation: "isolate" }}
-              >
-                {t.features.map((feature, i) => (
+              <motion.div variants={fadeUp} className="mt-16 sm:mt-20">
+                {t.features.map((feature) => (
                   <article
                     key={feature.title}
-                    className="group relative flex bg-black first:rounded-l-2xl last:rounded-r-2xl first:rounded-tl-2xl first:rounded-bl-2xl last:rounded-tr-2xl last:rounded-br-2xl sm:first:rounded-r-none sm:last:rounded-l-none"
+                    className="grid grid-cols-1 gap-3 border-t border-white/[0.08] py-10 last:border-b last:border-white/[0.08] sm:grid-cols-12 sm:gap-10 sm:py-14"
                   >
-                    {/* Hover gradient fill */}
-                    <div
-                      className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[inherit]"
-                      style={{
-                        background:
-                          "radial-gradient(ellipse at 30% 20%, rgba(113,130,255,0.07) 0%, transparent 70%)",
-                      }}
-                      aria-hidden="true"
-                    />
-
-                    <div className="relative flex flex-1 flex-col justify-between p-8 sm:p-10 min-h-[280px] sm:min-h-[380px]">
-                      {/* Number + thin accent line */}
-                      <div className="flex items-center gap-3">
-                        <span className="font-mono text-[10px] tracking-[0.2em] text-white/25 tabular-nums">
-                          {String(i + 1).padStart(2, "0")}
-                        </span>
-                        <span
-                          className="flex-1 h-px transition-all duration-500"
-                          style={{
-                            background:
-                              i === 0
-                                ? "rgba(113,130,255,0.3)"
-                                : "rgba(255,255,255,0.07)",
-                          }}
-                          aria-hidden="true"
-                        />
-                      </div>
-
-                      <div className="space-y-3">
-                        <h3 className="text-xl sm:text-2xl font-medium leading-tight tracking-tight text-white">
-                          {feature.title}
-                        </h3>
-                        <p className="text-sm leading-relaxed text-white/45">
-                          {feature.copy}
-                        </p>
-                      </div>
-                    </div>
+                    <h3 className="text-2xl font-medium leading-tight tracking-tight text-white sm:col-span-5 sm:text-3xl">
+                      {feature.title}
+                    </h3>
+                    <p className="max-w-[58ch] text-base leading-relaxed text-white/65 sm:col-span-6 sm:col-start-7">
+                      {feature.copy}
+                    </p>
                   </article>
                 ))}
               </motion.div>
@@ -731,11 +756,7 @@ export default function AltLandingPage2() {
             aria-labelledby="workflow-heading"
           >
             <div className="max-w-[1680px] mx-auto px-6 sm:px-10">
-              <SectionHeader
-                eyebrow={t.workflowEyebrow}
-                title={t.workflowTitle}
-                id="workflow-heading"
-              />
+              <SectionHeader title={t.workflowTitle} id="workflow-heading" />
 
               <motion.div
                 variants={fadeUp}
@@ -765,7 +786,7 @@ export default function AltLandingPage2() {
                       <h3 className="text-lg sm:text-xl font-medium leading-tight tracking-tight text-white/80 group-hover:text-white transition-colors duration-300">
                         {title}
                       </h3>
-                      <p className="mt-2 text-sm leading-relaxed text-white/40 max-w-[60ch]">
+                      <p className="mt-2 text-sm leading-relaxed text-white/60 max-w-[60ch]">
                         {copy}
                       </p>
                     </div>
@@ -818,11 +839,7 @@ export default function AltLandingPage2() {
             <div className="max-w-[1680px] mx-auto px-6 sm:px-10">
               <Divider />
               <div className="pt-16 sm:pt-20">
-                <SectionHeader
-                  eyebrow={t.faqEyebrow}
-                  title={t.faqTitle}
-                  id="faq-heading"
-                />
+                <SectionHeader title={t.faqTitle} id="faq-heading" />
 
                 <motion.div variants={fadeUp} className="mt-16 sm:mt-20">
                   {/* Two-column layout on large screens: sticky label + accordion */}
@@ -830,7 +847,7 @@ export default function AltLandingPage2() {
                     <div className="lg:col-span-4 hidden lg:block">
                       {/* Decorative left column — stays sticky while scrolling FAQ */}
                       <div className="sticky top-32 flex flex-col gap-8">
-                        <p className="text-sm text-white/30 leading-relaxed max-w-[28ch]">
+                        <p className="text-sm text-white/55 leading-relaxed max-w-[28ch]">
                           {language === "en"
                             ? "Everything you need to know before getting started."
                             : "Todo lo que necesitas saber antes de empezar."}
@@ -904,18 +921,18 @@ export default function AltLandingPage2() {
                       slides+
                     </span>
                   </a>
-                  <p className="text-sm text-white/35 leading-relaxed max-w-[28ch]">
+                  <p className="text-sm text-white/60 leading-relaxed max-w-[28ch]">
                     {t.footerTagline}
                   </p>
                 </div>
-                <p className="text-xs text-white/20 font-mono">{t.copyright}</p>
+                <p className="text-xs text-white/45 font-mono">{t.copyright}</p>
               </div>
 
               {/* Right: headline + CTA */}
               <div className="lg:col-span-8 flex flex-col justify-between gap-10">
                 <div className="text-[clamp(2.25rem,5.5vw,5rem)] font-medium leading-[0.9] tracking-tight">
                   <p className="text-white">{t.footerHeadline[0]}</p>
-                  <p style={{ color: "rgba(255,255,255,0.35)" }}>
+                  <p style={{ color: "rgba(255,255,255,0.55)" }}>
                     {t.footerHeadline[1]}
                   </p>
                 </div>
@@ -934,6 +951,7 @@ export default function AltLandingPage2() {
           </div>
         </motion.footer>
       </div>
+      </MotionConfig>
     </>
   );
 }

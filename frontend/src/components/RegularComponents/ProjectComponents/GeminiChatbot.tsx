@@ -15,6 +15,7 @@ import { urlbackend } from "../../../config.js";
 import { Spinner } from "../../ui/spinner";
 import { useAnimatedText } from "../../ui/animated-text";
 import StylePickerModal from "./StylePickerModal";
+import cobaltTemplateSrc from "../../../../public/cobalt-slides-plus.html?raw";
 
 type ChatMsg = {
   id: string;
@@ -389,6 +390,78 @@ function cleanSlideHtml(html: string): string {
     .trim();
 }
 
+// Resolves CSS variables and class-based styles into inline style="" attributes
+// so each section works in an isolated iframe with no shared CSS context.
+function injectStyleIntoAllSections(sections: string[]): string[] {
+  if (sections.length <= 1) return sections;
+
+  // Extract the <style> block from section 1
+  const styleMatch = sections[0].match(/<style[\s\S]*?<\/style>/i);
+  if (!styleMatch) return sections;
+  const styleBlock = styleMatch[0];
+
+  // Build a hidden iframe to compute styles using the real browser engine
+  const iframe = document.createElement("iframe");
+  iframe.style.cssText = "position:fixed;top:-9999px;left:-9999px;width:1920px;height:1080px;visibility:hidden;";
+  document.body.appendChild(iframe);
+
+  try {
+    const doc = iframe.contentDocument!;
+    const win = iframe.contentWindow!;
+
+    const PROPS = [
+      "font-family","font-size","font-style","font-weight","line-height",
+      "letter-spacing","color","background-color","text-transform","text-align",
+      "opacity","position","top","left","right","bottom","display",
+      "flex-direction","justify-content","align-items","align-self","gap",
+      "min-height","max-width","padding","padding-top","padding-bottom",
+      "margin","margin-top","margin-bottom","border-top","border-bottom",
+      "writing-mode","text-orientation","z-index","pointer-events",
+      "overflow","transform","box-shadow","background-image","background-size",
+    ];
+
+    function resolveElement(el: Element) {
+      const computed = win.getComputedStyle(el);
+      const existing = el.getAttribute("style") || "";
+      const additions: string[] = [];
+      for (const prop of PROPS) {
+        if (existing.includes(prop)) continue;
+        const val = computed.getPropertyValue(prop);
+        if (val && val !== "" && val !== "normal" && val !== "none" && val !== "auto" && val !== "0px" && val !== "rgba(0, 0, 0, 0)") {
+          additions.push(`${prop}:${val}`);
+        }
+      }
+      if (additions.length > 0) {
+        el.setAttribute("style", existing ? `${existing};${additions.join(";")}` : additions.join(";"));
+      }
+      el.removeAttribute("class");
+      for (const child of Array.from(el.children)) resolveElement(child);
+    }
+
+    const result = sections.map((s, i) => {
+      const html = i === 0 ? s : s.replace(/(<section[^>]*>)/i, `$1${styleBlock}`);
+      doc.open();
+      doc.write(`<!doctype html><html><head></head><body>${html}</body></html>`);
+      doc.close();
+      const section = doc.querySelector("section");
+      if (!section) return s;
+      resolveElement(section);
+      return section.outerHTML
+        .replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/\s*class="[^"]*"/g, "");
+    });
+
+    return result;
+  } catch {
+    return sections.map((s, i) => {
+      if (i === 0) return s;
+      return s.replace(/(<section[^>]*>)/i, `$1${styleBlock}`);
+    });
+  } finally {
+    document.body.removeChild(iframe);
+  }
+}
+
 /* ── Code Modal ── */
 function CodeModal({ isOpen, onClose, codeBlock, onInsert, onReplace }: {
   isOpen: boolean; onClose: () => void;
@@ -680,25 +753,18 @@ export default function GeminiChatbot({
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const { supabase } = await import("../../../utils/supabaseClient");
-        const { data } = await supabase.auth.getSession();
-        const av = data?.session?.user?.user_metadata?.avatar_url
-          || data?.session?.user?.user_metadata?.picture;
+    const normalize = (av?: string | null) =>
+      !av ? null : (av.startsWith("data:") || av.startsWith("http") ? av : `data:image/png;base64,${av}`);
+    try {
+      const stored = localStorage.getItem("user");
+      if (stored) {
+        const u = JSON.parse(stored);
+        const av = normalize(u.avatar);
         if (av) { setUserAvatar(av); return; }
-      } catch {}
-      try {
-        const stored = localStorage.getItem("user");
-        if (stored) {
-          const u = JSON.parse(stored);
-          const av = u.avatar;
-          if (!av) return;
-          setUserAvatar(av.startsWith("data:") || av.startsWith("http") ? av : `data:image/png;base64,${av}`);
-        }
-      } catch {}
-    };
-    load();
+      }
+      const av = normalize(localStorage.getItem("avatar"));
+      if (av) setUserAvatar(av);
+    } catch {}
   }, []);
 
   const ADMIN_MODELS = [
@@ -841,7 +907,7 @@ export default function GeminiChatbot({
         let previewSlides: string[] | undefined;
 
         if (action === "replace_all" && newSlides.length > 0) {
-          const cleanSlides = newSlides.map((s: string) => cleanSlideHtml(s));
+          const cleanSlides = injectStyleIntoAllSections(newSlides.map((s: string) => cleanSlideHtml(s)));
           setCode(`<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>${cleanSlides.join("\n")}</body></html>`);
           previewSlides = cleanSlides;
           assistantText = assistantText || `Created ${cleanSlides.length} slide${cleanSlides.length > 1 ? "s" : ""}.`;
@@ -894,17 +960,22 @@ export default function GeminiChatbot({
 
       if (decision === "slides") {
         systemPrompt = SLIDES_SYSTEM_PROMPT;
-        message = `Create a complete presentation about: ${userMsg}${filesContext}.
+        message = `Below is a complete working example of a Cobalt Grid presentation. Study its exact HTML structure carefully — the inline styles, the grid overlay divs, the hairline divs, the page numbers, the typography. You must replicate this structure exactly for the new presentation.
 
-MANDATORY OUTPUT RULES — VIOLATIONS WILL BREAK THE RENDERER:
+REFERENCE TEMPLATE (copy this structure, replace only the content):
+${cobaltTemplateSrc}
+
+---
+
+Now create a complete presentation about: ${userMsg}${filesContext}
+
+RULES — follow exactly as in the template above:
 - Output EXACTLY 6 <section> tags (or the number requested by the user)
-- Each <section> must have style="width:1920px;height:1080px;overflow:hidden;position:relative;"
-- The FIRST <section> must include <style>@import url('...');</style> for fonts — ONLY the @import line, nothing else in that <style> tag
-- EVERY OTHER ELEMENT on EVERY section must use ONLY inline style="" attributes — NO classes, NO CSS variables (var(--x)), NO additional <style> blocks
-- background:#F0EBDE NOT background:var(--paper). color:#1F2BE0 NOT color:var(--ink). Always literal hex values.
+- Copy the structure from the template: grid overlay div, hairline top div, hairline bottom div, page number div — these must appear in EVERY section
+- Use ONLY inline style="" attributes — NO classes, NO <style> blocks (except the @import in section 1), NO CSS variables
+- Use literal hex values: background:#F0EBDE, color:#1F2BE0 — never var(--paper), never var(--ink)
 - Do NOT wrap in doctype, html, head, or body tags
-- Do NOT use markdown code fences
-- Output raw HTML only, nothing else before or after`;
+- Output raw HTML sections only, nothing else`;
       } else if (decision === "code") {
         message = `Return a single markdown code block (\`\`\`<language>) and nothing else.\nIf the language is HTML and it makes sense, return a full document.\n\nSpec:\n${userMsg}${filesContext}`;
       } else {
@@ -931,7 +1002,7 @@ MANDATORY OUTPUT RULES — VIOLATIONS WILL BREAK THE RENDERER:
       if (codeBlock) {
         snippetToApply = codeBlock.code;
         if (decision === "slides") {
-          previewSlides = extractSlides(codeBlock.code);
+          previewSlides = injectStyleIntoAllSections(extractSlides(codeBlock.code));
           assistantTextToShow = `I created ${previewSlides.length} slide${previewSlides.length > 1 ? "s" : ""} for you.`;
         } else if (codeBlock.code.includes("<section")) {
           codeBlockData = { lang: codeBlock.lang || "html", code: codeBlock.code, description: "I updated the slide" };
@@ -943,7 +1014,7 @@ MANDATORY OUTPUT RULES — VIOLATIONS WILL BREAK THE RENDERER:
       } else if (htmlOnly) {
         snippetToApply = raw;
         if (decision === "slides") {
-          previewSlides = extractSlides(raw);
+          previewSlides = injectStyleIntoAllSections(extractSlides(raw));
           assistantTextToShow = `I created ${previewSlides.length} slide${previewSlides.length > 1 ? "s" : ""} for you.`;
         } else if (raw.includes("<section")) {
           codeBlockData = { lang: "html", code: raw, description: "I updated the slide" };

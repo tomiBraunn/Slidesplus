@@ -37,11 +37,13 @@ export default function ProjectAccessRoute({ children }: Props) {
         if (!cancelled) {
           if (data.ok && data.hasAccess) {
             setHasAccess(true)
-            setUserRole(data.role)
+            setUserRole(data.userRole ?? null)
             setProjectExists(true)
           } else {
             setHasAccess(false)
-            setProjectExists(data.exists === true)
+            // El 404 del backend no trae `exists`; un 404 implica que no existe,
+            // cualquier otra respuesta sin acceso implica que sí existe.
+            setProjectExists(res.status !== 404)
           }
           setChecking(false)
         }
