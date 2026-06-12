@@ -20,11 +20,17 @@ const app = express()
 const isProduction = process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production" || process.env.VERCEL
 
 const frontendURL = isProduction
-	? "https://slidesplus.vercel.app"
+	? "https://slidesplus.tech"
 	: (process.env.FRONTEND_URL || "http://localhost:5173")
 
 app.use(cors({
-	origin: ["http://localhost:5173", "https://slidesplus.vercel.app", "https://slides-plus.vercel.app"],
+	origin: [
+		"http://localhost:5173",
+		"https://slidesplus.tech",
+		"https://www.slidesplus.tech",
+		"https://slidesplus.vercel.app",
+		"https://slides-plus.vercel.app",
+	],
 	credentials: true,
 	methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
 	allowedHeaders: ["Content-Type", "Authorization"]

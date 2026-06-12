@@ -14,7 +14,7 @@ const SPOTIFY_REDIRECT_URI = isProduction
 	: (process.env.SPOTIFY_REDIRECT_URI || "http://localhost:8000/spotify/callback")
 
 const FRONTEND_URL = isProduction
-	? "https://slidesplus.vercel.app"
+	? "https://slidesplus.tech"
 	: (process.env.FRONTEND_URL || "http://localhost:5173")
 
 /**
