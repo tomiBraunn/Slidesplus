@@ -108,13 +108,19 @@ export function slidesFingerprint(slides) {
 
 const MAX_VERSIONS_PER_PROJECT = 50
 
+/**
+ * Poda solo las versiones automáticas (auto_save) más antiguas, conservando
+ * las MAX_VERSIONS_PER_PROJECT más recientes. Las versiones manuales
+ * (manual_save) nunca se borran aquí: son puntos de restauración que el
+ * usuario nombró explícitamente.
+ */
 export async function pruneProjectChanges(pool, projectId) {
 	await pool.query(
 		`DELETE FROM project_changes
 		WHERE id IN (
 			SELECT id FROM project_changes
-			WHERE project_id = $1
-			ORDER BY created_at DESC
+			WHERE project_id = $1 AND change_type = 'auto_save'
+			ORDER BY created_at DESC, id DESC
 			OFFSET $2
 		)`,
 		[projectId, MAX_VERSIONS_PER_PROJECT]

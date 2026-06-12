@@ -770,8 +770,8 @@ export const autoSaveProject = async (req, res) => {
 
 		const lastVersionQuery = await pool.query(
 			`SELECT change_data FROM project_changes
-			WHERE project_id = $1
-			ORDER BY created_at DESC
+			WHERE project_id = $1 AND change_type IN ('auto_save', 'manual_save')
+			ORDER BY created_at DESC, id DESC
 			LIMIT 1`,
 			[projectId]
 		)
@@ -782,7 +782,7 @@ export const autoSaveProject = async (req, res) => {
 			if (lastSlides && slidesFingerprint(lastSlides) === fingerprint) {
 				return res.json({ ok: true, message: "No changes detected", version_id: null })
 			}
-			if (!lastSlides && lastData?.content === content) {
+			if (!lastSlides && lastData?.content === persistResult.document) {
 				return res.json({ ok: true, message: "No changes detected", version_id: null })
 			}
 		}
@@ -832,13 +832,20 @@ export const getProjectVersions = async (req, res) => {
 			return res.status(403).json({ ok: false, message: "Access denied" })
 		}
 
-		// Get all versions with user info
+		// Solo metadata: NO devolvemos content/slides aquí (pueden ser MB por
+		// versión). El detalle se carga bajo demanda vía GET /versions/:versionId.
+		// Filtramos versiones sin contenido restaurable (incluye filas legacy).
 		const versionsQuery = await pool.query(
 			`SELECT
 				pc.id,
+				pc.change_type,
 				pc.created_at,
-				pc.change_data,
-				u.id as user_id,
+				pc.change_data->>'name' AS name,
+				COALESCE(
+					(pc.change_data->>'slide_count')::int,
+					jsonb_array_length(COALESCE(pc.change_data->'slides', '[]'::jsonb)),
+					0
+				) AS slide_count,
 				u.username,
 				u.first_name,
 				u.last_name,
@@ -846,34 +853,73 @@ export const getProjectVersions = async (req, res) => {
 			FROM project_changes pc
 			JOIN users u ON u.id = pc.user_id
 			WHERE pc.project_id = $1
-			ORDER BY pc.created_at DESC`,
+				AND pc.change_data ? 'content'
+			ORDER BY pc.created_at DESC, pc.id DESC
+			LIMIT 100`,
 			[projectId]
 		)
 
 		const versions = versionsQuery.rows.map((v, index) => {
-			const changeData = v.change_data
 			const createdAt = new Date(v.created_at)
 			const defaultName = `Auto-saved at ${createdAt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}`
-			const displayName = changeData.name || defaultName
 
 			return {
 				id: v.id,
 				version_number: versionsQuery.rowCount - index,
-				name: displayName,
+				change_type: v.change_type,
+				name: v.name || defaultName,
 				created_at: v.created_at,
 				username: v.username,
 				first_name: v.first_name,
 				last_name: v.last_name,
 				avatar: v.avatar,
-				slide_count: changeData.slide_count || changeData.slides?.length || 0,
-				content: changeData.content,
-				slides: changeData.slides || null,
+				slide_count: v.slide_count || 0,
 			}
 		})
 
 		res.json({ ok: true, versions })
 	} catch (err) {
 		console.error("Error fetching project versions:", err)
+		res.status(500).json({ ok: false, message: "Internal error" })
+	}
+}
+
+/**
+ * GET /projects/:projectId/versions/:versionId
+ * Detalle de una versión (content + slides) para previsualizar/restaurar.
+ */
+export const getProjectVersionDetail = async (req, res) => {
+	if (!pool) return res.status(500).json({ message: "Database not configured" })
+	try {
+		const { projectId, versionId } = req.params
+		const userId = req.user.sub
+
+		const { hasAccess } = await checkProjectAccess(projectId, userId)
+		if (!hasAccess) {
+			return res.status(403).json({ ok: false, message: "Access denied" })
+		}
+
+		const changeData = await getVersionChangeData(projectId, versionId)
+		if (!changeData) {
+			return res.status(404).json({ ok: false, message: "Version not found" })
+		}
+
+		const slides = changeData.slides?.length
+			? changeData.slides
+			: parseSectionsFromHtml(changeData.content)
+
+		res.json({
+			ok: true,
+			version: {
+				id: versionId,
+				name: changeData.name || null,
+				content: changeData.content || null,
+				slides,
+				slide_count: changeData.slide_count ?? slides.length,
+			},
+		})
+	} catch (err) {
+		console.error("Error fetching version detail:", err)
 		res.status(500).json({ ok: false, message: "Internal error" })
 	}
 }
@@ -902,12 +948,14 @@ export const restoreProjectVersion = async (req, res) => {
 			return res.status(400).json({ ok: false, message: "Version has no content to restore" })
 		}
 
-		await persistProjectContent(pool, projectId, userId, {
+		const result = await persistProjectContent(pool, projectId, userId, {
 			content: changeData.content,
 			slides,
 		})
 
-		res.json({ ok: true, message: "Version restored successfully" })
+		// Devolvemos el documento restaurado para que el frontend actualice el
+		// Y.Doc compartido en vivo sin necesidad de recargar la página.
+		res.json({ ok: true, message: "Version restored successfully", content: result.document })
 	} catch (err) {
 		console.error("Error restoring project version:", err)
 		res.status(500).json({ ok: false, message: "Internal error" })
@@ -920,7 +968,10 @@ async function getVersionChangeData(projectId, versionId) {
 		[versionId, projectId]
 	)
 	if (versionQuery.rowCount === 0) return null
-	return versionQuery.rows[0].change_data
+	const data = versionQuery.rows[0].change_data
+	// change_data puede ser null o no-objeto en filas corruptas/legacy.
+	if (!data || typeof data !== "object") return null
+	return data
 }
 
 /**
