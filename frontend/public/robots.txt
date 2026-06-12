@@ -10,4 +10,4 @@ Disallow: /home
 Allow: /v/
 
 # Sitemap location
-Sitemap: https://slidesplus.vercel.app/sitemap.xml
+Sitemap: https://slidesplus.tech/sitemap.xml
