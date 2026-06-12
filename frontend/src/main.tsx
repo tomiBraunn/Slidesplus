@@ -5,6 +5,10 @@ import './index.css'
 import App from './App.tsx'
 import { getAuthToken } from './utils/getAuthToken'
 import { urlbackend } from './config.js'
+import { initAnalytics } from './analytics'
+
+// Inicializa Google Analytics 4 (no-op si VITE_GA_ID no está configurado).
+initAnalytics()
 
 // Wrap fetch to automatically attach Authorization header for backend requests
 const originalFetch = window.fetch.bind(window)

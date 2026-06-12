@@ -13,6 +13,7 @@ import {
 import { CornerRightUp } from "lucide-react";
 import { urlbackend } from "../../../config.js";
 import { Spinner } from "../../ui/spinner";
+import { Timer } from "../../ui/timer";
 import { useAnimatedText } from "../../ui/animated-text";
 import StylePickerModal from "./StylePickerModal";
 import cobaltTemplateSrc from "../../../../public/cobalt-slides-plus.html?raw";
@@ -1286,6 +1287,14 @@ RULES — follow exactly as in the template above:
                 </div>
                 <div className="px-3.5 py-2.5 rounded-2xl rounded-tl-sm bg-theme-quaternary flex items-center gap-2">
                   <Spinner className="size-3 text-theme-secondary" />
+                  <Timer
+                    loading={loading}
+                    format="MM:SS"
+                    variant="ghost"
+                    size="sm"
+                    className="px-0 py-0 gap-1"
+                    icon={() => null}
+                  />
                 </div>
               </div>
             )}

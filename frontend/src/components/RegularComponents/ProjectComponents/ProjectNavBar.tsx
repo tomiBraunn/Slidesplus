@@ -36,6 +36,7 @@ type Props = {
   onToggleTweakMode?: () => void;
   isEditingSlide?: boolean;
   hasCurrentSlide?: boolean;
+  onVersionRestored?: (content: string) => void;
 };
 
 type User = {
@@ -82,6 +83,7 @@ export default function ProjectNavBar({
   onToggleTweakMode,
   isEditingSlide = false,
   hasCurrentSlide = false,
+  onVersionRestored,
 }: Props) {
   const [user, setUser] = useState<User | null>(null);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
@@ -325,6 +327,7 @@ export default function ProjectNavBar({
         isOpen={versionHistoryOpen}
         onClose={() => setVersionHistoryOpen(false)}
         projectId={projectId || null}
+        onVersionRestored={onVersionRestored}
       />
 
       {settingsOpen && (

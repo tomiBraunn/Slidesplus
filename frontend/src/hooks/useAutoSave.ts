@@ -9,27 +9,36 @@ export function useAutoSave(
     onContentSynced?: (content: string) => void
   }
 ) {
-  const [lastSavedContent, setLastSavedContent] = useState<string>(documentContent)
   const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+
+  // Contenido vivo del documento (espejo del Y.Doc).
   const lastContentRef = useRef<string>(documentContent)
-  const initializedRef = useRef(false)
+  // Último contenido que YA fue versionado en /auto-save (o sembrado como
+  // baseline al abrir). Es la referencia contra la que decidimos si el
+  // intervalo de 60s debe crear una versión nueva. NO se actualiza con los
+  // guardados debounced a /slides (eso era el bug que impedía versionar).
+  const lastVersionedRef = useRef<string>(documentContent)
+  // Refs estables para opciones, para que el intervalo no se reinicie.
+  const optionsRef = useRef(options)
+  optionsRef.current = options
 
   useEffect(() => {
     lastContentRef.current = documentContent
   }, [documentContent])
 
+  // Marca el contenido sembrado/cargado como baseline ya versionado, para no
+  // crear una versión del seed inicial al abrir el proyecto.
   const syncBaseline = useCallback((content: string) => {
-    setLastSavedContent(content)
     lastContentRef.current = content
-    initializedRef.current = true
+    lastVersionedRef.current = content
   }, [])
 
   const runAutoSave = useCallback(async () => {
     if (!projectId) return false
 
     const currentContent = lastContentRef.current
-    if (currentContent === lastSavedContent) {
+    if (currentContent === lastVersionedRef.current) {
       return true
     }
 
@@ -40,23 +49,31 @@ export function useAutoSave(
       return true
     }
 
+    const token = localStorage.getItem('token')
+    if (!token) {
+      console.error('Auto-save abortado: no hay token de autenticación')
+      return false
+    }
+
     setIsSaving(true)
 
     try {
-      const token = localStorage.getItem('token')
       const response = await fetch(`${urlbackend}/projects/${projectId}/auto-save`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ content: currentContent }),
+        keepalive: true,
       })
 
       if (response.ok) {
-        setLastSavedContent(currentContent)
+        // El backend dedupea por fingerprint: tanto si creó versión como si no,
+        // este contenido ya está representado, así que avanzamos el baseline.
+        lastVersionedRef.current = currentContent
         setLastSaveTime(new Date())
-        options?.onContentSynced?.(currentContent)
+        optionsRef.current?.onContentSynced?.(currentContent)
         return true
       }
       console.error('Auto-save failed:', await response.text())
@@ -67,8 +84,10 @@ export function useAutoSave(
     } finally {
       setIsSaving(false)
     }
-  }, [projectId, lastSavedContent, options])
+  }, [projectId])
 
+  // Intervalo estable: solo depende de projectId. runAutoSave es estable
+  // (sus dependencias son refs), así que el timer no se reinicia en cada edición.
   useEffect(() => {
     if (!projectId) return
 
@@ -79,13 +98,12 @@ export function useAutoSave(
     return () => clearInterval(interval)
   }, [projectId, runAutoSave])
 
-  const hasUnsavedChanges = documentContent !== lastSavedContent
+  const hasUnsavedChanges = documentContent !== lastVersionedRef.current
 
   return {
     isSaving,
     lastSaveTime,
     hasUnsavedChanges,
-    lastSavedContent,
     syncBaseline,
     runAutoSave,
   }

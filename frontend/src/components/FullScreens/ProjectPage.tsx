@@ -561,8 +561,14 @@ function ProjectPageContent({ role }: { role: string | null }) {
       return false
     }
 
-    syncBaseline(finalDoc)
     return true
+  }
+
+  // Aplica el contenido de una versión restaurada al Y.Doc compartido. Al pasar
+  // por onChangeDoc se propaga a los colaboradores y dispara el guardado normal.
+  const handleVersionRestored = (content: string) => {
+    if (!content) return
+    onChangeDoc(content)
   }
 
   const flushPendingSave = async (options?: { keepalive?: boolean }) => {
@@ -1021,6 +1027,7 @@ Return ONLY the modified <section> HTML. Rules:
         onToggleTweakMode={() => tweakMode ? exitTweakMode() : enterTweakMode()}
         isEditingSlide={isEditingSlide}
         hasCurrentSlide={!!slides[currentSlide]}
+        onVersionRestored={handleVersionRestored}
       />
 
 
