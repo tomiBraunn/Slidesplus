@@ -36,7 +36,10 @@ app.use(cors({
 	allowedHeaders: ["Content-Type", "Authorization"]
 }))
 
-app.use(express.json())
+// Decks can be large: 10+ slides each carrying the full inlined template
+// stylesheet easily exceeds the 100kb default and 413s. Allow up to 25mb.
+app.use(express.json({ limit: "25mb" }))
+app.use(express.urlencoded({ limit: "25mb", extended: true }))
 
 app.use(
 	session({

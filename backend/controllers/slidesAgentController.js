@@ -1,7 +1,8 @@
-import { generateWithGemini, generateWithGeminiFallback } from "../services/geminiService.js"
+import { generateWithGemini, generateWithGeminiFallback, buildCompressedHistory } from "../services/geminiService.js"
 import { generateWithChatGPT } from "../services/chatgptService.js"
 import { pool } from "../config/database.js"
-import { getTemplateCatalog, getTemplateFiles, getSlidesPlusContent, getTemplateStyleContext } from "../services/templateService.js"
+import { getTemplateCatalog, getTemplateFiles, getSlidesPlusContent, getTemplateStyleContext, matchExplicitTemplate, matchTemplateByTrigger } from "../services/templateService.js"
+import { buildTemplateStyleBlock, injectAuthoritativeStyles } from "./geminiController.js"
 
 async function isAdminUser(userId) {
 	if (!pool || !userId) return false
@@ -99,6 +100,10 @@ export const slidesAgentController = async (req, res) => {
 
 		const fullMessage = `${slidesContext}USER INSTRUCTION: ${message}`
 
+		// Conversation memory: prior turns so the agent remembers what it just did
+		// (e.g. "you removed the iframe", "make it bigger"). Compressed to cap tokens.
+		const convoHistory = await buildCompressedHistory(Array.isArray(history) ? history : [])
+
 		// Call AI
 		let rawText = ""
 		if (admin) {
@@ -107,7 +112,7 @@ export const slidesAgentController = async (req, res) => {
 			console.log(`[SlidesAgent] Admin ${userId} → ${model}`)
 
 			if (isGemini) {
-				const r = await generateWithGemini({ system: systemPrompt, message: fullMessage, model })
+				const r = await generateWithGemini({ system: systemPrompt, message: fullMessage, history: convoHistory, model })
 				if (!r.ok) {
 					let details; try { details = JSON.parse(r.raw) } catch { details = r.raw }
 					console.error("[SlidesAgent] Gemini error:", r.status)
@@ -116,7 +121,7 @@ export const slidesAgentController = async (req, res) => {
 				const data = JSON.parse(r.raw)
 				rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || ""
 			} else {
-				const r = await generateWithChatGPT({ system: systemPrompt, message: fullMessage, model })
+				const r = await generateWithChatGPT({ system: systemPrompt, message: fullMessage, history: convoHistory, model })
 				if (!r.ok) {
 					let details; try { details = JSON.parse(r.raw) } catch { details = r.raw }
 					console.error("[SlidesAgent] GPT error:", r.status)
@@ -127,7 +132,7 @@ export const slidesAgentController = async (req, res) => {
 			}
 		} else {
 			console.log(`[SlidesAgent] User ${userId ?? "anon"} → Gemini fallback`)
-			const r = await generateWithGeminiFallback({ system: systemPrompt, message: fullMessage })
+			const r = await generateWithGeminiFallback({ system: systemPrompt, message: fullMessage, history: convoHistory })
 			if (!r.ok) {
 				let details; try { details = JSON.parse(r.raw) } catch { details = r.raw }
 				return res.status(502).json({ error: "Gemini upstream error", status: r.status, details })
@@ -144,6 +149,19 @@ export const slidesAgentController = async (req, res) => {
 		} catch (e) {
 			console.error("[SlidesAgent] Failed to parse JSON:", cleaned.slice(0, 500))
 			return res.status(500).json({ error: "Agent returned invalid JSON", raw: cleaned.slice(0, 1000) })
+		}
+
+		// A template the user explicitly asked for always beats the agent's pick.
+		// Triggers ("mat", "warm-modern"...) only count when paired with a style word,
+		// so casual phrasing doesn't hijack the agent's choice.
+		const generatesSlides = ["replace_all", "replace_slide", "insert_after"].includes(agentResponse.action)
+		if (generatesSlides) {
+			const userTemplate = matchExplicitTemplate(message)
+				|| (/\b(estilo|style|template|plantilla|tema|theme)\b/i.test(message) ? matchTemplateByTrigger(message) : null)
+			if (userTemplate && userTemplate !== agentResponse.template) {
+				console.log(`[SlidesAgent] User-requested template overrides agent pick: ${userTemplate} (was ${agentResponse.template})`)
+				agentResponse.template = userTemplate
+			}
 		}
 
 		// Two-pass: if agent generated slides with a template, restyle them using the real template CSS
@@ -218,20 +236,14 @@ ${agentResponse.slides.map((s, i) => `--- Slide ${i + 1} ---\n${s}`).join("\n\n"
 						const restyleCleaned = restyleRaw.replace(/^```[\w]*\n?/m, "").replace(/\n?```$/m, "").trim()
 						const restyled = JSON.parse(restyleCleaned)
 						if (Array.isArray(restyled) && restyled.length > 0) {
-							// Fix: replace body/html selectors with section so styles apply inside iframe
-							if (restyled[0]) {
-								restyled[0] = restyled[0].replace(
-									/(<style[^>]*>)([\s\S]*?)(<\/style>)/,
-									(_, open, css, close) => {
-										const fixed = css
-											.replace(/\bhtml\s*,\s*body\b/g, "section")
-											.replace(/\bbody\b(?!\s*-)/g, "section")
-										return open + fixed + close
-									}
-								)
-							}
-							agentResponse.slides = restyled
-							console.log(`[SlidesAgent] Restyle pass done: ${restyled.length} slides`)
+							// Don't trust the model to reproduce the 14KB stylesheet — inject
+							// the authoritative template style block deterministically, replacing
+							// whatever (often partial) <style> the model emitted.
+							const styleBlock = buildTemplateStyleBlock(styleCtx)
+							const joined = injectAuthoritativeStyles(restyled.join("\n"), styleBlock)
+							const fixedSlides = joined.match(/<section[\s\S]*?<\/section>/gi) || restyled
+							agentResponse.slides = fixedSlides
+							console.log(`[SlidesAgent] Restyle pass done: ${fixedSlides.length} slides`)
 						}
 					}
 				} catch (e) {
