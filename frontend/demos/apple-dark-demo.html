@@ -1,0 +1,227 @@
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;background:#0a0a0a;">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter+Tight:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+.od-root{
+  --bg:#0a0a0a; --bg-2:#141414; --bg-3:#1c1c1e;
+  --fg:#f5f5f7; --fg-mute:#a1a1a6; --fg-faint:#6e6e73;
+  --accent:#2997ff; --line:rgba(255,255,255,.12); --line-soft:rgba(255,255,255,.06);
+  --serif:'Playfair Display',Georgia,serif; --sans:'Inter Tight','Inter',system-ui,sans-serif;
+  --body:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',monospace;
+  position:absolute; inset:0; overflow:hidden; background:var(--bg); color:var(--fg);
+  font-family:var(--body);
+}
+.od-root *,.od-root *::before,.od-root *::after{margin:0;padding:0;box-sizing:border-box;}
+
+.od-slide{position:absolute;inset:0;display:none;overflow:hidden;background:var(--bg);}
+.od-slide.active{display:flex;}
+
+.display{font-family:var(--sans);font-weight:700;font-size:128px;line-height:.98;letter-spacing:-.03em;}
+.h1{font-family:var(--sans);font-weight:700;font-size:84px;line-height:1.02;letter-spacing:-.025em;}
+.h2{font-family:var(--sans);font-weight:600;font-size:52px;line-height:1.08;letter-spacing:-.02em;}
+.serif{font-family:var(--serif);font-weight:600;font-style:italic;}
+.lead{font-family:var(--body);font-size:26px;line-height:1.5;color:var(--fg-mute);font-weight:400;}
+.body{font-family:var(--body);font-size:21px;line-height:1.6;color:var(--fg-mute);}
+.eyebrow{font-family:var(--mono);font-size:15px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);}
+.mono{font-family:var(--mono);font-size:15px;letter-spacing:.06em;color:var(--fg-faint);}
+.accent{color:var(--accent);}
+
+.flex{display:flex;} .col{flex-direction:column;} .center{align-items:center;justify-content:center;} .between{justify-content:space-between;} .aic{align-items:center;} .grow{flex:1;}
+.gap-sm{gap:18px;} .gap-md{gap:32px;} .gap-lg{gap:52px;}
+.grid{display:grid;}
+.pad-lg{padding:96px;} .pad-xl{padding:120px;}
+.h-100{height:100%;} .w-100{width:100%;}
+.card{background:var(--bg-2);border:1px solid var(--line);border-radius:22px;}
+.divider{height:1px;background:var(--line);width:100%;}
+
+.od-pagenum{position:absolute;right:40px;bottom:34px;font-family:var(--mono);font-size:14px;color:var(--fg-faint);letter-spacing:.08em;z-index:8;}
+.glow{position:absolute;pointer-events:none;border-radius:50%;filter:blur(120px);opacity:.5;}
+
+.od-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:30;width:54px;height:54px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--fg);font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background .2s;}
+.od-arrow:hover{background:rgba(255,255,255,.12);}
+.od-arrow.prev{left:32px;}.od-arrow.next{right:32px;}
+.od-nav{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);display:flex;gap:9px;z-index:30;}
+.od-dot{width:8px;height:8px;border-radius:50%;border:none;background:rgba(255,255,255,.25);cursor:pointer;padding:0;transition:background .2s,transform .2s;}
+.od-dot.is-active{background:var(--fg);transform:scale(1.4);}
+
+.stat-v{font-family:var(--sans);font-weight:700;font-size:96px;line-height:1;letter-spacing:-.03em;}
+
+/* quiz */
+.od-quiz{flex:1;flex-direction:column;display:flex;padding:90px 120px;}
+.od-quiz .qbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:40px;}
+.od-quiz .qstage{flex:1;display:flex;flex-direction:column;gap:34px;}
+.od-quiz .qq{font-family:var(--sans);font-weight:700;font-size:56px;line-height:1.06;letter-spacing:-.02em;}
+.od-quiz .qopts{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.od-quiz .qopt{display:flex;align-items:center;gap:18px;background:var(--bg-2);border:1px solid var(--line);border-radius:16px;padding:26px 28px;cursor:pointer;font-size:21px;color:var(--fg);text-align:left;transition:background .18s,border-color .18s;}
+.od-quiz .qopt:hover{background:var(--bg-3);border-color:rgba(255,255,255,.25);}
+.od-quiz .qopt .k{width:40px;height:40px;border:1px solid var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);flex-shrink:0;}
+.od-quiz .qopt.correct{background:rgba(41,151,255,.16);border-color:var(--accent);}
+.od-quiz .qopt.correct .k{background:var(--accent);color:#fff;border-color:var(--accent);}
+.od-quiz .qopt.wrong{background:rgba(255,69,58,.14);border-color:#ff453a;color:#ff8a80;}
+.od-quiz .qopt.off{pointer-events:none;}
+.od-quiz .qfb{font-size:20px;line-height:1.5;color:var(--fg-mute);min-height:30px;opacity:0;transition:opacity .2s;}
+.od-quiz .qfb.show{opacity:1;}
+.od-quiz .qnext{align-self:flex-end;background:var(--fg);color:var(--bg);border:none;border-radius:980px;font-family:var(--sans);font-weight:600;font-size:18px;padding:15px 38px;cursor:pointer;display:none;transition:opacity .2s;}
+.od-quiz .qnext:hover{opacity:.85;}
+.od-quiz .qresult{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;text-align:center;}
+.od-quiz .qresult .rs{font-family:var(--sans);font-weight:700;font-size:180px;line-height:.9;letter-spacing:-.04em;}
+.od-quiz .qresult .rm{font-size:24px;color:var(--fg-mute);max-width:60ch;line-height:1.5;}
+.od-quiz .qresult .qnext{display:inline-block;align-self:center;}
+</style>
+
+<div class="od-root">
+
+  <!-- 1 · COVER -->
+  <div class="od-slide active">
+    <div class="glow" style="width:700px;height:700px;background:#2997ff;top:-200px;right:-150px;"></div>
+    <div class="flex col h-100 pad-xl between w-100" style="position:relative;z-index:1;">
+      <div class="flex between aic w-100">
+        <span class="eyebrow">Caso de estudio</span>
+        <span class="mono"></span>
+      </div>
+      <div class="flex col gap-md">
+        <h1 class="display">Apple.</h1>
+        <p class="lead" style="max-width:60ch;">La empresa que convirtió la tecnología en algo <span class="serif accent">simple, bello y personal</span>.</p>
+      </div>
+      <div class="mono">Diseño · Producto · Cultura</div>
+    </div>
+    <div class="od-pagenum">01 / 06</div>
+  </div>
+
+  <!-- 2 · QUÉ ES -->
+  <div class="od-slide">
+    <div class="grid h-100 w-100" style="grid-template-columns:1fr 1fr;">
+      <div class="flex col center pad-xl gap-md" style="border-right:1px solid var(--line);">
+        <span class="eyebrow" style="align-self:flex-start;">El origen</span>
+        <h2 class="h1">Del garaje<br/>al mundo</h2>
+      </div>
+      <div class="flex col">
+        <div class="grow flex col center pad-lg gap-sm" style="border-bottom:1px solid var(--line);">
+          <div class="h2" style="font-size:38px;">1976</div>
+          <p class="body" style="max-width:42ch;">Steve Jobs, Steve Wozniak y Ronald Wayne fundan Apple para acercar las computadoras a las personas comunes.</p>
+        </div>
+        <div class="grow flex col center pad-lg gap-sm" style="background:var(--bg-2);">
+          <div class="h2" style="font-size:38px;">Hoy</div>
+          <p class="body" style="max-width:42ch;">Una de las marcas más valiosas del planeta, con productos que usan cientos de millones de personas.</p>
+        </div>
+      </div>
+    </div>
+    <div class="od-pagenum">02 / 06</div>
+  </div>
+
+  <!-- 3 · PRODUCTOS -->
+  <div class="od-slide">
+    <div class="flex col h-100 w-100 pad-lg gap-lg">
+      <div class="flex between aic"><h2 class="h1" style="font-size:64px;">Productos icónicos</h2><span class="eyebrow">Hardware + Software</span></div>
+      <div class="grid grow gap-md" style="grid-template-columns:repeat(4,1fr);">
+        <div class="card flex col gap-sm pad-lg center"><div class="display" style="font-size:64px;"></div><div class="h2" style="font-size:30px;"> Mac</div><p class="body" style="text-align:center;font-size:18px;">La computadora personal, reinventada.</p></div>
+        <div class="card flex col gap-sm pad-lg center"><div class="display" style="font-size:64px;"></div><div class="h2" style="font-size:30px;"> iPod</div><p class="body" style="text-align:center;font-size:18px;">Mil canciones en tu bolsillo.</p></div>
+        <div class="card flex col gap-sm pad-lg center"><div class="display" style="font-size:64px;"></div><div class="h2" style="font-size:30px;"> iPhone</div><p class="body" style="text-align:center;font-size:18px;">El teléfono que cambió todo.</p></div>
+        <div class="card flex col gap-sm pad-lg center"><div class="display" style="font-size:64px;"></div><div class="h2" style="font-size:30px;"> Watch</div><p class="body" style="text-align:center;font-size:18px;">La tecnología en tu muñeca.</p></div>
+      </div>
+    </div>
+    <div class="od-pagenum">03 / 06</div>
+  </div>
+
+  <!-- 4 · FILOSOFÍA / NÚMEROS -->
+  <div class="od-slide">
+    <div class="glow" style="width:600px;height:600px;background:#2997ff;bottom:-250px;left:-150px;"></div>
+    <div class="flex col h-100 w-100 pad-xl between" style="position:relative;z-index:1;">
+      <div class="flex col gap-md">
+        <span class="eyebrow">La filosofía</span>
+        <h2 class="h1" style="max-width:24ch;">"La simplicidad es la <span class="serif accent">máxima sofisticación</span>."</h2>
+      </div>
+      <div class="grid gap-lg" style="grid-template-columns:repeat(3,1fr);">
+        <div class="flex col gap-sm"><div class="stat-v">1976</div><div class="mono">Año de fundación</div></div>
+        <div class="flex col gap-sm"><div class="stat-v">2007</div><div class="mono">Lanzamiento del iPhone</div></div>
+        <div class="flex col gap-sm"><div class="stat-v accent">#1</div><div class="mono">Marcas más valiosas del mundo</div></div>
+      </div>
+    </div>
+    <div class="od-pagenum">04 / 06</div>
+  </div>
+
+  <!-- 5 · QUIZ -->
+  <div class="od-slide">
+    <div class="od-quiz" data-odquiz>
+      <div class="qbar"><span class="eyebrow">Quiz</span><span class="mono" data-odprog>1 / 4</span></div>
+      <div class="qstage" data-odstage>
+        <div class="qq" data-odq></div>
+        <div class="qopts" data-odopts></div>
+        <div class="qfb" data-odfb></div>
+        <button class="qnext" data-odnext>Siguiente →</button>
+      </div>
+      <div class="qresult" data-odresult style="display:none;">
+        <div class="rs" data-odscore></div>
+        <div class="rm" data-odmsg></div>
+        <button class="qnext" data-odrestart>Reintentar</button>
+      </div>
+    </div>
+    <div class="od-pagenum">05 / 06</div>
+  </div>
+
+  <!-- 6 · CIERRE -->
+  <div class="od-slide">
+    <div class="glow" style="width:760px;height:760px;background:#2997ff;top:50%;left:50%;transform:translate(-50%,-50%);opacity:.35;"></div>
+    <div class="flex col center h-100 w-100 pad-xl gap-md" style="position:relative;z-index:1;text-align:center;">
+      <span class="eyebrow">Apple</span>
+      <h2 class="display" style="font-size:104px;">Think <span class="serif accent">different</span>.</h2>
+      <p class="lead" style="max-width:56ch;">Diseño, producto y cultura: la historia de cómo la tecnología se volvió simple, bella y personal.</p>
+    </div>
+    <div class="od-pagenum">06 / 06</div>
+  </div>
+
+  <button class="od-arrow prev" data-od-prev>&#8249;</button>
+  <button class="od-arrow next" data-od-next>&#8250;</button>
+  <nav class="od-nav"></nav>
+</div>
+
+<script>
+(function(){
+  var root=document.currentScript.closest('section').querySelector('.od-root');
+  if(!root||root.dataset.odInit)return; root.dataset.odInit='1';
+  var slides=Array.prototype.slice.call(root.querySelectorAll('.od-slide'));
+  var nav=root.querySelector('.od-nav'); var total=slides.length,cur=0;
+  slides.forEach(function(_,i){var d=document.createElement('button');d.className='od-dot';d.addEventListener('click',function(){go(i);});nav.appendChild(d);});
+  var dots=Array.prototype.slice.call(nav.children);
+  function go(i){if(i<0||i>=total)return;slides[cur].classList.remove('active');cur=i;slides[cur].classList.add('active');dots.forEach(function(d,di){d.classList.toggle('is-active',di===cur);});}
+  root.querySelector('[data-od-prev]').addEventListener('click',function(){go(cur-1);});
+  root.querySelector('[data-od-next]').addEventListener('click',function(){go(cur+1);});
+  document.addEventListener('keydown',function(e){if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();go(cur+1);}if(e.key==='ArrowLeft'){e.preventDefault();go(cur-1);}});
+  var sx=0;
+  root.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;},{passive:true});
+  root.addEventListener('touchend',function(e){var dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>40)go(cur+(dx<0?1:-1));},{passive:true});
+  dots[0].classList.add('is-active');
+
+  var quiz=root.querySelector('[data-odquiz]');
+  if(quiz){
+    var QS=[
+      {q:'¿En qué año se fundó Apple?',a:[{t:'1976',ok:true},{t:'1984',ok:false},{t:'2001',ok:false},{t:'1969',ok:false}],fb:'Apple se fundó en 1976.'},
+      {q:'¿Quiénes fundaron Apple?',a:[{t:'Bill Gates y Paul Allen.',ok:false},{t:'Steve Jobs, Steve Wozniak y Ronald Wayne.',ok:true},{t:'Mark Zuckerberg.',ok:false},{t:'Elon Musk.',ok:false}],fb:'La fundaron Jobs, Wozniak y Wayne.'},
+      {q:'¿Qué producto lanzó Apple en 2007?',a:[{t:'El primer Mac.',ok:false},{t:'El iPod.',ok:false},{t:'El iPhone.',ok:true},{t:'El Apple Watch.',ok:false}],fb:'El iPhone se presentó en 2007.'},
+      {q:'¿Qué idea resume la filosofía de Apple?',a:[{t:'Más botones es mejor.',ok:false},{t:'La simplicidad es la máxima sofisticación.',ok:true},{t:'Cuanto más complejo, mejor.',ok:false},{t:'El precio bajo ante todo.',ok:false}],fb:'Apple apuesta por la simplicidad como sofisticación.'}
+    ];
+    var qEl=quiz.querySelector('[data-odq]'),optsEl=quiz.querySelector('[data-odopts]'),fbEl=quiz.querySelector('[data-odfb]'),nextBtn=quiz.querySelector('[data-odnext]'),progEl=quiz.querySelector('[data-odprog]'),resEl=quiz.querySelector('[data-odresult]'),stageEl=quiz.querySelector('[data-odstage]'),scoreEl=quiz.querySelector('[data-odscore]'),msgEl=quiz.querySelector('[data-odmsg]'),restartBtn=quiz.querySelector('[data-odrestart]');
+    var K=['A','B','C','D'],qi=0,sc=0,ans=false;
+    function rq(){
+      var it=QS[qi];ans=false;progEl.textContent=(qi+1)+' / '+QS.length;qEl.textContent=it.q;
+      fbEl.classList.remove('show');fbEl.innerHTML='';nextBtn.style.display='none';
+      nextBtn.textContent=(qi===QS.length-1)?'Ver resultado →':'Siguiente →';optsEl.innerHTML='';
+      it.a.forEach(function(an,i){
+        var b=document.createElement('button');b.className='qopt';
+        b.innerHTML='<span class="k">'+K[i]+'</span><span>'+an.t+'</span>';
+        b.addEventListener('click',function(){
+          if(ans)return;ans=true;var all=Array.prototype.slice.call(optsEl.children);all.forEach(function(o){o.classList.add('off');});
+          if(an.ok){b.classList.add('correct');sc++;fbEl.innerHTML='✓ ¡Correcto! '+it.fb;}
+          else{b.classList.add('wrong');all[it.a.findIndex(function(x){return x.ok;})].classList.add('correct');fbEl.innerHTML='✕ '+it.fb;}
+          fbEl.classList.add('show');nextBtn.style.display='inline-block';
+        });
+        optsEl.appendChild(b);
+      });
+    }
+    nextBtn.addEventListener('click',function(){if(qi<QS.length-1){qi++;rq();}else{stageEl.style.display='none';resEl.style.display='flex';progEl.textContent='Resultado';scoreEl.textContent=sc+' / '+QS.length;msgEl.textContent=sc===QS.length?'¡Perfecto! Sabés todo sobre Apple.':(sc>=QS.length/2?'¡Bien! Te quedó clara la historia.':'Repasá las slides y reintentá.');}});
+    restartBtn.addEventListener('click',function(){qi=0;sc=0;resEl.style.display='none';stageEl.style.display='flex';rq();});
+    rq();
+  }
+})();
+</script>
+</section>

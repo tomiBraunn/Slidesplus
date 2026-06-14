@@ -13,7 +13,13 @@ import UrlNotFoundPage from "./components/FullScreens/UrlNotFoundPage";
 import ProtectedRoute from "./ProtectedRoute";
 import AltLandingPage from "./components/FullScreens/AltLandingPage";
 import AltLandingPage2 from "./components/FullScreens/AltLandingPage2";
+import AltLandingPage3 from "./components/FullScreens/AltLandingPage3";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { installAuthInterceptor } from "./utils/authInterceptor";
+
+// Wrap fetch once so an expired/invalid token (401 from our backend) logs the
+// user out and redirects to /login, instead of silently failing requests.
+installAuthInterceptor();
 
 // Envía un page_view a GA4 en cada cambio de ruta (necesario en SPAs, donde no
 // hay recarga completa entre páginas). No renderiza nada.
@@ -41,6 +47,7 @@ export default function App() {
           <Route path="/v/:id" element={<ProjectViewPage />} />
           <Route path="/oldlanding" element={<LandingPage />} />
           <Route path="/altlanding" element={<AltLandingPage />} />
+          <Route path="/altlanding3" element={<AltLandingPage3 />} />
           <Route path="/notfound" element={<UrlNotFoundPage />} />
           <Route path="*" element={<Navigate to="/notfound" replace />} />
         </Routes>

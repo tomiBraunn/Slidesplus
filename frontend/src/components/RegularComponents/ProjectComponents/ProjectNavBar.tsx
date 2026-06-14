@@ -36,6 +36,11 @@ type Props = {
   onToggleTweakMode?: () => void;
   isEditingSlide?: boolean;
   hasCurrentSlide?: boolean;
+  // Undo / redo (document-level)
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
   onVersionRestored?: (content: string) => void;
 };
 
@@ -83,6 +88,10 @@ export default function ProjectNavBar({
   onToggleTweakMode,
   isEditingSlide = false,
   hasCurrentSlide = false,
+  canUndo = false,
+  canRedo = false,
+  onUndo,
+  onRedo,
   onVersionRestored,
 }: Props) {
   const [user, setUser] = useState<User | null>(null);
@@ -219,6 +228,25 @@ export default function ProjectNavBar({
                     ? "Error"
                     : "Idle"}
             </span>
+            {/* Undo / Redo */}
+            <div className="flex items-center gap-0.5">
+              <button
+                onClick={onUndo}
+                disabled={!canUndo}
+                title="Undo (Ctrl+Z)"
+                className="flex items-center justify-center w-7 h-7 rounded-lg text-theme-secondary hover:text-theme-primary hover:bg-theme-quaternary transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>undo</span>
+              </button>
+              <button
+                onClick={onRedo}
+                disabled={!canRedo}
+                title="Redo (Ctrl+Y)"
+                className="flex items-center justify-center w-7 h-7 rounded-lg text-theme-secondary hover:text-theme-primary hover:bg-theme-quaternary transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>redo</span>
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-2.5">
@@ -275,26 +303,24 @@ export default function ProjectNavBar({
               refreshTrigger={spotifyRefreshTrigger}
               onColorChange={setSpotifyColor}
             />
-            {mode === "ai" && (
-              <div className="flex items-center gap-1 bg-theme-primary border border-theme-tertiary rounded-[20px] px-1 py-1">
-                <button
-                  onClick={onToggleEditPanel}
-                  disabled={isEditingSlide || !hasCurrentSlide}
-                  className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-[14px] border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${showEditPanel ? "border-blue-500 bg-blue-500/10 text-blue-400" : "border-transparent text-theme-secondary hover:text-theme-primary hover:bg-theme-quaternary"}`}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: 14 }}>edit</span>
-                  Edit
-                </button>
-                <button
-                  onClick={onToggleTweakMode}
-                  disabled={isEditingSlide || !hasCurrentSlide}
-                  className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-[14px] border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${tweakMode ? "border-blue-500 bg-blue-500/10 text-blue-400 animate-pulse" : "border-transparent text-theme-secondary hover:text-theme-primary hover:bg-theme-quaternary"}`}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: 14 }}>ads_click</span>
-                  {tweakMode ? "Click…" : "Tweak"}
-                </button>
-              </div>
-            )}
+            {/* Edit + Tweak: circular buttons matching Share/History, available
+                in any mode. Disabled (greyed) when there's no current slide. */}
+            <button
+              onClick={onToggleEditPanel}
+              disabled={isEditingSlide || !hasCurrentSlide}
+              title="Edit (Alt+3)"
+              className={`flex items-center justify-center w-8 h-8 p-1 rounded-full transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed ${showEditPanel ? "bg-blue-500 text-white" : "bg-theme-inverted text-theme-inverted"}`}
+            >
+              <span className="material-symbols-outlined text-base">edit</span>
+            </button>
+            <button
+              onClick={onToggleTweakMode}
+              disabled={isEditingSlide || !hasCurrentSlide}
+              title="Tweak (Alt+4)"
+              className={`flex items-center justify-center w-8 h-8 p-1 rounded-full transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed ${tweakMode ? "bg-blue-500 text-white animate-pulse" : "bg-theme-inverted text-theme-inverted"}`}
+            >
+              <span className="material-symbols-outlined text-base">ads_click</span>
+            </button>
 
             <div className="flex items-center justify-between w-auto bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300 rounded-[20px]">
               <span

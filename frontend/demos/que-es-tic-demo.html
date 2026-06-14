@@ -1,0 +1,229 @@
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;background:#FFFDF5;">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+.bf-root{
+  --pink:#FE90E8; --blue:#C0F7FE; --green:#99E885; --yellow:#F7CB46; --cream:#FFDC8B;
+  --black:#000; --white:#fff; --offwhite:#FFFDF5;
+  --border:4px solid var(--black); --shadow:10px 10px 0 var(--black); --shadow-sm:5px 5px 0 var(--black);
+  position:absolute; inset:0; overflow:hidden; background:var(--offwhite); color:var(--black);
+  font-family:'Inter',sans-serif;
+}
+.bf-root *,.bf-root *::before,.bf-root *::after{margin:0;padding:0;box-sizing:border-box;}
+
+.bf-slide{position:absolute;inset:0;display:none;overflow:hidden;}
+.bf-slide.active{display:block;}
+
+.nb-heading-xl{font-family:'Inter';font-weight:900;font-size:104px;line-height:.95;letter-spacing:-.02em;}
+.nb-heading-lg{font-family:'Inter';font-weight:800;font-size:64px;line-height:1;letter-spacing:-.01em;}
+.nb-heading-md{font-family:'Inter';font-weight:700;font-size:40px;line-height:1.1;}
+.nb-body{font-family:'Inter';font-size:22px;line-height:1.6;font-weight:500;}
+.nb-mono{font-family:'Space Grotesk',monospace;font-weight:500;font-size:16px;letter-spacing:.02em;}
+.nb-label{display:inline-block;border:3px solid var(--black);padding:8px 18px;font-family:'Space Grotesk',monospace;font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:.06em;}
+.nb-label-pink{background:var(--pink);} .nb-label-blue{background:var(--blue);} .nb-label-green{background:var(--green);} .nb-label-yellow{background:var(--yellow);} .nb-label-cream{background:var(--cream);}
+.nb-card{border:var(--border);background:var(--white);box-shadow:var(--shadow);}
+.nb-card-flat{border:var(--border);background:var(--white);}
+
+.flex{display:flex;} .col{flex-direction:column;} .center{align-items:center;justify-content:center;} .between{justify-content:space-between;} .aic{align-items:center;} .grow{flex:1;}
+.gap-sm{gap:16px;} .gap-md{gap:28px;} .gap-lg{gap:44px;}
+.grid{display:grid;}
+.pad-lg{padding:72px;} .pad-md{padding:40px;}
+.h-100{height:100%;} .w-100{width:100%;}
+.bg-pink{background:var(--pink);} .bg-blue{background:var(--blue);} .bg-green{background:var(--green);} .bg-yellow{background:var(--yellow);} .bg-cream{background:var(--cream);} .bg-black{background:var(--black);color:var(--white);}
+.deco-circle{border-radius:50%;border:var(--border);}
+
+.bf-pagenum{position:absolute;right:30px;bottom:24px;font-family:'Space Grotesk',monospace;font-weight:700;font-size:15px;z-index:8;}
+
+.bf-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:30;width:58px;height:58px;border:var(--border);background:var(--white);font-weight:900;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-sm);transition:transform .12s,background .15s;}
+.bf-arrow:hover{background:var(--yellow);transform:translateY(-50%) translate(-2px,-2px);}
+.bf-arrow.prev{left:28px;}.bf-arrow.next{right:28px;}
+.bf-nav{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);display:flex;gap:12px;z-index:30;}
+.bf-dot{width:16px;height:16px;border:3px solid var(--black);background:var(--white);cursor:pointer;padding:0;transition:background .15s;}
+.bf-dot.is-active{background:var(--pink);}
+
+.letter-box{width:120px;height:120px;border:var(--border);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;font-family:'Inter';font-weight:900;font-size:72px;}
+
+/* quiz */
+.bf-quiz{display:flex;flex-direction:column;height:100%;}
+.bf-quiz .qbar{padding:40px 72px;border-bottom:var(--border);display:flex;align-items:center;justify-content:space-between;}
+.bf-quiz .qstage{flex:1;display:flex;flex-direction:column;padding:54px 72px;gap:32px;}
+.bf-quiz .qq{font-family:'Inter';font-weight:900;font-size:52px;line-height:1.08;letter-spacing:-.01em;}
+.bf-quiz .qopts{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
+.bf-quiz .qopt{display:flex;align-items:center;gap:18px;border:var(--border);background:var(--white);padding:24px 26px;cursor:pointer;font-size:21px;font-weight:600;text-align:left;box-shadow:var(--shadow-sm);transition:transform .1s,background .15s;}
+.bf-quiz .qopt:hover{background:var(--blue);transform:translate(-2px,-2px);}
+.bf-quiz .qopt .k{width:42px;height:42px;border:3px solid var(--black);display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',monospace;font-weight:700;flex-shrink:0;}
+.bf-quiz .qopt.correct{background:var(--green);}
+.bf-quiz .qopt.correct .k{background:var(--black);color:var(--white);}
+.bf-quiz .qopt.wrong{background:var(--pink);}
+.bf-quiz .qopt.off{pointer-events:none;}
+.bf-quiz .qfb{font-size:20px;font-weight:600;line-height:1.5;min-height:30px;opacity:0;transition:opacity .2s;}
+.bf-quiz .qfb.show{opacity:1;}
+.bf-quiz .qnext{align-self:flex-end;border:var(--border);background:var(--yellow);font-family:'Inter';font-weight:800;font-size:18px;padding:16px 34px;cursor:pointer;box-shadow:var(--shadow-sm);display:none;}
+.bf-quiz .qnext:hover{transform:translate(-2px,-2px);}
+.bf-quiz .qresult{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;text-align:center;padding:64px;}
+.bf-quiz .qresult .rs{font-family:'Inter';font-weight:900;font-size:180px;line-height:.9;letter-spacing:-.04em;}
+.bf-quiz .qresult .rm{font-size:24px;font-weight:600;max-width:60ch;line-height:1.5;}
+.bf-quiz .qresult .qnext{display:inline-block;align-self:center;background:var(--green);}
+</style>
+
+<div class="bf-root">
+
+  <!-- 1 · COVER -->
+  <div class="bf-slide active">
+    <div class="flex col h-100 pad-lg between">
+      <div class="flex between aic">
+        <span class="nb-label nb-label-pink">¿Qué es?</span>
+        <span class="nb-mono">01 / 06</span>
+      </div>
+      <div class="flex col gap-md">
+        <div class="flex gap-md">
+          <div class="letter-box bg-pink">T</div>
+          <div class="letter-box bg-blue">I</div>
+          <div class="letter-box bg-green">C</div>
+        </div>
+        <h1 class="nb-heading-xl">Tecnologías de la<br/>Información y la<br/>Comunicación</h1>
+      </div>
+      <div class="nb-body" style="max-width:60ch;">Todo lo que usamos para crear, guardar, enviar y encontrar información: computadoras, internet, apps y mucho más.</div>
+    </div>
+    <div class="bf-pagenum">01 / 06</div>
+  </div>
+
+  <!-- 2 · DEFINICIÓN -->
+  <div class="bf-slide">
+    <div class="grid h-100" style="grid-template-columns:1fr 1fr;">
+      <div class="bg-yellow flex col center pad-lg gap-md" style="border-right:var(--border);">
+        <span class="nb-label nb-label-cream" style="align-self:flex-start;">En una frase</span>
+        <h2 class="nb-heading-lg">Herramientas para<br/>manejar<br/>información</h2>
+      </div>
+      <div class="flex col">
+        <div class="grow flex col center pad-lg gap-sm" style="border-bottom:var(--border);">
+          <div class="nb-heading-md">La parte "TI"</div>
+          <p class="nb-body">Tecnologías de la Información: los equipos y programas que procesan y guardan datos.</p>
+        </div>
+        <div class="grow flex col center pad-lg gap-sm bg-blue">
+          <div class="nb-heading-md">La parte "C"</div>
+          <p class="nb-body">Comunicación: las redes que conectan todo e intercambian esa información, como internet.</p>
+        </div>
+      </div>
+    </div>
+    <div class="bf-pagenum">02 / 06</div>
+  </div>
+
+  <!-- 3 · EJEMPLOS (cards) -->
+  <div class="bf-slide">
+    <div class="flex col h-100 pad-lg gap-lg">
+      <div class="flex between aic">
+        <h2 class="nb-heading-lg">TIC en tu día a día</h2>
+        <span class="nb-label nb-label-green">Ejemplos</span>
+      </div>
+      <div class="grid grow gap-md" style="grid-template-columns:repeat(4,1fr);">
+        <div class="nb-card flex col gap-sm pad-md center"><div class="deco-circle bg-pink flex center" style="width:90px;height:90px;font-size:42px;">📱</div><div class="nb-heading-md" style="font-size:28px;">Celulares</div><p class="nb-body" style="font-size:18px;text-align:center;">Apps, mensajes y llamadas.</p></div>
+        <div class="nb-card flex col gap-sm pad-md center"><div class="deco-circle bg-blue flex center" style="width:90px;height:90px;font-size:42px;">🌐</div><div class="nb-heading-md" style="font-size:28px;">Internet</div><p class="nb-body" style="font-size:18px;text-align:center;">Buscar y compartir online.</p></div>
+        <div class="nb-card flex col gap-sm pad-md center"><div class="deco-circle bg-green flex center" style="width:90px;height:90px;font-size:42px;">💻</div><div class="nb-heading-md" style="font-size:28px;">Computadoras</div><p class="nb-body" style="font-size:18px;text-align:center;">Crear, estudiar y trabajar.</p></div>
+        <div class="nb-card flex col gap-sm pad-md center"><div class="deco-circle bg-yellow flex center" style="width:90px;height:90px;font-size:42px;">☁️</div><div class="nb-heading-md" style="font-size:28px;">La nube</div><p class="nb-body" style="font-size:18px;text-align:center;">Guardar datos a distancia.</p></div>
+      </div>
+    </div>
+    <div class="bf-pagenum">03 / 06</div>
+  </div>
+
+  <!-- 4 · POR QUÉ IMPORTAN -->
+  <div class="bf-slide">
+    <div class="grid h-100" style="grid-template-columns:55% 45%;">
+      <div class="flex col center pad-lg gap-md" style="border-right:var(--border);">
+        <span class="nb-label nb-label-pink" style="align-self:flex-start;">¿Por qué importan?</span>
+        <h2 class="nb-heading-lg">Cambian cómo<br/>vivimos,<br/>aprendemos y<br/>trabajamos</h2>
+      </div>
+      <div class="flex col">
+        <div class="grow flex aic pad-lg gap-sm bg-cream" style="border-bottom:var(--border);"><span class="nb-heading-md" style="font-size:30px;">→&nbsp;Acercan a las personas sin importar la distancia</span></div>
+        <div class="grow flex aic pad-lg gap-sm" style="border-bottom:var(--border);"><span class="nb-heading-md" style="font-size:30px;">→&nbsp;Dan acceso a información al instante</span></div>
+        <div class="grow flex aic pad-lg gap-sm bg-green"><span class="nb-heading-md" style="font-size:30px;">→&nbsp;Abren nuevas formas de crear y trabajar</span></div>
+      </div>
+    </div>
+    <div class="bf-pagenum">04 / 06</div>
+  </div>
+
+  <!-- 5 · QUIZ -->
+  <div class="bf-slide">
+    <div class="bf-quiz" data-bfquiz>
+      <div class="qbar"><h2 class="nb-heading-lg">Quiz</h2><span class="nb-label nb-label-blue" data-bfprog>1 / 4</span></div>
+      <div class="qstage" data-bfstage>
+        <div class="qq" data-bfq></div>
+        <div class="qopts" data-bfopts></div>
+        <div class="qfb" data-bffb></div>
+        <button class="qnext" data-bfnext>Siguiente →</button>
+      </div>
+      <div class="qresult" data-bfresult style="display:none;">
+        <div class="rs" data-bfscore></div>
+        <div class="rm" data-bfmsg></div>
+        <button class="qnext" data-bfrestart>Reintentar</button>
+      </div>
+    </div>
+    <div class="bf-pagenum">05 / 06</div>
+  </div>
+
+  <!-- 6 · CIERRE -->
+  <div class="bf-slide">
+    <div class="flex col center h-100 pad-lg gap-lg bg-pink">
+      <span class="nb-label nb-label-cream">TIC</span>
+      <h2 class="nb-heading-xl" style="text-align:center;">Tecnología que<br/>nos conecta</h2>
+      <p class="nb-body" style="max-width:60ch;text-align:center;">Las TIC son las herramientas que usamos para crear, guardar, enviar y encontrar información — la base del mundo digital.</p>
+    </div>
+    <div class="bf-pagenum">06 / 06</div>
+  </div>
+
+  <button class="bf-arrow prev" data-bf-prev>&#8249;</button>
+  <button class="bf-arrow next" data-bf-next>&#8250;</button>
+  <nav class="bf-nav"></nav>
+</div>
+
+<script>
+(function(){
+  var root=document.currentScript.closest('section').querySelector('.bf-root');
+  if(!root||root.dataset.bfInit)return; root.dataset.bfInit='1';
+  var slides=Array.prototype.slice.call(root.querySelectorAll('.bf-slide'));
+  var nav=root.querySelector('.bf-nav'); var total=slides.length,cur=0;
+  slides.forEach(function(_,i){var d=document.createElement('button');d.className='bf-dot';d.addEventListener('click',function(){go(i);});nav.appendChild(d);});
+  var dots=Array.prototype.slice.call(nav.children);
+  function go(i){if(i<0||i>=total)return;slides[cur].classList.remove('active');cur=i;slides[cur].classList.add('active');dots.forEach(function(d,di){d.classList.toggle('is-active',di===cur);});}
+  root.querySelector('[data-bf-prev]').addEventListener('click',function(){go(cur-1);});
+  root.querySelector('[data-bf-next]').addEventListener('click',function(){go(cur+1);});
+  document.addEventListener('keydown',function(e){if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();go(cur+1);}if(e.key==='ArrowLeft'){e.preventDefault();go(cur-1);}});
+  var sx=0;
+  root.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;},{passive:true});
+  root.addEventListener('touchend',function(e){var dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>40)go(cur+(dx<0?1:-1));},{passive:true});
+  dots[0].classList.add('is-active');
+
+  // quiz
+  var quiz=root.querySelector('[data-bfquiz]');
+  if(quiz){
+    var QS=[
+      {q:'¿Qué significa la sigla TIC?',a:[{t:'Tecnologías de la Información y la Comunicación.',ok:true},{t:'Trabajo, Internet y Computación.',ok:false},{t:'Teléfonos, Internet y Cables.',ok:false},{t:'Técnicas de Inteligencia Computacional.',ok:false}],fb:'TIC = Tecnologías de la Información y la Comunicación.'},
+      {q:'¿Cuál de estos NO es un ejemplo de TIC?',a:[{t:'Una app de mensajería.',ok:false},{t:'Internet.',ok:false},{t:'Una bicicleta.',ok:true},{t:'La computadora.',ok:false}],fb:'Una bicicleta no maneja información: no es una TIC.'},
+      {q:'¿Para qué sirven principalmente las TIC?',a:[{t:'Solo para jugar videojuegos.',ok:false},{t:'Crear, guardar, enviar y encontrar información.',ok:true},{t:'Únicamente para hacer llamadas.',ok:false},{t:'Solo para ver televisión.',ok:false}],fb:'Sirven para crear, guardar, enviar y encontrar información.'},
+      {q:'¿Qué representa la "C" en TIC?',a:[{t:'Computación.',ok:false},{t:'Código.',ok:false},{t:'Comunicación.',ok:true},{t:'Conexión eléctrica.',ok:false}],fb:'La "C" es de Comunicación: las redes que conectan todo.'}
+    ];
+    var qEl=quiz.querySelector('[data-bfq]'),optsEl=quiz.querySelector('[data-bfopts]'),fbEl=quiz.querySelector('[data-bffb]'),nextBtn=quiz.querySelector('[data-bfnext]'),progEl=quiz.querySelector('[data-bfprog]'),resEl=quiz.querySelector('[data-bfresult]'),stageEl=quiz.querySelector('[data-bfstage]'),scoreEl=quiz.querySelector('[data-bfscore]'),msgEl=quiz.querySelector('[data-bfmsg]'),restartBtn=quiz.querySelector('[data-bfrestart]');
+    var K=['A','B','C','D'],qi=0,sc=0,ans=false;
+    function rq(){
+      var it=QS[qi];ans=false;progEl.textContent=(qi+1)+' / '+QS.length;qEl.textContent=it.q;
+      fbEl.classList.remove('show');fbEl.innerHTML='';nextBtn.style.display='none';
+      nextBtn.textContent=(qi===QS.length-1)?'Ver resultado →':'Siguiente →';optsEl.innerHTML='';
+      it.a.forEach(function(an,i){
+        var b=document.createElement('button');b.className='qopt';
+        b.innerHTML='<span class="k">'+K[i]+'</span><span>'+an.t+'</span>';
+        b.addEventListener('click',function(){
+          if(ans)return;ans=true;var all=Array.prototype.slice.call(optsEl.children);all.forEach(function(o){o.classList.add('off');});
+          if(an.ok){b.classList.add('correct');sc++;fbEl.innerHTML='✓ ¡Correcto! '+it.fb;}
+          else{b.classList.add('wrong');all[it.a.findIndex(function(x){return x.ok;})].classList.add('correct');fbEl.innerHTML='✕ '+it.fb;}
+          fbEl.classList.add('show');nextBtn.style.display='inline-block';
+        });
+        optsEl.appendChild(b);
+      });
+    }
+    nextBtn.addEventListener('click',function(){if(qi<QS.length-1){qi++;rq();}else{stageEl.style.display='none';resEl.style.display='flex';progEl.textContent='Resultado';scoreEl.textContent=sc+' / '+QS.length;msgEl.textContent=sc===QS.length?'¡Perfecto! Entendiste qué son las TIC.':(sc>=QS.length/2?'¡Bien! Te quedó clara la idea.':'Repasá las slides y reintentá.');}});
+    restartBtn.addEventListener('click',function(){qi=0;sc=0;resEl.style.display='none';stageEl.style.display='flex';rq();});
+    rq();
+  }
+})();
+</script>
+</section>

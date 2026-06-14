@@ -15,8 +15,7 @@ import { urlbackend } from "../../../config.js";
 import { Spinner } from "../../ui/spinner";
 import { Timer } from "../../ui/timer";
 import { useAnimatedText } from "../../ui/animated-text";
-import StylePickerModal from "./StylePickerModal";
-import cobaltTemplateSrc from "../../../../public/cobalt-slides-plus.html?raw";
+import ComponentsModal from "./ComponentsModal";
 
 type ChatMsg = {
   id: string;
@@ -391,76 +390,37 @@ function cleanSlideHtml(html: string): string {
     .trim();
 }
 
-// Resolves CSS variables and class-based styles into inline style="" attributes
-// so each section works in an isolated iframe with no shared CSS context.
+// Each <section> is rendered later in its own isolated iframe (srcDoc), so it
+// carries no shared CSS context. Templates put their full design system (fonts
+// + class definitions) in a single <style> block inside the FIRST section.
+// To make every section self-contained, copy that <style> block verbatim into
+// each subsequent section that doesn't already have one. Classes are PRESERVED
+// — the CSS targets them, so stripping classes would leave slides unstyled.
 function injectStyleIntoAllSections(sections: string[]): string[] {
   if (sections.length <= 1) return sections;
 
-  // Extract the <style> block from section 1
-  const styleMatch = sections[0].match(/<style[\s\S]*?<\/style>/i);
-  if (!styleMatch) return sections;
-  const styleBlock = styleMatch[0];
-
-  // Build a hidden iframe to compute styles using the real browser engine
-  const iframe = document.createElement("iframe");
-  iframe.style.cssText = "position:fixed;top:-9999px;left:-9999px;width:1920px;height:1080px;visibility:hidden;";
-  document.body.appendChild(iframe);
-
-  try {
-    const doc = iframe.contentDocument!;
-    const win = iframe.contentWindow!;
-
-    const PROPS = [
-      "font-family","font-size","font-style","font-weight","line-height",
-      "letter-spacing","color","background-color","text-transform","text-align",
-      "opacity","position","top","left","right","bottom","display",
-      "flex-direction","justify-content","align-items","align-self","gap",
-      "min-height","max-width","padding","padding-top","padding-bottom",
-      "margin","margin-top","margin-bottom","border-top","border-bottom",
-      "writing-mode","text-orientation","z-index","pointer-events",
-      "overflow","transform","box-shadow","background-image","background-size",
-    ];
-
-    function resolveElement(el: Element) {
-      const computed = win.getComputedStyle(el);
-      const existing = el.getAttribute("style") || "";
-      const additions: string[] = [];
-      for (const prop of PROPS) {
-        if (existing.includes(prop)) continue;
-        const val = computed.getPropertyValue(prop);
-        if (val && val !== "" && val !== "normal" && val !== "none" && val !== "auto" && val !== "0px" && val !== "rgba(0, 0, 0, 0)") {
-          additions.push(`${prop}:${val}`);
-        }
-      }
-      if (additions.length > 0) {
-        el.setAttribute("style", existing ? `${existing};${additions.join(";")}` : additions.join(";"));
-      }
-      el.removeAttribute("class");
-      for (const child of Array.from(el.children)) resolveElement(child);
-    }
-
-    const result = sections.map((s, i) => {
-      const html = i === 0 ? s : s.replace(/(<section[^>]*>)/i, `$1${styleBlock}`);
-      doc.open();
-      doc.write(`<!doctype html><html><head></head><body>${html}</body></html>`);
-      doc.close();
-      const section = doc.querySelector("section");
-      if (!section) return s;
-      resolveElement(section);
-      return section.outerHTML
-        .replace(/<style[\s\S]*?<\/style>/gi, "")
-        .replace(/\s*class="[^"]*"/g, "");
-    });
-
-    return result;
-  } catch {
-    return sections.map((s, i) => {
-      if (i === 0) return s;
-      return s.replace(/(<section[^>]*>)/i, `$1${styleBlock}`);
-    });
-  } finally {
-    document.body.removeChild(iframe);
+  // Grab the complete <style> block from the first section that has one.
+  let styleBlock = "";
+  for (const s of sections) {
+    const m = s.match(/<style[\s\S]*?<\/style>/i);
+    if (m) { styleBlock = m[0]; break; }
   }
+  if (!styleBlock) return sections;
+
+  // The template CSS may still target "html, body" / "body" — inside a section
+  // those never match. Rewrite them to "section" so backgrounds/typography from
+  // the template actually apply (defensive: the backend asks the model to do
+  // this, but don't depend on it).
+  styleBlock = styleBlock
+    .replace(/\bhtml\s*,\s*body\b/gi, "section")
+    .replace(/(^|[^.\w-])body\b(?!\s*-)/gi, "$1section");
+
+  return sections.map((s) => {
+    // Already has its own <style> (e.g. the source section) — leave it.
+    if (/<style[\s\S]*?<\/style>/i.test(s)) return s;
+    // Inject the shared style block right after the opening <section> tag.
+    return s.replace(/(<section[^>]*>)/i, `$1${styleBlock}`);
+  });
 }
 
 /* ── Code Modal ── */
@@ -721,7 +681,7 @@ function AnimatedMessage({ content, isLatest }: { content: string; isLatest: boo
 /* ── Main component ── */
 export default function GeminiChatbot({
   setCode, code, projectId, currentSlideIndex, slides,
-  onDeleteSlide, onDeleteAllSlides, initialPrompt,
+  onDeleteSlide, onDeleteAllSlides, initialPrompt, externalMessage,
 }: {
   setCode: (val: string | ((v: string) => string)) => void;
   code?: string;
@@ -731,6 +691,10 @@ export default function GeminiChatbot({
   onDeleteSlide?: (index: number) => void;
   onDeleteAllSlides?: () => void;
   initialPrompt?: string | null;
+  // A message pushed in from outside (e.g. the Tweak panel). Bump `nonce` to
+  // re-send the same text. Routed through the normal chat flow so it appears
+  // in the conversation instead of firing a hidden background request.
+  externalMessage?: { text: string; nonce: number } | null;
 }) {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [loading, setLoading] = useState(false);
@@ -749,7 +713,7 @@ export default function GeminiChatbot({
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedModel, setSelectedModel] = useState(localStorage.getItem("selectedModel") || "gpt-4o");
   const [showModelPicker, setShowModelPicker] = useState(false);
-  const [showStylePicker, setShowStylePicker] = useState(false);
+  const [showComponents, setShowComponents] = useState(false);
 
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
 
@@ -895,10 +859,11 @@ export default function GeminiChatbot({
           msgWithFiles += "\n\nAttached files:\n" + fileContents.join("\n\n");
         }
 
+        const agentHistory = messages.slice(-20).map((m) => ({ role: m.role, content: m.content }));
         const res = await fetch(`${urlbackend}/gemini/slides-agent`, {
           method: "POST",
           headers: authHeaders,
-          body: JSON.stringify({ slides, message: msgWithFiles, model: isAdmin ? selectedModel : undefined }),
+          body: JSON.stringify({ slides, message: msgWithFiles, history: agentHistory, model: isAdmin ? selectedModel : undefined }),
         });
         const data = await res.json();
         if (!res.ok) { setErrors({ form: data?.error || "Error connecting to AI" }); return; }
@@ -960,23 +925,11 @@ export default function GeminiChatbot({
       }
 
       if (decision === "slides") {
+        // The backend picks the design template from the raw message and builds
+        // the full prompt (template CSS + example slides). SLIDES_SYSTEM_PROMPT
+        // is only a fallback — the backend replaces it in slides mode.
         systemPrompt = SLIDES_SYSTEM_PROMPT;
-        message = `Below is a complete working example of a Cobalt Grid presentation. Study its exact HTML structure carefully — the inline styles, the grid overlay divs, the hairline divs, the page numbers, the typography. You must replicate this structure exactly for the new presentation.
-
-REFERENCE TEMPLATE (copy this structure, replace only the content):
-${cobaltTemplateSrc}
-
----
-
-Now create a complete presentation about: ${userMsg}${filesContext}
-
-RULES — follow exactly as in the template above:
-- Output EXACTLY 6 <section> tags (or the number requested by the user)
-- Copy the structure from the template: grid overlay div, hairline top div, hairline bottom div, page number div — these must appear in EVERY section
-- Use ONLY inline style="" attributes — NO classes, NO <style> blocks (except the @import in section 1), NO CSS variables
-- Use literal hex values: background:#F0EBDE, color:#1F2BE0 — never var(--paper), never var(--ink)
-- Do NOT wrap in doctype, html, head, or body tags
-- Output raw HTML sections only, nothing else`;
+        message = `${userMsg}${filesContext}`;
       } else if (decision === "code") {
         message = `Return a single markdown code block (\`\`\`<language>) and nothing else.\nIf the language is HTML and it makes sense, return a full document.\n\nSpec:\n${userMsg}${filesContext}`;
       } else {
@@ -1053,12 +1006,6 @@ RULES — follow exactly as in the template above:
     if (!inputValue.trim() && attachedFiles.length === 0) return;
     const userMsg = inputValue.trim();
 
-    // /style command — open the style picker modal
-    if (userMsg === "/style") {
-      setShowStylePicker(true);
-      setInputValue("");
-      return;
-    }
     let uploadedAttachments: FileAttachment[] = [];
 
     if (attachedFiles.length > 0) {
@@ -1109,6 +1056,14 @@ RULES — follow exactly as in the template above:
       setTimeout(() => { processMessage(initialPrompt); setInputValue(""); }, 500);
     }
   }, [initialPrompt, loadingHistory, messages.length, projectId]);
+
+  /* ── external message (Tweak panel, etc.) ── */
+  const lastExternalNonce = useRef<number | null>(null);
+  useEffect(() => {
+    if (!externalMessage || externalMessage.nonce === lastExternalNonce.current) return;
+    lastExternalNonce.current = externalMessage.nonce;
+    if (externalMessage.text.trim()) processMessage(externalMessage.text);
+  }, [externalMessage, processMessage]);
 
   /* ── regenerate ── */
   const regenerateLastMessage = async () => {
@@ -1357,14 +1312,6 @@ RULES — follow exactly as in the template above:
               </div>
             )}
 
-            {/* /style command hint */}
-            {inputValue === "/style" && (
-              <div className="mb-2 px-3 py-2 bg-[#7182FF]/10 border border-[#7182FF]/30 rounded-lg flex items-center gap-2 text-xs text-[#7182FF]">
-                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
-                Press Enter to open the Style Picker
-              </div>
-            )}
-
             <div className="flex gap-2 items-center">
               <input ref={fileInputRef} type="file" multiple onChange={(e) => {
                 const files = Array.from(e.target.files ?? []);
@@ -1373,6 +1320,9 @@ RULES — follow exactly as in the template above:
               }} className="hidden" accept="*/*" />
               <button onClick={() => fileInputRef.current?.click()} disabled={uploadingFiles || loading} className="bg-theme-primary hover:bg-[#52585A] border border-[#52585A] rounded-lg px-3 py-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0" title="Attach files">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+              </button>
+              <button onClick={() => setShowComponents(true)} disabled={uploadingFiles || loading} className="bg-theme-primary hover:bg-[#52585A] border border-[#52585A] rounded-lg px-3 py-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0" title="Componentes">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>
               </button>
               <textarea
                 ref={textareaRef}
@@ -1416,11 +1366,12 @@ RULES — follow exactly as in the template above:
       {selectedSlidesModal && (
         <SlidesPreviewModal isOpen onClose={() => setSelectedSlidesModal(null)} slides={selectedSlidesModal.slides} onInsertSlides={insertSlidesAtPosition} />
       )}
-      <StylePickerModal
-        isOpen={showStylePicker}
-        onClose={() => setShowStylePicker(false)}
+      <ComponentsModal
+        isOpen={showComponents}
+        onClose={() => setShowComponents(false)}
         onApplyStyle={handleApplyStyle}
         onRegenerate={handleRegenerateWithStyle}
+        onInsertComponent={insertSlidesAtPosition}
       />
     </AssistantRuntimeProvider>
   );

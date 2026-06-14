@@ -1,5 +1,5 @@
 //"local" <---> "prod"
-const ENV = "prod"
+const ENV = "local"
 
 const urls = {
   local: "http://localhost:8000",

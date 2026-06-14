@@ -11,6 +11,7 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { urlbackend } from "../../config.js"
 import { getAuthToken } from "../../utils/getAuthToken"
+import { getTemplateCatalog, getCachedCatalog } from "../../utils/templateCatalog"
 import { motion, AnimatePresence } from "framer-motion"
 
 type Project = {
@@ -275,9 +276,10 @@ function HomePage() {
 
   useEffect(() => {
     if (activeTab !== "templates" || templates.length > 0) return
+    const cached = getCachedCatalog()
+    if (cached) { setTemplates(cached); return }
     setTemplatesLoading(true)
-    fetch(`/templates/catalog.json`)
-      .then(r => r.json())
+    getTemplateCatalog()
       .then(data => setTemplates(data))
       .catch(() => {})
       .finally(() => setTemplatesLoading(false))
@@ -377,9 +379,6 @@ function HomePage() {
             <div className="searchbar flex flex-col items-center justify-start w-full gap-6">
               <div className="flex flex-col items-center gap-2">
                 <AppTextLogo size={isMobile ? 60 : 100} />
-                <p className="text-sm text-theme-secondary">
-                  {user?.first_name ? `Welcome back, ${user.first_name}.` : "Welcome back."}
-                </p>
               </div>
 
               <div className="relative w-full md:w-[70vw] flex items-center justify-center">
@@ -555,7 +554,7 @@ function HomePage() {
 
               {activeTab === "my-designs" ? (
                 <div
-                  className={`gap-4 flex-1 overflow-y-auto overflow-x-hidden pb-8 ${isMobile ? "flex flex-col" : viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 transition-all duration-300" : "flex flex-col"
+                  className={`gap-4 flex-1 overflow-y-auto overflow-x-hidden pb-8 ${isMobile ? "flex flex-col" : viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 auto-rows-min content-start transition-all duration-300" : "flex flex-col"
                     }`}
                 >
                   {(() => {
@@ -693,7 +692,7 @@ function HomePage() {
                   </div>
 
                   {templatesLoading ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 flex-1 overflow-y-auto">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 flex-1 overflow-y-auto auto-rows-min content-start">
                       {Array.from({ length: 12 }).map((_, i) => (
                         <div key={i} className="rounded-[15px] bg-theme-quaternary border border-theme-tertiary p-1.5 flex flex-col gap-2">
                           <Skeleton className="w-full aspect-[16/9] rounded-[10px]" />
@@ -704,7 +703,7 @@ function HomePage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 flex-1 overflow-y-auto">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 flex-1 overflow-y-auto auto-rows-min content-start">
                       {templates
                         .filter(t => !templateSearch || t.name.includes(templateSearch.toLowerCase()) || t.description.toLowerCase().includes(templateSearch.toLowerCase()))
                         .map(t => {

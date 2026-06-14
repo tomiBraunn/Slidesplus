@@ -1,7 +1,6 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import SpotlightCard from "../MultiuseComponents/SpotlightCard";
-
-type Template = { name: string; description: string };
+import { getTemplateCatalog, getCachedCatalog, type Template } from "../../../utils/templateCatalog";
 
 type Props = {
   isOpen: boolean;
@@ -36,7 +35,7 @@ function TemplateCard({ template, onApplyStyle, onRegenerate }: {
           </div>
         )}
         <iframe
-          src={`/templates/${template.name}/slides-plus.html`}
+          src={`/templates/${template.name}/example.html`}
           style={{
             transform: "scale(0.25)",
             transformOrigin: "top left",
@@ -51,7 +50,8 @@ function TemplateCard({ template, onApplyStyle, onRegenerate }: {
             transition: "opacity 0.3s",
           }}
           onLoad={() => setLoaded(true)}
-          sandbox="allow-same-origin"
+          sandbox="allow-scripts allow-same-origin"
+          loading="lazy"
           title={template.name}
         />
       </div>
@@ -81,19 +81,19 @@ function TemplateCard({ template, onApplyStyle, onRegenerate }: {
 }
 
 export default function StylePickerModal({ isOpen, onClose, onApplyStyle, onRegenerate }: Props) {
-  const [templates, setTemplates] = useState<Template[]>([]);
+  // Seed from the shared cache so reopening is instant.
+  const [templates, setTemplates] = useState<Template[]>(() => getCachedCatalog() ?? []);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!isOpen || templates.length > 0) return;
+    if (templates.length > 0) return;
     setLoading(true);
-    fetch(`/templates/catalog.json`)
-      .then(r => r.json())
-      .then(data => setTemplates(data))
+    getTemplateCatalog()
+      .then(setTemplates)
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [isOpen]);
+  }, [templates.length]);
 
   const filtered = templates.filter(t => {
     if (!search) return true;
@@ -101,10 +101,14 @@ export default function StylePickerModal({ isOpen, onClose, onApplyStyle, onRege
     return t.name.includes(q) || t.description.toLowerCase().includes(q);
   });
 
-  if (!isOpen) return null;
-
+  // Keep the modal (and its loaded preview iframes) mounted; just hide it.
+  // Re-opening then shows already-rendered previews instead of reloading them.
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+      style={{ display: isOpen ? "flex" : "none" }}
+      onClick={onClose}
+    >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
         className="relative z-10 flex flex-col bg-theme-primary border border-theme-tertiary rounded-2xl w-full max-w-5xl max-h-[85vh] overflow-hidden shadow-2xl"
@@ -123,7 +127,6 @@ export default function StylePickerModal({ isOpen, onClose, onApplyStyle, onRege
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-52 px-3 py-1.5 text-sm bg-theme-quaternary border border-theme-tertiary rounded-lg text-theme-primary placeholder:text-theme-secondary focus:outline-none focus:border-[#7182FF] transition-colors"
-              autoFocus
             />
             <button
               onClick={onClose}

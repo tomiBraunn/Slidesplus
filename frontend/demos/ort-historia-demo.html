@@ -1,0 +1,256 @@
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;background:#ffffff;">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&display=swap');
+
+.rg-root{
+  --black:#0a0a0a; --white:#ffffff; --pink:#f2d4cf; --green:#e5edd6; --gray:#f5f5f5; --darkgray:#333;
+  --border:4px solid var(--black); --shadow:10px 10px 0 var(--black); --shadow-sm:6px 6px 0 var(--black);
+  position:absolute; inset:0; overflow:hidden; background:var(--white); color:var(--black);
+  font-family:'Archivo','Segoe UI',system-ui,sans-serif;
+}
+.rg-root *,.rg-root *::before,.rg-root *::after{margin:0;padding:0;box-sizing:border-box;}
+
+.rg-slide{position:absolute;inset:0;display:none;background:var(--white);overflow:hidden;}
+.rg-slide.active{display:block;}
+
+.t-display{font-size:120px;font-weight:900;line-height:1.02;letter-spacing:-.02em;text-transform:uppercase;}
+.t-headline{font-size:72px;font-weight:900;line-height:1.08;letter-spacing:-.01em;text-transform:uppercase;}
+.t-title{font-size:40px;font-weight:800;line-height:1.18;text-transform:uppercase;letter-spacing:.01em;}
+.t-subtitle{font-size:22px;font-weight:700;line-height:1.3;text-transform:uppercase;letter-spacing:.04em;}
+.t-body{font-size:22px;font-weight:500;line-height:1.6;}
+.t-caption{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;}
+.t-number{font-size:150px;font-weight:900;line-height:1;letter-spacing:-.04em;}
+
+.b{border:var(--border);} .b-r{border-right:var(--border);} .b-b{border-bottom:var(--border);} .b-t{border-top:var(--border);}
+.bg-pink{background:var(--pink);} .bg-green{background:var(--green);} .bg-black{background:var(--black);} .bg-gray{background:var(--gray);} .bg-white{background:var(--white);}
+.c-white{color:var(--white);}
+.flex{display:flex;} .col{flex-direction:column;} .center{align-items:center;justify-content:center;} .between{justify-content:space-between;} .grow{flex:1;} .aic{align-items:center;}
+.gap-sm{gap:16px;} .gap-md{gap:32px;} .gap-lg{gap:48px;}
+.grid{display:grid;}
+.pad-lg{padding:64px;} .pad-md{padding:40px;} .pad-sm{padding:20px;}
+.shadow{box-shadow:var(--shadow);} .shadow-sm{box-shadow:var(--shadow-sm);}
+.w-100{width:100%;} .h-100{height:100%;}
+.label{display:inline-block;background:var(--black);color:var(--white);padding:8px 18px;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;}
+.line{width:80px;height:6px;background:var(--black);}
+
+.rg-pagenum{position:absolute;right:34px;bottom:26px;font-size:14px;font-weight:800;letter-spacing:.08em;z-index:8;}
+
+/* arrows + dots */
+.rg-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:30;width:56px;height:56px;border:var(--border);background:var(--white);color:var(--black);font-weight:900;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-sm);transition:background .15s;}
+.rg-arrow:hover{background:var(--green);}
+.rg-arrow.prev{left:28px;}.rg-arrow.next{right:28px;}
+.rg-nav{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:30;}
+.rg-dot{width:14px;height:14px;border:3px solid var(--black);background:transparent;cursor:pointer;padding:0;transition:background .15s;}
+.rg-dot.is-active{background:var(--black);}
+
+/* timeline */
+.tl-row{display:grid;grid-template-columns:200px 1fr;align-items:stretch;}
+.tl-year{font-size:60px;font-weight:900;letter-spacing:-.03em;display:flex;align-items:center;justify-content:center;}
+.tl-txt{display:flex;flex-direction:column;justify-content:center;gap:6px;padding:22px 36px;}
+
+/* quiz */
+.rg-quiz{display:flex;flex-direction:column;height:100%;}
+.rg-quiz .qbar{padding:40px 64px;border-bottom:var(--border);display:flex;align-items:center;justify-content:space-between;}
+.rg-quiz .qstage{flex:1;display:flex;flex-direction:column;padding:54px 64px;gap:34px;}
+.rg-quiz .qq{font-size:48px;font-weight:900;line-height:1.1;text-transform:uppercase;letter-spacing:-.01em;}
+.rg-quiz .qopts{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
+.rg-quiz .qopt{display:flex;align-items:center;gap:18px;border:var(--border);background:var(--white);padding:24px 26px;cursor:pointer;font-size:21px;font-weight:700;text-align:left;box-shadow:var(--shadow-sm);transition:transform .1s,background .15s;}
+.rg-quiz .qopt:hover{background:var(--green);transform:translate(-2px,-2px);}
+.rg-quiz .qopt .k{width:40px;height:40px;border:3px solid var(--black);display:flex;align-items:center;justify-content:center;font-weight:900;flex-shrink:0;}
+.rg-quiz .qopt.correct{background:var(--green);}
+.rg-quiz .qopt.correct .k{background:var(--black);color:var(--white);}
+.rg-quiz .qopt.wrong{background:var(--pink);}
+.rg-quiz .qopt.off{pointer-events:none;}
+.rg-quiz .qfb{font-size:20px;font-weight:600;line-height:1.5;min-height:30px;opacity:0;transition:opacity .2s;}
+.rg-quiz .qfb.show{opacity:1;}
+.rg-quiz .qnext{align-self:flex-end;background:var(--black);color:var(--white);border:var(--border);font-weight:800;font-size:18px;text-transform:uppercase;letter-spacing:.04em;padding:16px 34px;cursor:pointer;box-shadow:var(--shadow-sm);display:none;}
+.rg-quiz .qnext:hover{background:var(--green);color:var(--black);}
+.rg-quiz .qresult{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;text-align:center;padding:64px;}
+.rg-quiz .qresult .rs{font-size:170px;font-weight:900;line-height:.9;letter-spacing:-.04em;}
+.rg-quiz .qresult .rm{font-size:24px;font-weight:600;max-width:60ch;line-height:1.5;}
+.rg-quiz .qresult .qnext{display:inline-block;align-self:center;}
+</style>
+
+<div class="rg-root">
+
+  <!-- 1 · COVER -->
+  <div class="rg-slide active">
+    <div class="grid h-100" style="grid-template-columns:1fr 1fr;">
+      <div class="bg-pink b-r flex col pad-lg" style="justify-content:space-between;">
+        <div class="flex aic gap-sm">
+          <div class="b bg-white flex center" style="width:60px;height:60px;font-weight:900;font-size:22px;">O</div>
+          <div style="font-size:24px;font-weight:900;letter-spacing:-.02em;">ORT ARGENTINA</div>
+        </div>
+        <div>
+          <div class="label" style="margin-bottom:28px;">Desde 1936</div>
+          <h1 class="t-display">La historia<br/>de ORT</h1>
+        </div>
+        <div class="t-subtitle">Educación · Tecnología · Comunidad</div>
+      </div>
+      <div class="flex col">
+        <div class="grow flex aic b-b pad-lg t-title">→&nbsp;Una organización educativa</div>
+        <div class="grow flex aic b-b pad-lg t-title bg-green">→&nbsp;Nacida con perfil técnico</div>
+        <div class="grow flex aic pad-lg t-title">→&nbsp;Hoy, +7.000 alumnos</div>
+      </div>
+    </div>
+    <div class="rg-pagenum">01 / 06</div>
+  </div>
+
+  <!-- 2 · QUÉ ES / ORIGEN -->
+  <div class="rg-slide">
+    <div class="grid h-100" style="grid-template-columns:45% 55%;">
+      <div class="flex col center b-r pad-lg gap-md">
+        <div class="flex aic gap-sm w-100"><span class="label">Origen</span><span class="line"></span></div>
+        <h2 class="t-headline w-100">Una idea<br/>traída por<br/>inmigrantes</h2>
+      </div>
+      <div class="grid" style="grid-template-rows:1fr 1fr;">
+        <div class="b-b pad-lg flex col center gap-sm">
+          <div class="t-subtitle">¿Quién la fundó?</div>
+          <p class="t-body">En 1936, un grupo de inmigrantes judíos creó la Asociación ORT Argentina, vinculada a ORT Mundial, para enseñar oficios a la comunidad.</p>
+        </div>
+        <div class="pad-lg flex col center gap-sm bg-gray">
+          <div class="t-subtitle">¿Con qué objetivo?</div>
+          <p class="t-body">Desarrollar actividades educativas con un fuerte perfil técnico, formando a las personas en habilidades concretas y útiles.</p>
+        </div>
+      </div>
+    </div>
+    <div class="rg-pagenum">02 / 06</div>
+  </div>
+
+  <!-- 3 · TIMELINE -->
+  <div class="rg-slide">
+    <div class="flex col h-100">
+      <div class="pad-lg b-b flex aic between">
+        <h2 class="t-headline">Línea de tiempo</h2>
+        <span class="label">1936 → hoy</span>
+      </div>
+      <div class="grow flex col">
+        <div class="tl-row b-b"><div class="tl-year bg-pink b-r">1936</div><div class="tl-txt"><div class="t-subtitle">Nace ORT Argentina</div><div class="t-body">Fundada el 5 de marzo en el barrio de Constitución.</div></div></div>
+        <div class="tl-row b-b"><div class="tl-year b-r">1941</div><div class="tl-txt"><div class="t-subtitle">Primeros cursos</div><div class="t-body">Comienzan a dictarse las clases en una casa alquilada.</div></div></div>
+        <div class="tl-row b-b"><div class="tl-year bg-green b-r">1951</div><div class="tl-txt"><div class="t-subtitle">Edificio propio</div><div class="t-body">Se inaugura la sede de la calle Yatay 240.</div></div></div>
+        <div class="tl-row"><div class="tl-year bg-black c-white b-r">Hoy</div><div class="tl-txt"><div class="t-subtitle">Dos sedes</div><div class="t-body">Almagro y Belgrano, con más de 7.000 alumnos.</div></div></div>
+      </div>
+    </div>
+    <div class="rg-pagenum">03 / 06</div>
+  </div>
+
+  <!-- 4 · NÚMEROS -->
+  <div class="rg-slide">
+    <div class="flex col h-100">
+      <div class="pad-lg b-b"><h2 class="t-headline">ORT en números</h2></div>
+      <div class="grow grid" style="grid-template-columns:1fr 1fr 1fr;">
+        <div class="b-r pad-lg flex col center gap-sm"><div class="t-number">1936</div><div class="t-subtitle" style="text-align:center;">Año de fundación</div></div>
+        <div class="b-r pad-lg flex col center gap-sm bg-pink"><div class="t-number">2</div><div class="t-subtitle" style="text-align:center;">Sedes: Almagro y Belgrano</div></div>
+        <div class="pad-lg flex col center gap-sm bg-green"><div class="t-number">7K<span style="font-size:.5em;">+</span></div><div class="t-subtitle" style="text-align:center;">Alumnos hoy</div></div>
+      </div>
+      <div class="b-t pad-md flex center t-body" style="text-align:center;">Más de un siglo de ORT en el mundo · más de 85 años en Argentina</div>
+    </div>
+    <div class="rg-pagenum">04 / 06</div>
+  </div>
+
+  <!-- 5 · DE OFICIOS A TECNOLOGÍA -->
+  <div class="rg-slide">
+    <div class="grid h-100" style="grid-template-columns:1fr 1fr;">
+      <div class="bg-black c-white flex col center pad-lg gap-md">
+        <span class="label" style="background:var(--white);color:var(--black);">La evolución</span>
+        <h2 class="t-headline">De los<br/>oficios a la<br/>tecnología</h2>
+      </div>
+      <div class="flex col">
+        <div class="grow b-b pad-lg flex col center gap-sm"><div class="t-subtitle">Ayer</div><p class="t-body">Empezó enseñando oficios concretos a la comunidad, con un perfil netamente técnico.</p></div>
+        <div class="grow pad-lg flex col center gap-sm bg-green"><div class="t-subtitle">Hoy</div><p class="t-body">Evolucionó hacia una gran diversidad de proyectos educativos: programación, IA, robótica, diseño y más.</p></div>
+      </div>
+    </div>
+    <div class="rg-pagenum">05 / 06</div>
+  </div>
+
+  <!-- 6 · QUIZ -->
+  <div class="rg-slide">
+    <div class="rg-quiz" data-rgquiz>
+      <div class="qbar"><h2 class="t-headline">Quiz</h2><span class="label" data-rgprog>1 / 4</span></div>
+      <div class="qstage" data-rgstage>
+        <div class="qq" data-rgq></div>
+        <div class="qopts" data-rgopts></div>
+        <div class="qfb" data-rgfb></div>
+        <button class="qnext" data-rgnext>Siguiente →</button>
+      </div>
+      <div class="qresult" data-rgresult style="display:none;">
+        <div class="rs" data-rgscore></div>
+        <div class="rm" data-rgmsg></div>
+        <button class="qnext" data-rgrestart>Reintentar</button>
+      </div>
+    </div>
+    <div class="rg-pagenum">06 / 07</div>
+  </div>
+
+  <!-- 7 · CIERRE -->
+  <div class="rg-slide">
+    <div class="flex col center h-100 pad-lg gap-lg bg-pink">
+      <span class="label">ORT Argentina · Desde 1936</span>
+      <h2 class="t-display" style="text-align:center;">Educar para<br/>el futuro</h2>
+      <p class="t-body" style="max-width:60ch;text-align:center;">De una casa alquilada en 1941 a dos sedes con miles de alumnos: una historia de educación, tecnología y comunidad.</p>
+    </div>
+    <div class="rg-pagenum">07 / 07</div>
+  </div>
+
+  <button class="rg-arrow prev" data-rg-prev>&#8249;</button>
+  <button class="rg-arrow next" data-rg-next>&#8250;</button>
+  <nav class="rg-nav"></nav>
+</div>
+
+<script>
+(function(){
+  var root = document.currentScript.closest('section').querySelector('.rg-root');
+  if(!root || root.dataset.rgInit) return;
+  root.dataset.rgInit='1';
+  var slides = Array.prototype.slice.call(root.querySelectorAll('.rg-slide'));
+  var nav = root.querySelector('.rg-nav');
+  var total = slides.length, cur = 0;
+  slides.forEach(function(_,i){ var d=document.createElement('button'); d.className='rg-dot'; d.addEventListener('click',function(){go(i);}); nav.appendChild(d); });
+  var dots = Array.prototype.slice.call(nav.children);
+  function go(i){ if(i<0||i>=total) return; slides[cur].classList.remove('active'); cur=i; slides[cur].classList.add('active'); dots.forEach(function(d,di){ d.classList.toggle('is-active',di===cur); }); }
+  root.querySelector('[data-rg-prev]').addEventListener('click',function(){go(cur-1);});
+  root.querySelector('[data-rg-next]').addEventListener('click',function(){go(cur+1);});
+  document.addEventListener('keydown',function(e){ if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();go(cur+1);} if(e.key==='ArrowLeft'){e.preventDefault();go(cur-1);} });
+  var sx=0;
+  root.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;},{passive:true});
+  root.addEventListener('touchend',function(e){var dx=e.changedTouches[0].clientX-sx; if(Math.abs(dx)>40) go(cur+(dx<0?1:-1));},{passive:true});
+  dots[0].classList.add('is-active');
+
+  // Quiz
+  var quiz = root.querySelector('[data-rgquiz]');
+  if(quiz){
+    var QS=[
+      {q:'¿En qué año se fundó ORT Argentina?',a:[{t:'1936',ok:true},{t:'1951',ok:false},{t:'1989',ok:false},{t:'2005',ok:false}],fb:'ORT Argentina se fundó en 1936.'},
+      {q:'¿Quiénes fundaron ORT Argentina?',a:[{t:'El Estado nacional.',ok:false},{t:'Un grupo de inmigrantes judíos.',ok:true},{t:'Una empresa de tecnología.',ok:false},{t:'Una universidad extranjera.',ok:false}],fb:'La fundó un grupo de inmigrantes judíos, vinculada a ORT Mundial.'},
+      {q:'¿Con qué perfil nació la institución?',a:[{t:'Artístico.',ok:false},{t:'Deportivo.',ok:false},{t:'Técnico.',ok:true},{t:'Comercial.',ok:false}],fb:'Nació con un fuerte perfil técnico, enseñando oficios.'},
+      {q:'¿Cuántas sedes tiene ORT hoy?',a:[{t:'Una.',ok:false},{t:'Dos: Almagro y Belgrano.',ok:true},{t:'Cinco.',ok:false},{t:'Ninguna, es online.',ok:false}],fb:'Tiene dos sedes —Almagro y Belgrano— con +7.000 alumnos.'}
+    ];
+    var qEl=quiz.querySelector('[data-rgq]'),optsEl=quiz.querySelector('[data-rgopts]'),fbEl=quiz.querySelector('[data-rgfb]'),nextBtn=quiz.querySelector('[data-rgnext]'),progEl=quiz.querySelector('[data-rgprog]'),resEl=quiz.querySelector('[data-rgresult]'),stageEl=quiz.querySelector('[data-rgstage]'),scoreEl=quiz.querySelector('[data-rgscore]'),msgEl=quiz.querySelector('[data-rgmsg]'),restartBtn=quiz.querySelector('[data-rgrestart]');
+    var K=['A','B','C','D'],qi=0,sc=0,ans=false;
+    function rq(){
+      var it=QS[qi];ans=false;
+      progEl.textContent=(qi+1)+' / '+QS.length;
+      qEl.textContent=it.q;fbEl.classList.remove('show');fbEl.innerHTML='';nextBtn.style.display='none';
+      nextBtn.textContent=(qi===QS.length-1)?'Ver resultado →':'Siguiente →';
+      optsEl.innerHTML='';
+      it.a.forEach(function(an,i){
+        var b=document.createElement('button');b.className='qopt';
+        b.innerHTML='<span class="k">'+K[i]+'</span><span>'+an.t+'</span>';
+        b.addEventListener('click',function(){
+          if(ans)return;ans=true;
+          var all=Array.prototype.slice.call(optsEl.children);
+          all.forEach(function(o){o.classList.add('off');});
+          if(an.ok){b.classList.add('correct');sc++;fbEl.innerHTML='✓ ¡Correcto! '+it.fb;}
+          else{b.classList.add('wrong');all[it.a.findIndex(function(x){return x.ok;})].classList.add('correct');fbEl.innerHTML='✕ '+it.fb;}
+          fbEl.classList.add('show');nextBtn.style.display='inline-block';
+        });
+        optsEl.appendChild(b);
+      });
+    }
+    nextBtn.addEventListener('click',function(){ if(qi<QS.length-1){qi++;rq();}else{stageEl.style.display='none';resEl.style.display='flex';progEl.textContent='Resultado';scoreEl.textContent=sc+' / '+QS.length;msgEl.textContent=sc===QS.length?'¡Perfecto! Sabés la historia de ORT.':(sc>=QS.length/2?'¡Bien! Te quedó clara la historia.':'Repasá las slides y reintentá.');} });
+    restartBtn.addEventListener('click',function(){qi=0;sc=0;resEl.style.display='none';stageEl.style.display='flex';rq();});
+    rq();
+  }
+})();
+</script>
+</section>

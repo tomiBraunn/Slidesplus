@@ -1,0 +1,184 @@
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;background:#232e26;">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap');
+
+.mat-root{
+  --c-bg:#232e26; --c-bg-alt:#2e3d30; --c-bg-light:#ede6d0; --c-bg-light-alt:#e4dac4;
+  --c-fg:#f0e8d2; --c-fg-2:rgba(240,232,210,.58); --c-fg-3:rgba(240,232,210,.3);
+  --c-fg-light:#1e2820; --c-fg-light-2:rgba(30,40,32,.6);
+  --c-accent:#c07030; --c-spotify:#1DB954; --c-border:rgba(240,232,210,.12); --c-border-light:rgba(30,40,32,.14);
+  --f-display:"Bricolage Grotesque",sans-serif; --f-body:"DM Sans",system-ui,sans-serif; --f-mono:"DM Mono",monospace;
+  position:absolute; inset:0; overflow:hidden; background:var(--c-bg); color:var(--c-fg); font-family:var(--f-body);
+}
+.mat-root *,.mat-root *::before,.mat-root *::after{margin:0;padding:0;box-sizing:border-box;}
+
+.mat-slide{position:absolute;inset:0;display:none;overflow:hidden;background:var(--c-bg);}
+.mat-slide.active{display:flex;}
+.mat-slide.light{background:var(--c-bg-light);color:var(--c-fg-light);}
+
+.disp{font-family:var(--f-display);font-weight:800;line-height:.92;letter-spacing:-.02em;}
+.h1{font-family:var(--f-display);font-weight:700;font-size:88px;line-height:1;letter-spacing:-.02em;}
+.h2{font-family:var(--f-display);font-weight:600;font-size:48px;line-height:1.08;}
+.lead{font-family:var(--f-body);font-size:25px;line-height:1.55;color:var(--c-fg-2);}
+.light .lead{color:var(--c-fg-light-2);}
+.body{font-family:var(--f-body);font-size:20px;line-height:1.6;color:var(--c-fg-2);}
+.light .body{color:var(--c-fg-light-2);}
+.kicker{font-family:var(--f-mono);font-size:15px;letter-spacing:.16em;text-transform:uppercase;color:var(--c-accent);}
+.mono{font-family:var(--f-mono);font-size:14px;letter-spacing:.06em;color:var(--c-fg-3);}
+.spot{color:var(--c-spotify);}
+
+.flex{display:flex;} .col{flex-direction:column;} .center{align-items:center;justify-content:center;} .between{justify-content:space-between;} .aic{align-items:center;} .grow{flex:1;}
+.gap-sm{gap:16px;} .gap-md{gap:30px;} .gap-lg{gap:50px;}
+.grid{display:grid;}
+.pad-lg{padding:90px;} .pad-xl{padding:110px;}
+.h-100{height:100%;} .w-100{width:100%;}
+.rule{width:60px;height:3px;background:var(--c-accent);}
+
+.mat-pagenum{position:absolute;right:40px;bottom:34px;font-family:var(--f-mono);font-size:14px;color:var(--c-fg-3);letter-spacing:.08em;z-index:8;}
+.light .mat-pagenum{color:var(--c-fg-light-2);}
+.wood{position:absolute;width:680px;height:680px;border-radius:50%;background:radial-gradient(circle,rgba(122,78,36,.5),transparent 70%);filter:blur(40px);pointer-events:none;bottom:-260px;right:-180px;}
+
+.mat-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:30;width:54px;height:54px;border:1px solid var(--c-border);background:rgba(240,232,210,.06);color:var(--c-fg);font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background .2s;}
+.mat-arrow:hover{background:var(--c-accent);color:#fff;border-color:var(--c-accent);}
+.light .mat-arrow{border-color:var(--c-border-light);color:var(--c-fg-light);background:rgba(30,40,32,.04);}
+.mat-arrow.prev{left:30px;}.mat-arrow.next{right:30px;}
+.mat-nav{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);display:flex;gap:9px;z-index:30;}
+.mat-dot{width:8px;height:8px;border-radius:50%;border:none;background:rgba(240,232,210,.28);cursor:pointer;padding:0;transition:background .2s,transform .2s;}
+.mat-dot.is-active{background:var(--c-accent);transform:scale(1.4);}
+
+.img-card{border-radius:14px;overflow:hidden;background:var(--c-bg-alt);position:relative;}
+.img-card img{width:100%;height:100%;object-fit:cover;display:block;}
+.embed-wrap{border-radius:14px;overflow:hidden;background:var(--c-bg-alt);}
+.embed-wrap iframe{width:100%;border:none;display:block;border-radius:14px;}
+.stat-v{font-family:var(--f-display);font-weight:700;font-size:84px;line-height:1;color:var(--c-accent);letter-spacing:-.02em;}
+</style>
+
+<div class="mat-root">
+
+  <!-- 1 · COVER -->
+  <div class="mat-slide active">
+    <div class="wood"></div>
+    <div class="grid h-100 w-100" style="grid-template-columns:1.1fr .9fr;position:relative;z-index:1;">
+      <div class="flex col pad-xl between">
+        <div class="flex aic gap-sm">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg" alt="Spotify" style="width:54px;height:54px;"/>
+          <span class="kicker" style="color:var(--c-spotify);">Spotify</span>
+        </div>
+        <div class="flex col gap-md">
+          <h1 class="disp" style="font-size:128px;">El sonido<br/>del mundo.</h1>
+          <p class="lead" style="max-width:46ch;">La plataforma que puso millones de canciones en el bolsillo de cientos de millones de personas.</p>
+        </div>
+        <div class="mono">Música · Podcasts · Streaming</div>
+      </div>
+      <div class="img-card" style="margin:60px 90px 60px 0;">
+        <img src="https://images.unsplash.com/photo-1611339555312-e607c8352fd7?w=1200&q=80" alt="Escuchando música" loading="lazy"/>
+      </div>
+    </div>
+    <div class="mat-pagenum">01 / 06</div>
+  </div>
+
+  <!-- 2 · QUÉ ES -->
+  <div class="mat-slide light">
+    <div class="grid h-100 w-100" style="grid-template-columns:1fr 1fr;">
+      <div class="flex col center pad-xl gap-md" style="border-right:1px solid var(--c-border-light);">
+        <span class="kicker" style="align-self:flex-start;">¿Qué es?</span>
+        <h2 class="h1" style="font-size:76px;color:var(--c-fg-light);">Tu música,<br/>cuando<br/>quieras</h2>
+        <div class="rule"></div>
+      </div>
+      <div class="flex col">
+        <div class="grow flex col center pad-lg gap-sm" style="border-bottom:1px solid var(--c-border-light);">
+          <div class="h2" style="color:var(--c-fg-light);">2008</div>
+          <p class="body" style="max-width:42ch;">Nace en Suecia, fundada por Daniel Ek y Martin Lorentzon, con una idea: escuchar cualquier canción al instante, legalmente.</p>
+        </div>
+        <div class="grow flex col center pad-lg gap-sm" style="background:var(--c-bg-light-alt);">
+          <div class="h2" style="color:var(--c-fg-light);">Hoy</div>
+          <p class="body" style="max-width:42ch;">Cientos de millones de usuarios en todo el mundo y un catálogo de más de 100 millones de canciones.</p>
+        </div>
+      </div>
+    </div>
+    <div class="mat-pagenum">02 / 06</div>
+  </div>
+
+  <!-- 3 · CÓMO SUENA (embeds reales) -->
+  <div class="mat-slide">
+    <div class="flex col h-100 w-100 pad-lg gap-md">
+      <div class="flex between aic">
+        <h2 class="h1" style="font-size:60px;">Escuchá una muestra</h2>
+        <span class="kicker" style="color:var(--c-spotify);">Reproductores reales</span>
+      </div>
+      <div class="grid grow gap-md" style="grid-template-columns:1fr 1fr;">
+        <div class="embed-wrap flex center"><iframe src="https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM5M?theme=0" height="380" loading="lazy" allow="encrypted-media"></iframe></div>
+        <div class="embed-wrap flex center"><iframe src="https://open.spotify.com/embed/album/4aawyAB9vmqN3uQ7FjRGTy?theme=0" height="380" loading="lazy" allow="encrypted-media"></iframe></div>
+      </div>
+      <p class="body">Cada reproductor trae su propia portada y un avance de la música — todo en vivo, dentro de la slide.</p>
+    </div>
+    <div class="mat-pagenum">03 / 06</div>
+  </div>
+
+  <!-- 4 · NÚMEROS -->
+  <div class="mat-slide">
+    <div class="wood" style="bottom:auto;top:-260px;left:-180px;right:auto;"></div>
+    <div class="flex col h-100 w-100 pad-xl between" style="position:relative;z-index:1;">
+      <div class="flex col gap-sm">
+        <span class="kicker">En números</span>
+        <h2 class="h1" style="font-size:64px;">Una escala global</h2>
+      </div>
+      <div class="grid gap-lg" style="grid-template-columns:repeat(3,1fr);">
+        <div class="flex col gap-sm"><div class="stat-v">2008</div><div class="mono">Año de lanzamiento</div></div>
+        <div class="flex col gap-sm"><div class="stat-v">100 M+</div><div class="mono">Canciones en el catálogo</div></div>
+        <div class="flex col gap-sm"><div class="stat-v">180+</div><div class="mono">Países donde está disponible</div></div>
+      </div>
+      <p class="lead" style="max-width:70ch;">De una startup sueca a la plataforma de audio más usada del planeta.</p>
+    </div>
+    <div class="mat-pagenum">04 / 06</div>
+  </div>
+
+  <!-- 5 · DESCUBRIR (imagen + artista embed) -->
+  <div class="mat-slide light">
+    <div class="grid h-100 w-100" style="grid-template-columns:1fr 1fr;">
+      <div class="img-card" style="border-radius:0;"><img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=1200&q=80" alt="Conciertos y música" loading="lazy"/></div>
+      <div class="flex col center pad-xl gap-md">
+        <span class="kicker" style="align-self:flex-start;">Lo que lo hace especial</span>
+        <h2 class="h1" style="font-size:60px;color:var(--c-fg-light);">Te ayuda a<br/>descubrir</h2>
+        <p class="body" style="max-width:44ch;">Listas personalizadas, recomendaciones y mezclas según tu gusto: Spotify aprende lo que te gusta y te muestra música nueva.</p>
+        <div class="embed-wrap w-100"><iframe src="https://open.spotify.com/embed/artist/0TnOYISbd1XYRBk9myaseg?theme=0" height="152" loading="lazy" allow="encrypted-media"></iframe></div>
+      </div>
+    </div>
+    <div class="mat-pagenum">05 / 06</div>
+  </div>
+
+  <!-- 6 · CIERRE -->
+  <div class="mat-slide">
+    <div class="wood"></div>
+    <div class="flex col center h-100 w-100 pad-xl gap-md" style="position:relative;z-index:1;text-align:center;">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg" alt="Spotify" style="width:90px;height:90px;"/>
+      <h2 class="disp" style="font-size:104px;">Dale play.</h2>
+      <p class="lead" style="max-width:54ch;">Música, podcasts y descubrimiento — el sonido del mundo, en un solo lugar.</p>
+    </div>
+    <div class="mat-pagenum">06 / 06</div>
+  </div>
+
+  <button class="mat-arrow prev" data-mat-prev>&#8249;</button>
+  <button class="mat-arrow next" data-mat-next>&#8250;</button>
+  <nav class="mat-nav"></nav>
+</div>
+
+<script>
+(function(){
+  var root=document.currentScript.closest('section').querySelector('.mat-root');
+  if(!root||root.dataset.matInit)return; root.dataset.matInit='1';
+  var slides=Array.prototype.slice.call(root.querySelectorAll('.mat-slide'));
+  var nav=root.querySelector('.mat-nav'); var total=slides.length,cur=0;
+  slides.forEach(function(_,i){var d=document.createElement('button');d.className='mat-dot';d.addEventListener('click',function(){go(i);});nav.appendChild(d);});
+  var dots=Array.prototype.slice.call(nav.children);
+  function go(i){if(i<0||i>=total)return;slides[cur].classList.remove('active');cur=i;slides[cur].classList.add('active');dots.forEach(function(d,di){d.classList.toggle('is-active',di===cur);});}
+  root.querySelector('[data-mat-prev]').addEventListener('click',function(){go(cur-1);});
+  root.querySelector('[data-mat-next]').addEventListener('click',function(){go(cur+1);});
+  document.addEventListener('keydown',function(e){if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();go(cur+1);}if(e.key==='ArrowLeft'){e.preventDefault();go(cur-1);}});
+  var sx=0;
+  root.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;},{passive:true});
+  root.addEventListener('touchend',function(e){var dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>40)go(cur+(dx<0?1:-1));},{passive:true});
+  dots[0].classList.add('is-active');
+})();
+</script>
+</section>

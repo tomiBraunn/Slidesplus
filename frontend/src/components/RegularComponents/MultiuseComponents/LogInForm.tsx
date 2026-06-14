@@ -67,6 +67,11 @@ function LogInForm() {
         return;
       }
 
+      // Clear any leftover Supabase (Google) session so its token can't override
+      // this password login after redirect. Suppress the resulting SIGNED_OUT so
+      // the auth interceptor doesn't wipe the backend token we store next.
+      (window as any).__suppressSupabaseSignout = true;
+      try { await supabase.auth.signOut(); } catch { /* ignore */ }
       localStorage.setItem("token", data.token);
       setRedirecting(true);
       window.location.href = "/home";

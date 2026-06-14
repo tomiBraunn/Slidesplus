@@ -150,13 +150,20 @@ function ProjectPreview({
       ro.disconnect()
       window.removeEventListener("resize", updateScale)
     }
-  }, [slides])
+  }, [slides, show, isMobile])
 
   useEffect(() => {
     const current = slides.find((s) => s.position === selectedSlide)
     if (!current) return
     const target = iframeRef.current?.contentDocument || iframeRef.current?.contentWindow?.document
     if (!target) return
+    // Modern slides ship their own full-bleed <section>; render them faithfully.
+    // Legacy "bare HTML" slides need the old centering/padding so they look right.
+    const html = current.html || ""
+    const hasSection = /<section[\s>]/i.test(html)
+    const legacyCSS = hasSection
+      ? ""
+      : `body{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem;text-align:center;background:white;}`
     target.open()
     target.write(`
       <!DOCTYPE html>
@@ -164,30 +171,16 @@ function ProjectPreview({
         <head>
           <meta charset="utf-8">
           <style>
-            * { margin:0; padding:0; box-sizing:border-box; }
-            html, body { width:1920px; height:1080px; overflow:hidden; background:white; }
-            body { 
-              transform: scale(${mainScale}); 
-              transform-origin: top left; 
-              display:flex; 
-              align-items:center; 
-              justify-content:center; 
+            html, body { margin:0; padding:0; width:1920px; height:1080px; overflow:hidden; }
+            body {
+              transform: scale(${mainScale});
+              transform-origin: top left;
             }
-            section { 
-              width:1920px; 
-              height:1080px; 
-              display:flex; 
-              flex-direction:column; 
-              align-items:center; 
-              justify-content:center; 
-              padding:4rem; 
-              text-align:center; 
-              background:white; 
-            }
+            ${legacyCSS}
           </style>
         </head>
         <body>
-          ${current.html || ""}
+          ${html}
         </body>
       </html>
     `)
@@ -339,7 +332,7 @@ function ProjectPreview({
         <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} items-start justify-start gap-2 w-full min-h-0 px-2 md:px-4 pb-1 md:pb-2`} style={{ flex: '1 1 0', overflow: 'hidden' }}>
           <div
             ref={wrapperRef}
-            className={`flex items-center justify-start w-10 ${isMobile ? 'w-full flex-1 min-h-0' : 'flex-1 min-h-0 h-full'}`}
+            className={`flex items-center justify-center ${isMobile ? 'w-full flex-1 min-h-0' : 'flex-1 min-w-0 min-h-0 h-full'}`}
           >
             <div
               ref={mainPreviewRef}
@@ -381,7 +374,7 @@ function ProjectPreview({
                 >
                   <iframe
                     title={`slide-${s.position}`}
-                    srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:1920px;height:1080px;overflow:hidden;background:white;}body{transform:scale(${thumbScale});transform-origin:top left;width:1920px;height:1080px;}section{width:1920px;height:1080px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem;text-align:center;background:white;}</style></head><body>${s.html}</body></html>`}
+                    srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0;width:1920px;height:1080px;overflow:hidden;}body{transform:scale(${thumbScale});transform-origin:top left;}${/<section[\s>]/i.test(s.html || "") ? "" : "body{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem;text-align:center;background:white;}"}</style></head><body>${s.html}</body></html>`}
                     className="w-full h-full border-0 pointer-events-none"
                     sandbox=""
                   />

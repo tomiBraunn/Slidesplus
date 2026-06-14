@@ -1,0 +1,109 @@
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;background:#101418;">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+.qz-root{
+  --bg:#101418; --panel:#1a2027; --line:rgba(255,255,255,.12);
+  --fg:#f3f5f7; --fg-mute:#9aa3ad; --accent:#4f8cff; --ok:#3ad29f; --bad:#ff5d6c;
+  position:absolute; inset:0; overflow:hidden; background:var(--bg); color:var(--fg);
+  font-family:'Inter',system-ui,sans-serif; display:flex; flex-direction:column;
+}
+.qz-root *{margin:0;padding:0;box-sizing:border-box;}
+.qz-bar{display:flex;align-items:center;justify-content:space-between;padding:54px 90px;border-bottom:1px solid var(--line);}
+.qz-bar .qz-title{font-size:46px;font-weight:900;letter-spacing:-.02em;}
+.qz-bar .qz-prog{font-size:18px;font-weight:600;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:8px 20px;}
+.qz-stage{flex:1;display:flex;flex-direction:column;padding:64px 90px;gap:40px;}
+.qz-q{font-size:54px;font-weight:800;line-height:1.1;letter-spacing:-.01em;max-width:32ch;}
+.qz-opts{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
+.qz-opt{display:flex;align-items:center;gap:20px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:28px 30px;cursor:pointer;font-size:23px;font-weight:500;text-align:left;color:var(--fg);transition:background .18s,border-color .18s,transform .1s;}
+.qz-opt:hover{background:#222a33;border-color:rgba(255,255,255,.28);transform:translateY(-2px);}
+.qz-opt .qz-k{width:44px;height:44px;border:1px solid var(--line);border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0;}
+.qz-opt.ok{background:rgba(58,210,159,.16);border-color:var(--ok);}
+.qz-opt.ok .qz-k{background:var(--ok);color:#06231a;border-color:var(--ok);}
+.qz-opt.bad{background:rgba(255,93,108,.14);border-color:var(--bad);color:#ffb3ba;}
+.qz-opt.off{pointer-events:none;}
+.qz-fb{font-size:21px;font-weight:500;line-height:1.5;color:var(--fg-mute);min-height:32px;opacity:0;transition:opacity .2s;}
+.qz-fb.show{opacity:1;}
+.qz-next{align-self:flex-end;background:var(--fg);color:#0c0f13;border:none;border-radius:999px;font-weight:700;font-size:19px;padding:16px 40px;cursor:pointer;display:none;transition:opacity .2s;}
+.qz-next:hover{opacity:.85;}
+.qz-result{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;text-align:center;padding:64px;}
+.qz-result .qz-score{font-size:190px;font-weight:900;line-height:.9;letter-spacing:-.04em;color:var(--accent);}
+.qz-result .qz-msg{font-size:26px;color:var(--fg-mute);max-width:60ch;line-height:1.5;}
+.qz-result .qz-next{display:inline-block;align-self:center;}
+</style>
+
+<div class="qz-root" data-quiz>
+  <div class="qz-bar">
+    <div class="qz-title">Quiz</div>
+    <div class="qz-prog" data-prog>1 / 3</div>
+  </div>
+  <div class="qz-stage" data-stage>
+    <div class="qz-q" data-q></div>
+    <div class="qz-opts" data-opts></div>
+    <div class="qz-fb" data-fb></div>
+    <button class="qz-next" data-next>Next →</button>
+  </div>
+  <div class="qz-result" data-result style="display:none;">
+    <div class="qz-score" data-score></div>
+    <div class="qz-msg" data-msg></div>
+    <button class="qz-next" data-restart>Try again</button>
+  </div>
+</div>
+
+<script>
+/* ── EDIT YOUR QUESTIONS HERE ─────────────────────────────────────────
+   Each question: { q: "...", a: [ {t:"option", ok:true|false}, ... ], fb:"explanation" }
+   Mark the correct option with ok:true.                                   */
+(function(){
+  var QUESTIONS = [
+    { q: "Write your first question here.",
+      a: [ {t:"Correct option", ok:true}, {t:"Wrong option", ok:false}, {t:"Another option", ok:false}, {t:"One more", ok:false} ],
+      fb: "Explain why this is the correct answer." },
+    { q: "Your second question goes here.",
+      a: [ {t:"Wrong", ok:false}, {t:"Correct", ok:true}, {t:"Wrong", ok:false}, {t:"Wrong", ok:false} ],
+      fb: "A short explanation of the answer." },
+    { q: "And the third question here.",
+      a: [ {t:"Wrong", ok:false}, {t:"Wrong", ok:false}, {t:"Correct", ok:true}, {t:"Wrong", ok:false} ],
+      fb: "An extra fact to reinforce the lesson." }
+  ];
+  /* ─────────────────────────────────────────────────────────────────── */
+
+  var root = document.currentScript.closest('section').querySelector('[data-quiz]');
+  if(!root || root.dataset.qzInit) return; root.dataset.qzInit='1';
+  var qEl=root.querySelector('[data-q]'), optsEl=root.querySelector('[data-opts]'), fbEl=root.querySelector('[data-fb]'),
+      nextBtn=root.querySelector('[data-next]'), progEl=root.querySelector('[data-prog]'), stageEl=root.querySelector('[data-stage]'),
+      resEl=root.querySelector('[data-result]'), scoreEl=root.querySelector('[data-score]'), msgEl=root.querySelector('[data-msg]'),
+      restartBtn=root.querySelector('[data-restart]');
+  var K=['A','B','C','D','E','F'], qi=0, sc=0, ans=false;
+
+  function render(){
+    var it=QUESTIONS[qi]; ans=false;
+    progEl.textContent=(qi+1)+' / '+QUESTIONS.length;
+    qEl.textContent=it.q; fbEl.classList.remove('show'); fbEl.innerHTML='';
+    nextBtn.style.display='none'; nextBtn.textContent=(qi===QUESTIONS.length-1)?'See result →':'Next →';
+    optsEl.innerHTML='';
+    it.a.forEach(function(an,i){
+      var b=document.createElement('button'); b.className='qz-opt';
+      b.innerHTML='<span class="qz-k">'+K[i]+'</span><span>'+an.t+'</span>';
+      b.addEventListener('click',function(){
+        if(ans)return; ans=true;
+        var all=Array.prototype.slice.call(optsEl.children); all.forEach(function(o){o.classList.add('off');});
+        if(an.ok){ b.classList.add('ok'); sc++; fbEl.innerHTML='✓ Correct! '+it.fb; }
+        else{ b.classList.add('bad'); all[it.a.findIndex(function(x){return x.ok;})].classList.add('ok'); fbEl.innerHTML='✕ '+it.fb; }
+        fbEl.classList.add('show'); nextBtn.style.display='inline-block';
+      });
+      optsEl.appendChild(b);
+    });
+  }
+  nextBtn.addEventListener('click',function(){
+    if(qi<QUESTIONS.length-1){ qi++; render(); }
+    else{
+      stageEl.style.display='none'; resEl.style.display='flex'; progEl.textContent='Result';
+      scoreEl.textContent=sc+' / '+QUESTIONS.length;
+      msgEl.textContent = sc===QUESTIONS.length ? 'Perfect! You got everything right.' : (sc>=QUESTIONS.length/2 ? 'Nice! Good result.' : 'Try again to improve.');
+    }
+  });
+  restartBtn.addEventListener('click',function(){ qi=0; sc=0; resEl.style.display='none'; stageEl.style.display='flex'; render(); });
+  render();
+})();
+</script>
+</section>

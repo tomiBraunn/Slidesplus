@@ -197,32 +197,46 @@ function EditPanel({
     }
   }, [slideHtml, targetIndex])
 
-  const update = (key: keyof CSSProps, value: string) => {
-    setProps(p => p ? { ...p, [key]: value } : p)
+  // Write the current props onto the active element and push the updated slide
+  // up. Called live on every field change so edits show immediately.
+  const applyProps = (next: CSSProps) => {
+    if (!activeEl || !domRef.current) return
+    const s = activeEl.style
+    if (next.fontFamily) s.fontFamily = next.fontFamily
+    if (next.fontSize) s.fontSize = next.fontSize.includes("px") ? next.fontSize : next.fontSize + "px"
+    if (next.fontWeight) s.fontWeight = next.fontWeight
+    if (next.color) s.color = next.color
+    if (next.textAlign) s.textAlign = next.textAlign
+    if (next.lineHeight) s.lineHeight = next.lineHeight
+    if (next.letterSpacing) s.letterSpacing = next.letterSpacing.includes("px") ? next.letterSpacing : next.letterSpacing + "px"
+    if (next.width) s.width = next.width.includes("px") || next.width.includes("%") ? next.width : next.width + "px"
+    if (next.height) s.height = next.height.includes("px") || next.height.includes("%") ? next.height : next.height + "px"
+    if (next.backgroundColor) s.backgroundColor = next.backgroundColor
+    if (next.opacity !== "") s.opacity = next.opacity
+    if (next.padding) s.padding = next.padding.includes("px") ? next.padding : next.padding + "px"
+    if (next.margin) s.margin = next.margin.includes("px") ? next.margin : next.margin + "px"
+    if (next.border) s.border = next.border
+    if (next.borderRadius) s.borderRadius = next.borderRadius.includes("px") ? next.borderRadius : next.borderRadius + "px"
+    setCssText(activeEl.getAttribute("style") || "")
+    const section = domRef.current.querySelector("section")
+    if (section) onApply(section.outerHTML)
   }
 
-  const applyChanges = () => {
+  // Field edit → update state AND apply immediately (no Apply button).
+  const update = (key: keyof CSSProps, value: string) => {
+    setProps(p => {
+      if (!p) return p
+      const next = { ...p, [key]: value }
+      applyProps(next)
+      return next
+    })
+  }
+
+  // Raw CSS textarea edit → apply that style string verbatim, immediately.
+  const updateCssText = (value: string) => {
+    setCssText(value)
     if (!activeEl || !domRef.current) return
-    if (cssText.trim()) {
-      activeEl.setAttribute("style", cssText)
-    } else if (props) {
-      const s = activeEl.style
-      if (props.fontFamily) s.fontFamily = props.fontFamily
-      if (props.fontSize) s.fontSize = props.fontSize.includes("px") ? props.fontSize : props.fontSize + "px"
-      if (props.fontWeight) s.fontWeight = props.fontWeight
-      if (props.color) s.color = props.color
-      if (props.textAlign) s.textAlign = props.textAlign
-      if (props.lineHeight) s.lineHeight = props.lineHeight
-      if (props.letterSpacing) s.letterSpacing = props.letterSpacing.includes("px") ? props.letterSpacing : props.letterSpacing + "px"
-      if (props.width) s.width = props.width.includes("px") || props.width.includes("%") ? props.width : props.width + "px"
-      if (props.height) s.height = props.height.includes("px") || props.height.includes("%") ? props.height : props.height + "px"
-      if (props.backgroundColor) s.backgroundColor = props.backgroundColor
-      if (props.opacity !== "") s.opacity = props.opacity
-      if (props.padding) s.padding = props.padding.includes("px") ? props.padding : props.padding + "px"
-      if (props.margin) s.margin = props.margin.includes("px") ? props.margin : props.margin + "px"
-      if (props.border) s.border = props.border
-      if (props.borderRadius) s.borderRadius = props.borderRadius.includes("px") ? props.borderRadius : props.borderRadius + "px"
-    }
+    activeEl.setAttribute("style", value)
     const section = domRef.current.querySelector("section")
     if (section) onApply(section.outerHTML)
   }
@@ -376,7 +390,7 @@ function EditPanel({
               language="css"
               theme="vs-dark"
               value={cssText}
-              onChange={v => setCssText(v || "")}
+              onChange={v => updateCssText(v || "")}
               options={{
                 minimap: { enabled: false },
                 fontSize: 11,
@@ -392,16 +406,6 @@ function EditPanel({
             />
           </div>
         </div>
-      </div>
-
-      {/* Footer */}
-      <div className="px-3 py-2.5 border-t border-theme-tertiary flex-shrink-0">
-        <button
-          onClick={applyChanges}
-          className="w-full py-1.5 text-xs font-medium bg-theme-inverted text-theme-inverted rounded-lg hover:opacity-90 transition-all"
-        >
-          Apply
-        </button>
       </div>
     </div>
   )
@@ -432,7 +436,15 @@ function ProjectPageContent({ role }: { role: string | null }) {
   const [isEditingSlide, setIsEditingSlide] = useState(false)
   const [tweakMode, setTweakMode] = useState(false)
   const [tweakElement, setTweakElement] = useState<string | null>(null)
+  const [chatMessage, setChatMessage] = useState<{ text: string; nonce: number } | null>(null)
   const tweakInputRef = useRef<HTMLInputElement>(null)
+  // Refs mirroring state/handlers so the global keydown listener (mounted once)
+  // always sees current values without re-binding.
+  const slidesRef = useRef<string[]>([])
+  const currentSlideRef = useRef(0)
+  const tweakModeRef = useRef(false)
+  const enterTweakModeRef = useRef<() => void>(() => {})
+  const exitTweakModeRef = useRef<() => void>(() => {})
   const isDragging = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const editorRef = useRef<HTMLDivElement>(null)
@@ -664,16 +676,38 @@ function ProjectPageContent({ role }: { role: string | null }) {
         setShowEditPanel(false)
         setEditPickMode(false)
       }
+      // Undo / Redo (document-level). Ctrl/Cmd+Z, Ctrl/Cmd+Y or Ctrl/Cmd+Shift+Z.
+      const mod = e.ctrlKey || e.metaKey
+      if (mod && !e.altKey && (e.key === 'z' || e.key === 'Z')) {
+        e.preventDefault()
+        e.shiftKey ? redoRef.current() : undoRef.current()
+        return
+      }
+      if (mod && !e.altKey && (e.key === 'y' || e.key === 'Y')) {
+        e.preventDefault()
+        redoRef.current()
+        return
+      }
       if (e.altKey && e.key === '1') {
         e.preventDefault()
         setMode('code')
-      // VISUAL MODE comentado temporalmente
-      // } else if (e.altKey && e.key === '2') {
-      //   e.preventDefault()
-      //   setMode('visual')
-      } else if (e.altKey && e.key === '3') {
+      } else if (e.altKey && e.key === '2') {
         e.preventDefault()
         setMode('ai')
+      } else if (e.altKey && e.key === '3') {
+        e.preventDefault()
+        if (slidesRef.current[currentSlideRef.current]) {
+          // Edit and Tweak are mutually exclusive.
+          exitTweakModeRef.current()
+          setTweakElement(null)
+          setShowEditPanel(v => !v)
+        }
+      } else if (e.altKey && e.key === '4') {
+        e.preventDefault()
+        if (slidesRef.current[currentSlideRef.current]) {
+          setShowEditPanel(false)
+          tweakModeRef.current ? exitTweakModeRef.current() : enterTweakModeRef.current()
+        }
       }
     }
 
@@ -724,12 +758,56 @@ function ProjectPageContent({ role }: { role: string | null }) {
   // Mutaciones del doc que vienen de fuera de Monaco (añadir/borrar/reordenar
   // slides, chat AI, edit panel). Se aplican como diff sobre el Y.Text; el espejo
   // Y→React actualiza `doc` y el efecto de autosave persiste.
+  // ── Undo / Redo: document-level snapshot stacks ──
+  const undoStackRef = useRef<string[]>([])
+  const redoStackRef = useRef<string[]>([])
+  const isUndoRedoRef = useRef(false)
+  const [canUndo, setCanUndo] = useState(false)
+  const [canRedo, setCanRedo] = useState(false)
+  const MAX_HISTORY = 100
+
   const onChangeDoc = (next: string) => {
     const minimalDoc = "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body><section class=\"slide\"></section></body></html>"
     const hasContent = next.replace(/<[^>]*>/g, '').trim().length > 0
     const finalDoc = hasContent ? next : minimalDoc
+
+    // Record history for user-initiated changes only (not undo/redo replays).
+    if (!isUndoRedoRef.current) {
+      const prev = docRef.current
+      if (prev && prev !== finalDoc) {
+        undoStackRef.current.push(prev)
+        if (undoStackRef.current.length > MAX_HISTORY) undoStackRef.current.shift()
+        redoStackRef.current = []
+        setCanUndo(true)
+        setCanRedo(false)
+      }
+    }
     setDocExternally(finalDoc)
   }
+
+  const undo = () => {
+    if (undoStackRef.current.length === 0) return
+    const prev = undoStackRef.current.pop()!
+    redoStackRef.current.push(docRef.current)
+    isUndoRedoRef.current = true
+    setDocExternally(prev)
+    setTimeout(() => { isUndoRedoRef.current = false }, 0)
+    setCanUndo(undoStackRef.current.length > 0)
+    setCanRedo(true)
+  }
+
+  const redo = () => {
+    if (redoStackRef.current.length === 0) return
+    const next = redoStackRef.current.pop()!
+    undoStackRef.current.push(docRef.current)
+    isUndoRedoRef.current = true
+    setDocExternally(next)
+    setTimeout(() => { isUndoRedoRef.current = false }, 0)
+    setCanRedo(redoStackRef.current.length > 0)
+    setCanUndo(true)
+  }
+  const undoRef = useRef(undo); undoRef.current = undo
+  const redoRef = useRef(redo); redoRef.current = redo
 
   const applySetDoc = (val: string | ((v: string) => string)) => {
     const next = typeof val === "function" ? val(docRef.current) : val
@@ -909,6 +987,9 @@ Return ONLY the modified <section> HTML. Rules:
   }
 
   const enterTweakMode = () => {
+    // Tweak and Edit are mutually exclusive — close Edit first.
+    setShowEditPanel(false)
+    setEditPickMode(false)
     setTweakMode(true)
     setTweakElement(null)
     const iframe = livePreviewRef.current
@@ -952,7 +1033,17 @@ Return ONLY the modified <section> HTML. Rules:
     doc.getElementById("tweak-mode-script")?.remove()
   }
 
+  // Keep the keydown-listener refs current every render.
+  slidesRef.current = slides
+  currentSlideRef.current = currentSlide
+  tweakModeRef.current = tweakMode
+  enterTweakModeRef.current = enterTweakMode
+  exitTweakModeRef.current = exitTweakMode
+
   const enterEditPickMode = () => {
+    // Edit and Tweak are mutually exclusive — leave Tweak when entering Edit.
+    if (tweakModeRef.current) exitTweakMode()
+    setTweakElement(null)
     setEditPickMode(true)
     const iframe = livePreviewRef.current
     if (!iframe) return
@@ -1009,6 +1100,10 @@ Return ONLY the modified <section> HTML. Rules:
 
   return (
     <div className="w-screen h-screen flex flex-col">
+      <style>{`
+        @keyframes tweakPanelIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .tweak-panel-in { animation: tweakPanelIn 0.2s ease-out; }
+      `}</style>
       <ProjectNavBar
         projectId={projectId || undefined}
         name={name}
@@ -1022,11 +1117,24 @@ Return ONLY the modified <section> HTML. Rules:
         useLegacyVisualEditor={useLegacyVisualEditor}
         onToggleLegacyEditor={() => setUseLegacyVisualEditor(!useLegacyVisualEditor)}
         showEditPanel={showEditPanel}
-        onToggleEditPanel={() => setShowEditPanel(v => !v)}
+        onToggleEditPanel={() => {
+          // Edit and Tweak are mutually exclusive.
+          if (tweakMode) exitTweakMode()
+          setTweakElement(null)
+          setShowEditPanel(v => !v)
+        }}
         tweakMode={tweakMode}
-        onToggleTweakMode={() => tweakMode ? exitTweakMode() : enterTweakMode()}
+        onToggleTweakMode={() => {
+          if (tweakMode) { exitTweakMode(); return }
+          setShowEditPanel(false)
+          enterTweakMode()
+        }}
         isEditingSlide={isEditingSlide}
         hasCurrentSlide={!!slides[currentSlide]}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onUndo={undo}
+        onRedo={redo}
         onVersionRestored={handleVersionRestored}
       />
 
@@ -1144,7 +1252,10 @@ Return ONLY the modified <section> HTML. Rules:
               height: "100%"
             }}
           >
-            {mode === "code" && (
+            {/* Code + AI panels are BOTH always mounted; we only toggle their
+                visibility. Unmounting the chatbot when leaving AI mode would
+                cancel an in-flight generation, so we keep it alive. */}
+            <div className="absolute inset-0" style={{ display: mode === "code" ? "block" : "none" }}>
               <CodeEditorMode
                 doc={doc}
                 onChange={onChangeDoc}
@@ -1152,68 +1263,101 @@ Return ONLY the modified <section> HTML. Rules:
                 awareness={collabAwareness.current}
                 readOnly={isViewer}
               />
-            )}
-            {/* VISUAL MODE comentado temporalmente, descomentar para reactivar:
-            {mode === "visual" && !useLegacyVisualEditor && <VisualEditorMode doc={doc} onChange={onChangeDoc} previewRef={livePreviewRef} projectId={projectId} />}
-            {mode === "visual" && useLegacyVisualEditor && <VisualEditorModeLegacy doc={doc} onChange={onChangeDoc} />}
-            */}
-            {mode === "ai" && (
-              <div className="relative flex flex-col h-full w-full overflow-hidden">
-                {/* Tweak element input + edit panel — botones movidos a la navbar */}
-                <div className="flex flex-col gap-2 px-4 pt-3 pb-1 flex-shrink-0">
-                  {/* Panel Tweak: input pre-populado con el elemento seleccionado */}
-                  {tweakElement && !tweakMode && (
-                    <div className="flex gap-2 items-center">
-                      <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-500/10 border border-blue-500/30 rounded-lg text-xs text-blue-400 flex-shrink-0 max-w-[140px] truncate">
-                        <span className="material-symbols-outlined" style={{ fontSize: 12 }}>ads_click</span>
-                        <span className="truncate">{tweakElement}</span>
-                      </div>
-                      <input
-                        ref={tweakInputRef}
-                        placeholder="What to change on this element?"
-                        className="flex-1 bg-theme-primary border border-theme-tertiary rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-theme-secondary transition-colors text-theme-primary placeholder:text-theme-secondary"
-                        onKeyDown={async e => {
-                          if (e.key === "Enter" && !e.shiftKey) {
-                            e.preventDefault()
-                            const instruction = `On the element: ${tweakElement} — ${(e.target as HTMLInputElement).value}`
-                            setTweakElement(null);
-                            (e.target as HTMLInputElement).value = ""
-                            await callEditSlide(instruction)
-                          }
-                          if (e.key === "Escape") { setTweakElement(null) }
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-h-0">
-                  <GeminiChatbot
-                    setCode={applySetDoc}
-                    code={doc}
-                    projectId={projectId || undefined}
-                    currentSlideIndex={currentSlide}
-                    slides={slides}
-                    onDeleteSlide={deleteSlide}
-                    onDeleteAllSlides={deleteAllSlides}
-                    initialPrompt={initialAIPrompt}
-                  />
-                </div>
-                {/* Edit panel flotante sobre el chatbot */}
-                {showEditPanel && slides[currentSlide] && (
-                  <EditPanel
-                    slideHtml={slides[currentSlide]}
-                    targetIndex={editTargetIndex}
-                    pickMode={editPickMode}
-                    onStartPickMode={enterEditPickMode}
-                    onApply={(newHtml) => {
-                      const updatedSlides = [...slides]
-                      updatedSlides[currentSlide] = newHtml
-                      applySetDoc(`<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>${updatedSlides.join("\n")}</body></html>`)
-                    }}
-                    onClose={() => { setShowEditPanel(false); setEditPickMode(false) }}
-                  />
-                )}
+            </div>
+
+            <div className="absolute inset-0 flex flex-col overflow-hidden" style={{ display: mode === "ai" ? "flex" : "none" }}>
+              <div className="flex-1 min-h-0">
+                <GeminiChatbot
+                  setCode={applySetDoc}
+                  code={doc}
+                  projectId={projectId || undefined}
+                  currentSlideIndex={currentSlide}
+                  slides={slides}
+                  onDeleteSlide={deleteSlide}
+                  onDeleteAllSlides={deleteAllSlides}
+                  initialPrompt={initialAIPrompt}
+                  externalMessage={chatMessage}
+                />
               </div>
+            </div>
+
+            {/* Tweak input + Edit panel — available in ANY mode (code or ai),
+                rendered outside the mode switch as overlays. */}
+            {tweakElement && !tweakMode && (
+              <div className="absolute inset-x-0 top-0 z-30 flex items-start justify-center p-4 pointer-events-none">
+                <div className="pointer-events-auto w-full bg-theme-primary border border-theme-tertiary rounded-2xl shadow-2xl overflow-hidden tweak-panel-in">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-theme-tertiary">
+                    <div className="flex items-center gap-2 text-sm font-medium text-theme-primary">
+                      <span className="material-symbols-outlined text-blue-400" style={{ fontSize: 18 }}>ads_click</span>
+                      Tweak element
+                    </div>
+                    <button
+                      onClick={() => setTweakElement(null)}
+                      className="p-1 rounded-lg text-theme-secondary hover:text-theme-primary hover:bg-theme-quaternary transition-colors"
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
+                    </button>
+                  </div>
+                  <div className="px-4 pt-3">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-500/10 border border-blue-500/30 rounded-lg text-xs text-blue-400 max-w-full">
+                      <span className="material-symbols-outlined flex-shrink-0" style={{ fontSize: 13 }}>target</span>
+                      <span className="truncate font-mono">{tweakElement}</span>
+                    </div>
+                  </div>
+                  <div className="p-4 pt-3">
+                    <textarea
+                      ref={tweakInputRef as any}
+                      placeholder="What should change on this element?"
+                      rows={2}
+                      className="w-full bg-theme-quaternary border border-theme-tertiary rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none focus:border-blue-500 transition-colors text-theme-primary placeholder:text-theme-secondary"
+                      onKeyDown={e => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault()
+                          const val = (e.target as HTMLTextAreaElement).value.trim()
+                          if (!val) return
+                          const instruction = `On the element ${tweakElement}: ${val}`
+                          setTweakElement(null)
+                          setMode('ai')
+                          setChatMessage({ text: instruction, nonce: Date.now() })
+                        }
+                        if (e.key === "Escape") setTweakElement(null)
+                      }}
+                    />
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-[11px] text-theme-secondary">Enter to send · Esc to cancel</span>
+                      <button
+                        onClick={() => {
+                          const el = tweakInputRef.current as unknown as HTMLTextAreaElement | null
+                          const val = el?.value.trim()
+                          if (!val) return
+                          const instruction = `On the element ${tweakElement}: ${val}`
+                          setTweakElement(null)
+                          setMode('ai')
+                          setChatMessage({ text: instruction, nonce: Date.now() })
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors"
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>ads_click</span>
+                        Tweak
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            {showEditPanel && slides[currentSlide] && (
+              <EditPanel
+                slideHtml={slides[currentSlide]}
+                targetIndex={editTargetIndex}
+                pickMode={editPickMode}
+                onStartPickMode={enterEditPickMode}
+                onApply={(newHtml) => {
+                  const updatedSlides = [...slides]
+                  updatedSlides[currentSlide] = newHtml
+                  applySetDoc(`<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>${updatedSlides.join("\n")}</body></html>`)
+                }}
+                onClose={() => { setShowEditPanel(false); setEditPickMode(false) }}
+              />
             )}
           </div>
         </div>

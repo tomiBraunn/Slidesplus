@@ -1,0 +1,434 @@
+<section style="width:1920px;height:1080px;overflow:hidden;position:relative;background:#E9E5DB;">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+.tic-root{
+  --paper:#E9E5DB; --paper-deep:#DCD6C4; --sun:#F1EE2E; --sun-soft:#F8F39B;
+  --ink:#1B2566; --ember:#E26B4A; --haze:#F0DA7C; --line:#1B2566;
+  position:absolute; inset:0; overflow:hidden; background:var(--paper);
+  font-family:'Archivo','Helvetica Neue',sans-serif; color:var(--ink);
+}
+.tic-root *,.tic-root *::before,.tic-root *::after{box-sizing:border-box;margin:0;padding:0;}
+
+.tic-deck{position:absolute;inset:0;}
+.tic-slide{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity 320ms ease;background:var(--paper);}
+.tic-slide.active{opacity:1;pointer-events:auto;}
+
+.display{font-family:'Instrument Serif',Georgia,serif;font-weight:400;line-height:.9;letter-spacing:-.012em;}
+.micro-label{font-family:'Archivo',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.18em;}
+.body-text{font-family:'Archivo',sans-serif;font-weight:400;line-height:1.5;}
+
+.pagenum{position:absolute;right:48px;bottom:40px;font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--ink);letter-spacing:.08em;z-index:8;opacity:.75;}
+
+/* COVER */
+.s-cover .blocks{position:absolute;inset:0;pointer-events:none;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;grid-template-rows:repeat(8,1fr);}
+.s-cover .blocks .b1{background:rgba(241,238,46,.55);grid-column:1;grid-row:3/6;}
+.s-cover .blocks .b2{background:rgba(241,238,46,.4);grid-column:4;grid-row:1/4;}
+.s-cover .blocks .b3{background:rgba(241,238,46,.7);grid-column:1/3;grid-row:6/9;}
+.s-cover .blocks .b4{background:rgba(241,238,46,.45);grid-column:3/5;grid-row:6/8;}
+.s-cover .sunglow{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 42% 38% at 52% 42%,rgba(241,238,46,.95) 0%,rgba(241,238,46,.65) 38%,rgba(240,218,124,.22) 65%,rgba(233,229,219,0) 88%),radial-gradient(ellipse 28% 30% at 88% 16%,rgba(226,107,74,.22) 0%,rgba(226,107,74,0) 70%);}
+.s-cover .date-rail{position:absolute;top:48px;right:76px;font-family:'Instrument Serif',Georgia,serif;font-size:84px;color:var(--ink);line-height:.96;text-align:right;letter-spacing:-.005em;z-index:5;}
+.s-cover .titlewrap{position:absolute;left:76px;bottom:200px;z-index:5;max-width:88%;}
+.s-cover .title{font-family:'Instrument Serif',Georgia,serif;font-size:210px;line-height:.86;color:var(--ink);letter-spacing:-.018em;}
+.s-cover .title em{font-style:italic;}
+.s-cover .subline{margin-top:16px;font-family:'Archivo',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.18em;font-size:15px;color:var(--ink);}
+.s-cover .footer-row{position:absolute;left:76px;right:76px;bottom:48px;display:grid;grid-template-columns:1.1fr 1fr 1.4fr 2fr;gap:40px;z-index:5;}
+.s-cover .footer-row>div{border-top:1px solid var(--ink);padding-top:14px;}
+.s-cover .footer-row .ftag{text-transform:uppercase;letter-spacing:.16em;font-weight:600;font-size:13px;margin-bottom:6px;}
+.s-cover .footer-row .ftxt{font-family:'Archivo',sans-serif;font-size:15px;line-height:1.45;}
+.s-cover .footer-row .fdesc{font-family:'Archivo',sans-serif;font-size:14px;line-height:1.5;color:var(--ink);}
+
+/* PROGRAMME split */
+.s-programme{display:grid;grid-template-columns:1fr 1fr;}
+.s-programme .left{background:var(--sun);position:relative;padding:80px;display:flex;flex-direction:column;justify-content:space-between;}
+.s-programme .left .kicker{font-family:'Archivo',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.2em;font-size:15px;color:var(--ink);}
+.s-programme .left .word{font-family:'Instrument Serif',Georgia,serif;font-size:150px;line-height:.86;color:var(--ink);letter-spacing:-.018em;}
+.s-programme .left .meta{font-family:'Archivo',sans-serif;font-size:18px;line-height:1.5;max-width:90%;color:var(--ink);}
+.s-programme .right{background:var(--paper);position:relative;padding:80px 80px 88px;display:flex;flex-direction:column;gap:30px;}
+.s-programme .right .head{font-family:'Archivo',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.18em;font-size:15px;border-bottom:1px solid var(--ink);padding-bottom:14px;}
+.s-programme .strands{display:flex;flex-direction:column;gap:22px;}
+.s-programme .strand{display:grid;grid-template-columns:56px 1fr;gap:24px;border-bottom:1px solid rgba(27,37,102,.18);padding-bottom:20px;}
+.s-programme .strand .num{font-family:'Instrument Serif',Georgia,serif;font-size:38px;color:var(--ink);line-height:1;}
+.s-programme .strand h3{margin:0 0 4px 0;font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:30px;line-height:1.1;color:var(--ink);}
+.s-programme .strand p{margin:0;font-family:'Archivo',sans-serif;font-size:16px;line-height:1.5;color:var(--ink);max-width:92%;}
+
+/* DATA */
+.s-data .glow{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 50% 40% at 92% 8%,rgba(241,238,46,.55) 0%,rgba(241,238,46,0) 70%);}
+.s-data .frame{position:absolute;inset:76px 76px 110px;display:grid;grid-template-columns:1fr 1.4fr;grid-template-rows:auto 1fr;gap:44px;z-index:4;}
+.s-data .head{grid-column:1/3;display:flex;align-items:end;justify-content:space-between;gap:32px;border-bottom:1px solid var(--ink);padding-bottom:22px;}
+.s-data .head .lab{font-family:'Archivo',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.2em;font-size:14px;color:var(--ink);}
+.s-data .head .h{font-family:'Instrument Serif',Georgia,serif;font-size:52px;line-height:1;color:var(--ink);}
+.s-data .col-a{display:flex;flex-direction:column;justify-content:center;gap:30px;}
+.s-data .stat{display:flex;flex-direction:column;gap:4px;}
+.s-data .stat .v{font-family:'Instrument Serif',Georgia,serif;font-size:130px;line-height:.92;color:var(--ink);letter-spacing:-.01em;}
+.s-data .stat .v sup{font-size:.42em;vertical-align:super;opacity:.7;font-style:italic;}
+.s-data .stat .lab2{font-family:'Archivo',sans-serif;font-weight:500;text-transform:uppercase;letter-spacing:.18em;font-size:14px;color:var(--ink);}
+.s-data .stat .desc{font-family:'Archivo',sans-serif;font-size:15px;line-height:1.45;color:var(--ink);max-width:34ch;margin-top:4px;}
+.s-data .chart{display:flex;flex-direction:column;gap:14px;justify-content:center;}
+.s-data .row{display:grid;grid-template-columns:64px 1fr 100px;align-items:center;gap:22px;}
+.s-data .row .yr{font-family:'JetBrains Mono',monospace;font-size:15px;color:var(--ink);letter-spacing:.04em;}
+.s-data .row .val{font-family:'JetBrains Mono',monospace;font-size:15px;color:var(--ink);text-align:right;letter-spacing:.02em;}
+.s-data .bar{height:22px;background:var(--ink);position:relative;}
+.s-data .bar.lit{background:var(--sun);border:1px solid var(--ink);}
+
+/* IMAGES gallery */
+.s-gallery{padding:76px;display:flex;flex-direction:column;}
+.s-gallery .ghead{display:flex;align-items:end;justify-content:space-between;border-bottom:1px solid var(--ink);padding-bottom:20px;margin-bottom:28px;}
+.s-gallery .ghead .h{font-family:'Instrument Serif',Georgia,serif;font-size:56px;line-height:1;color:var(--ink);}
+.s-gallery .ghead .h em{font-style:italic;}
+.s-gallery .ghead .lab{font-family:'Archivo',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.2em;font-size:14px;color:var(--ink);}
+.s-gallery .grid{flex:1;display:grid;grid-template-columns:1.4fr 1fr;grid-template-rows:1fr 1fr;gap:18px;min-height:0;}
+.s-gallery .gimg{overflow:hidden;background:var(--paper-deep);position:relative;border:1px solid var(--ink);}
+.s-gallery .gimg:first-child{grid-row:1/3;}
+.s-gallery .gimg img{width:100%;height:100%;object-fit:cover;display:block;}
+.s-gallery .gcap{position:absolute;left:0;bottom:0;right:0;background:linear-gradient(to top,rgba(27,37,102,.85),transparent);color:var(--paper);font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:.04em;padding:28px 16px 12px;}
+
+/* IFRAME */
+.s-live{padding:76px;display:flex;flex-direction:column;}
+.s-live .lhead{display:flex;align-items:end;justify-content:space-between;border-bottom:1px solid var(--ink);padding-bottom:20px;margin-bottom:24px;}
+.s-live .lhead .h{font-family:'Instrument Serif',Georgia,serif;font-size:56px;line-height:1;color:var(--ink);}
+.s-live .lhead .h em{font-style:italic;}
+.s-live .lhead .lab{font-family:'Archivo',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.2em;font-size:14px;color:var(--ink);}
+.s-live .lsub{font-family:'Archivo',sans-serif;font-size:18px;line-height:1.5;color:var(--ink);max-width:72%;margin-bottom:20px;}
+.s-live .iframe-wrap{flex:1;min-height:0;border:1px solid var(--ink);background:#fff;overflow:hidden;display:flex;}
+.s-live .iframe-wrap iframe{width:100%;height:100%;border:none;display:block;}
+
+/* COLOPHON */
+.s-colophon .glow{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 55% 50% at 50% 110%,rgba(241,238,46,.85) 0%,rgba(241,238,46,.5) 35%,rgba(240,218,124,.18) 60%,rgba(233,229,219,0) 84%),radial-gradient(ellipse 30% 30% at 12% 18%,rgba(226,107,74,.18) 0%,rgba(226,107,74,0) 70%);}
+.s-colophon .titlewrap{position:absolute;left:76px;top:72px;z-index:5;max-width:92%;}
+.s-colophon .ktag{font-family:'Archivo',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.22em;font-size:13px;color:var(--ink);margin-bottom:22px;}
+.s-colophon .ttl{font-family:'Instrument Serif',Georgia,serif;font-size:180px;line-height:.86;color:var(--ink);letter-spacing:-.018em;}
+.s-colophon .ttl em{font-style:italic;}
+.s-colophon .colofo{position:absolute;left:76px;bottom:110px;right:76px;display:grid;grid-template-columns:1.2fr 1.1fr 1fr 1.4fr;gap:40px;z-index:5;}
+.s-colophon .colofo>div{border-top:1px solid var(--ink);padding-top:16px;}
+.s-colophon .colofo .ftag{text-transform:uppercase;letter-spacing:.16em;font-weight:600;font-size:12px;margin-bottom:6px;color:var(--ink);}
+.s-colophon .colofo .ftxt{font-family:'Archivo',sans-serif;font-size:14px;line-height:1.5;color:var(--ink);}
+
+/* QUIZ */
+.s-quiz{padding:76px;display:flex;flex-direction:column;}
+.s-quiz .qhead{display:flex;align-items:end;justify-content:space-between;border-bottom:1px solid var(--ink);padding-bottom:20px;margin-bottom:34px;}
+.s-quiz .qhead .h{font-family:'Instrument Serif',Georgia,serif;font-size:56px;line-height:1;color:var(--ink);}
+.s-quiz .qhead .h em{font-style:italic;}
+.s-quiz .qhead .lab{font-family:'Archivo',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.2em;font-size:14px;color:var(--ink);}
+.s-quiz .question{font-family:'Instrument Serif',Georgia,serif;font-size:46px;line-height:1.12;color:var(--ink);max-width:80%;margin-bottom:44px;}
+.s-quiz .options{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.s-quiz .opt{display:flex;align-items:center;gap:18px;border:1px solid var(--ink);background:var(--paper);padding:26px 28px;cursor:pointer;font-family:'Archivo',sans-serif;font-size:20px;color:var(--ink);text-align:left;transition:background .18s,color .18s;}
+.s-quiz .opt:hover{background:var(--sun-soft);}
+.s-quiz .opt .key{font-family:'JetBrains Mono',monospace;font-weight:500;font-size:18px;width:34px;height:34px;border:1px solid var(--ink);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.s-quiz .opt.correct{background:var(--sun);border-color:var(--ink);}
+.s-quiz .opt.correct .key{background:var(--ink);color:var(--sun);}
+.s-quiz .opt.wrong{background:rgba(226,107,74,.18);border-color:var(--ember);color:var(--ember);}
+.s-quiz .opt.wrong .key{border-color:var(--ember);color:var(--ember);}
+.s-quiz .opt.disabled{pointer-events:none;}
+.s-quiz .feedback{margin-top:30px;font-family:'Archivo',sans-serif;font-size:19px;line-height:1.5;color:var(--ink);min-height:30px;opacity:0;transition:opacity .25s;}
+.s-quiz .feedback.show{opacity:1;}
+.s-quiz .feedback em{font-style:italic;font-family:'Instrument Serif',Georgia,serif;color:var(--ink);}
+.s-quiz .quiz-next-row{margin-top:24px;display:flex;justify-content:flex-end;min-height:48px;}
+.s-quiz .quiz-next{font-family:'Archivo',sans-serif;font-weight:600;font-size:17px;letter-spacing:.04em;color:var(--paper);background:var(--ink);border:1px solid var(--ink);padding:14px 30px;cursor:pointer;transition:background .18s,color .18s;}
+.s-quiz .quiz-next:hover{background:var(--sun);color:var(--ink);}
+.s-quiz .quiz-result{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;text-align:center;}
+.s-quiz .quiz-result .rscore{font-family:'Instrument Serif',Georgia,serif;font-size:160px;line-height:.9;color:var(--ink);}
+.s-quiz .quiz-result .rmsg{font-family:'Archivo',sans-serif;font-size:22px;line-height:1.5;color:var(--ink);max-width:60ch;}
+.s-quiz .quiz-result .rmsg em{font-style:italic;font-family:'Instrument Serif',Georgia,serif;}
+
+/* nav */
+.tic-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:30;width:52px;height:52px;border:1px solid var(--ink);background:rgba(233,229,219,.7);color:var(--ink);font-family:'JetBrains Mono',monospace;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s,color .2s;}
+.tic-arrow:hover{background:var(--sun);}
+.tic-arrow.prev{left:24px;}.tic-arrow.next{right:24px;}
+.tic-nav{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:30;}
+.tic-dot{width:8px;height:8px;border-radius:50%;border:1px solid var(--ink);background:transparent;cursor:pointer;padding:0;transition:background .2s;}
+.tic-dot.is-active{background:var(--ink);}
+</style>
+
+<div class="tic-root">
+  <div class="tic-deck">
+
+    <!-- 1 · COVER -->
+    <div class="tic-slide s-cover active">
+      <div class="blocks"><div class="b1"></div><div class="b2"></div><div class="b3"></div><div class="b4"></div></div>
+      <div class="sunglow"></div>
+      <div class="date-rail">TIC<br/>Experience</div>
+      <div class="titlewrap">
+        <h1 class="title">TIC<br/><em>Experience</em></h1>
+        <div class="subline">ORT Argentina · Especialización en Tecnologías de la Información</div>
+      </div>
+      <div class="footer-row">
+        <div><div class="ftag">Qué es</div><div class="ftxt">La muestra anual<br/>de proyectos TIC</div></div>
+        <div><div class="ftag">Quiénes</div><div class="ftxt">Estudiantes de<br/>15 a 18 años</div></div>
+        <div><div class="ftag">Dónde</div><div class="ftxt">Sede Belgrano<br/>de ORT</div></div>
+        <div><div class="ftag">Sobre</div><div class="fdesc">Una jornada donde los jóvenes presentan sus proyectos de IA, realidad virtual, robótica y videojuegos al público.</div></div>
+      </div>
+      <div class="pagenum">01 / 06</div>
+    </div>
+
+    <!-- 2 · QUÉ ES (programme split) -->
+    <div class="tic-slide s-programme">
+      <div class="left">
+        <div class="kicker">El evento</div>
+        <div class="word">¿Qué es?</div>
+        <div class="meta">TIC Experience es la muestra anual de la especialización en Tecnologías de la Información y Comunicación de ORT. Los estudiantes exponen los proyectos que desarrollaron durante el año.</div>
+      </div>
+      <div class="right">
+        <div class="head">Las áreas que se presentan</div>
+        <div class="strands">
+          <div class="strand"><div class="num">01</div><div><h3>Inteligencia Artificial</h3><p>Proyectos que aplican IA para resolver problemas reales y con impacto social.</p></div></div>
+          <div class="strand"><div class="num">02</div><div><h3>Realidad Virtual</h3><p>Experiencias inmersivas y entornos interactivos creados por los alumnos.</p></div></div>
+          <div class="strand"><div class="num">03</div><div><h3>Robótica</h3><p>Robots y sistemas físicos programados de punta a punta por los estudiantes.</p></div></div>
+          <div class="strand"><div class="num">04</div><div><h3>Videojuegos</h3><p>Juegos diseñados y desarrollados como proyecto curricular.</p></div></div>
+        </div>
+      </div>
+      <div class="pagenum">02 / 06</div>
+    </div>
+
+    <!-- 3 · DATA -->
+    <div class="tic-slide s-data">
+      <div class="glow"></div>
+      <div class="frame">
+        <div class="head">
+          <div class="lab">En números</div>
+          <div class="h">La muestra, en cifras</div>
+        </div>
+        <div class="col-a">
+          <div class="stat">
+            <div class="v">30<sup>+</sup></div>
+            <div class="lab2">Proyectos</div>
+            <div class="desc">Más de treinta desarrollos exhibidos en el hall de la sede.</div>
+          </div>
+          <div class="stat">
+            <div class="v">15—18</div>
+            <div class="lab2">Edad de los autores</div>
+            <div class="desc">Jóvenes que cambian el mundo de la mano de la tecnología.</div>
+          </div>
+        </div>
+        <div class="chart">
+          <div class="row"><div class="yr">2022</div><div class="bar" style="width:62%"></div><div class="val">edición</div></div>
+          <div class="row"><div class="yr">2023</div><div class="bar" style="width:72%"></div><div class="val">edición</div></div>
+          <div class="row"><div class="yr">2024</div><div class="bar" style="width:84%"></div><div class="val">edición</div></div>
+          <div class="row"><div class="yr">2025</div><div class="bar" style="width:92%"></div><div class="val">edición</div></div>
+          <div class="row"><div class="yr">2026</div><div class="bar lit" style="width:100%"></div><div class="val">actual</div></div>
+        </div>
+      </div>
+      <div class="pagenum">03 / 06</div>
+    </div>
+
+    <!-- 4 · GALLERY (imágenes reales) -->
+    <div class="tic-slide s-gallery">
+      <div class="ghead">
+        <div class="h">La experiencia, <em>en vivo</em></div>
+        <div class="lab">Fotos del evento</div>
+      </div>
+      <div class="grid">
+        <div class="gimg"><img src="https://ticexperience2026.vercel.app/img/bg-img/4.jpg" alt="TIC Experience" loading="lazy"/><div class="gcap">Proyectos en el hall</div></div>
+        <div class="gimg"><img src="https://ticexperience2026.vercel.app/img/bg-img/5.jpg" alt="TIC Experience" loading="lazy"/><div class="gcap">Estudiantes presentando</div></div>
+        <div class="gimg"><img src="https://ticexperience2026.vercel.app/img/bg-img/6.jpg" alt="TIC Experience" loading="lazy"/><div class="gcap">Público recorriendo la muestra</div></div>
+      </div>
+      <div class="pagenum">04 / 06</div>
+    </div>
+
+    <!-- 5 · IFRAME EN VIVO -->
+    <div class="tic-slide s-live">
+      <div class="lhead">
+        <div class="h">El sitio, <em>dentro</em> de la slide</div>
+        <div class="lab">En vivo</div>
+      </div>
+      <div class="lsub">Esto no es una captura: es la web oficial de TIC Experience 2026, funcionando acá mismo. Podés navegarla sin salir de la presentación.</div>
+      <div class="iframe-wrap"><iframe src="https://ticexperience2026.vercel.app/" loading="lazy"></iframe></div>
+      <div class="pagenum">05 / 07</div>
+    </div>
+
+    <!-- 6 · QUIZ -->
+    <div class="tic-slide s-quiz">
+      <div class="qhead">
+        <div class="h">Mini <em>quiz</em></div>
+        <div class="lab" data-quiz-progress>Pregunta 1 / 4</div>
+      </div>
+      <div class="quiz-stage" data-quiz>
+        <div class="question" data-question></div>
+        <div class="options" data-options></div>
+        <div class="feedback" data-feedback></div>
+        <div class="quiz-next-row">
+          <button class="quiz-next" data-next style="display:none;">Siguiente →</button>
+        </div>
+      </div>
+      <div class="quiz-result" data-result style="display:none;">
+        <div class="rscore" data-score></div>
+        <div class="rmsg" data-rmsg></div>
+        <button class="quiz-next" data-restart>Reintentar</button>
+      </div>
+      <div class="pagenum">06 / 07</div>
+    </div>
+
+    <!-- 7 · COLOPHON -->
+    <div class="tic-slide s-colophon">
+      <div class="glow"></div>
+      <div class="titlewrap">
+        <div class="ktag">TIC Experience · ORT Argentina</div>
+        <h1 class="ttl">Innovación<br/>con <em>impacto</em></h1>
+      </div>
+      <div class="colofo">
+        <div><div class="ftag">Organiza</div><div class="ftxt">ORT Argentina<br/>Especialización TIC</div></div>
+        <div><div class="ftag">Edición</div><div class="ftxt">2026<br/>Sede Belgrano</div></div>
+        <div><div class="ftag">Web</div><div class="ftxt">ticexperience2026<br/>.vercel.app</div></div>
+        <div><div class="ftag">Cierre</div><div class="ftxt">Jóvenes de 15 a 18 años dispuestos a cambiar el mundo de la mano de la tecnología.</div></div>
+      </div>
+      <div class="pagenum">07 / 07</div>
+    </div>
+
+  </div>
+
+  <button class="tic-arrow prev" data-tic-prev>&#8249;</button>
+  <button class="tic-arrow next" data-tic-next>&#8250;</button>
+  <nav class="tic-nav"></nav>
+</div>
+
+<script>
+(function(){
+  var root = document.currentScript.closest('section').querySelector('.tic-root');
+  if(!root || root.dataset.ticInit) return;
+  root.dataset.ticInit = '1';
+  var slides = Array.prototype.slice.call(root.querySelectorAll('.tic-slide'));
+  var nav = root.querySelector('.tic-nav');
+  var total = slides.length, cur = 0;
+  slides.forEach(function(_,i){
+    var d=document.createElement('button'); d.className='tic-dot';
+    d.addEventListener('click', function(){ go(i); }); nav.appendChild(d);
+  });
+  var dots = Array.prototype.slice.call(nav.children);
+  function go(i){
+    if(i<0||i>=total) return;
+    slides[cur].classList.remove('active');
+    cur=i;
+    slides[cur].classList.add('active');
+    dots.forEach(function(d,di){ d.classList.toggle('is-active', di===cur); });
+  }
+  root.querySelector('[data-tic-prev]').addEventListener('click', function(){ go(cur-1); });
+  root.querySelector('[data-tic-next]').addEventListener('click', function(){ go(cur+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key==='ArrowRight'||e.key===' '){ e.preventDefault(); go(cur+1); }
+    if(e.key==='ArrowLeft'){ e.preventDefault(); go(cur-1); }
+  });
+  var sx=0;
+  root.addEventListener('touchstart', function(e){ sx=e.touches[0].clientX; }, {passive:true});
+  root.addEventListener('touchend', function(e){ var dx=e.changedTouches[0].clientX-sx; if(Math.abs(dx)>40) go(cur+(dx<0?1:-1)); }, {passive:true});
+  dots[0].classList.add('is-active');
+
+  // Quiz logic — multiple questions
+  var quiz = root.querySelector('[data-quiz]');
+  if(quiz){
+    var QUESTIONS = [
+      {
+        q: '¿Qué es TIC Experience?',
+        a: [
+          {t:'Una feria de compra y venta de computadoras usadas.', ok:false},
+          {t:'La muestra anual donde estudiantes de ORT presentan sus proyectos de tecnología.', ok:true},
+          {t:'Un curso online para aprender a programar desde cero.', ok:false},
+          {t:'Una conferencia internacional solo para empresas de software.', ok:false}
+        ],
+        fb: 'Es la muestra anual de proyectos de la especialización TIC de ORT.'
+      },
+      {
+        q: '¿Quiénes presentan sus proyectos?',
+        a: [
+          {t:'Profesores universitarios.', ok:false},
+          {t:'Empresas de tecnología invitadas.', ok:false},
+          {t:'Estudiantes de entre 15 y 18 años.', ok:true},
+          {t:'Desarrolladores profesionales.', ok:false}
+        ],
+        fb: 'Son jóvenes de 15 a 18 años de la especialización TIC.'
+      },
+      {
+        q: '¿Qué tipo de proyectos se ven en la muestra?',
+        a: [
+          {t:'Solo páginas web sencillas.', ok:false},
+          {t:'IA, realidad virtual, robótica y videojuegos.', ok:true},
+          {t:'Únicamente trabajos en papel.', ok:false},
+          {t:'Solo planillas de cálculo.', ok:false}
+        ],
+        fb: 'Hay desarrollos con IA, realidad virtual, robots y videojuegos.'
+      },
+      {
+        q: '¿Dónde se realiza TIC Experience?',
+        a: [
+          {t:'En la sede Belgrano de ORT.', ok:true},
+          {t:'En un estadio de fútbol.', ok:false},
+          {t:'Totalmente online, sin sede física.', ok:false},
+          {t:'En el exterior del país.', ok:false}
+        ],
+        fb: 'Se realiza en el hall de la sede Belgrano de ORT.'
+      }
+    ];
+
+    var qEl = quiz.querySelector('[data-question]');
+    var optsEl = quiz.querySelector('[data-options]');
+    var fbEl = quiz.querySelector('[data-feedback]');
+    var nextBtn = quiz.querySelector('[data-next]');
+    var progEl = root.querySelector('[data-quiz-progress]');
+    var resultEl = root.querySelector('[data-result]');
+    var scoreEl = root.querySelector('[data-score]');
+    var rmsgEl = root.querySelector('[data-rmsg]');
+    var restartBtn = root.querySelector('[data-restart]');
+    var keys = ['A','B','C','D'];
+    var idx = 0, score = 0, answered = false;
+
+    function render(){
+      var item = QUESTIONS[idx];
+      answered = false;
+      progEl.textContent = 'Pregunta ' + (idx+1) + ' / ' + QUESTIONS.length;
+      qEl.textContent = item.q;
+      fbEl.classList.remove('show'); fbEl.innerHTML = '';
+      nextBtn.style.display = 'none';
+      nextBtn.textContent = (idx === QUESTIONS.length-1) ? 'Ver resultado →' : 'Siguiente →';
+      optsEl.innerHTML = '';
+      item.a.forEach(function(ans, i){
+        var b = document.createElement('button');
+        b.className = 'opt';
+        b.innerHTML = '<span class="key">'+keys[i]+'</span><span>'+ans.t+'</span>';
+        b.addEventListener('click', function(){
+          if(answered) return;
+          answered = true;
+          var all = Array.prototype.slice.call(optsEl.children);
+          all.forEach(function(o){ o.classList.add('disabled'); });
+          if(ans.ok){
+            b.classList.add('correct'); score++;
+            fbEl.innerHTML = '<em>¡Correcto!</em> ' + item.fb;
+          } else {
+            b.classList.add('wrong');
+            all[item.a.findIndex(function(x){return x.ok;})].classList.add('correct');
+            fbEl.innerHTML = '<em>No exactamente.</em> ' + item.fb;
+          }
+          fbEl.classList.add('show');
+          nextBtn.style.display = 'inline-block';
+        });
+        optsEl.appendChild(b);
+      });
+    }
+
+    nextBtn.addEventListener('click', function(){
+      if(idx < QUESTIONS.length-1){ idx++; render(); }
+      else { showResult(); }
+    });
+
+    function showResult(){
+      quiz.style.display = 'none';
+      resultEl.style.display = 'flex';
+      progEl.textContent = 'Resultado';
+      scoreEl.textContent = score + ' / ' + QUESTIONS.length;
+      var msg;
+      if(score === QUESTIONS.length) msg = '<em>¡Perfecto!</em> Sabés todo sobre TIC Experience.';
+      else if(score >= QUESTIONS.length/2) msg = '<em>¡Bien!</em> Te quedó clara la idea de qué es TIC Experience.';
+      else msg = '<em>Repasá las slides.</em> TIC Experience es la muestra anual de proyectos TIC de ORT.';
+      rmsgEl.innerHTML = msg;
+    }
+
+    restartBtn.addEventListener('click', function(){
+      idx = 0; score = 0;
+      resultEl.style.display = 'none';
+      quiz.style.display = 'block';
+      render();
+    });
+
+    render();
+  }
+})();
+</script>
+</section>

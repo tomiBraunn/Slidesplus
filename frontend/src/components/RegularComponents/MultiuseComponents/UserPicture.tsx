@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import SettingsModal from "../MultiuseComponents/SettingsModal";
 import { urlbackend } from "../../../config.js";
 import { useTheme } from "../../../contexts/ThemeContext";
+import { supabase } from "../../../utils/supabaseClient";
 
 type Props = {
   avatar?: string | null;
@@ -140,7 +141,12 @@ export default function UserPicture({ avatar, size = 38 }: Props) {
   const fullName = `${user?.first_name || ""} ${user?.last_name || ""}`.trim() || "User";
 
   const toggleDropdown = () => setIsOpen(!isOpen);
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Must end the Supabase (Google) session too. Otherwise its sb-* keys live
+    // on and the auth interceptor / getSession() re-populate localStorage["token"]
+    // with the Google token — so a later email/password login silently reverts
+    // to the Google account.
+    try { await supabase.auth.signOut(); } catch { /* ignore */ }
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     window.location.href = "/";
