@@ -1136,6 +1136,7 @@ Return ONLY the modified <section> HTML. Rules:
         onUndo={undo}
         onRedo={redo}
         onVersionRestored={handleVersionRestored}
+        slides={slides}
       />
 
 

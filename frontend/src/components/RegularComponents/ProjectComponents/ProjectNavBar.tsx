@@ -7,6 +7,7 @@ import { VersionHistoryModal } from "./VersionHistoryModal";
 import { SpotifyController } from "./SpotifyController";
 import SettingsModal from "../MultiuseComponents/SettingsModal";
 import { urlbackend } from "../../../config.js";
+import { exportToPdf, exportToPptxImage, exportToPptxEditable } from "../../../utils/export";
 
 export type ProjectMode = "code" | "visual" | "ai";
 
@@ -42,6 +43,8 @@ type Props = {
   onUndo?: () => void;
   onRedo?: () => void;
   onVersionRestored?: (content: string) => void;
+  // Export (PDF / PPTX)
+  slides?: string[];
 };
 
 type User = {
@@ -93,10 +96,14 @@ export default function ProjectNavBar({
   onUndo,
   onRedo,
   onVersionRestored,
+  slides = [],
 }: Props) {
   const [user, setUser] = useState<User | null>(null);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [exporting, setExporting] = useState<null | { label: string; current: number; total: number }>(null);
+  const exportMenuRef = React.useRef<HTMLDivElement>(null);
   const [spotifyRefreshTrigger, setSpotifyRefreshTrigger] = useState(0);
   const [spotifyColor, setSpotifyColor] = useState<string>('');
   const [isEditingName, setIsEditingName] = useState(false);
@@ -165,6 +172,45 @@ export default function ProjectNavBar({
     } catch (err) {
       console.error("Error updating project name:", err);
       setEditedName(name);
+    }
+  };
+
+  // Cerrar el menú de export al click afuera.
+  useEffect(() => {
+    if (!exportMenuOpen) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setExportMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [exportMenuOpen]);
+
+  const handleExport = async (format: "pdf" | "pptx-image" | "pptx-editable") => {
+    setExportMenuOpen(false);
+    if (!slides || slides.length === 0 || exporting) return;
+    const label =
+      format === "pdf"
+        ? "PDF"
+        : format === "pptx-image"
+          ? "PowerPoint (imagen)"
+          : "PowerPoint (editable)";
+    setExporting({ label, current: 0, total: slides.length });
+    const onProgress = (current: number, total: number) =>
+      setExporting({ label, current, total });
+    try {
+      if (format === "pdf") {
+        await exportToPdf(slides, name, onProgress);
+      } else if (format === "pptx-image") {
+        await exportToPptxImage(slides, name, onProgress);
+      } else {
+        await exportToPptxEditable(slides, name, onProgress);
+      }
+    } catch (err) {
+      console.error("Export failed:", err);
+    } finally {
+      setExporting(null);
     }
   };
 
@@ -271,6 +317,72 @@ export default function ProjectNavBar({
               <span className="material-symbols-outlined text-base">play_arrow</span>
               <p>Present</p>
             </button>
+
+            {/* Export (PDF / PPTX) */}
+            <div className="relative" ref={exportMenuRef}>
+              <button
+                onClick={() => setExportMenuOpen((v) => !v)}
+                disabled={!!exporting || slides.length === 0}
+                title="Export"
+                className="flex items-center justify-center w-8 h-8 p-1 bg-theme-inverted text-theme-inverted rounded-full transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {exporting ? (
+                  <span className="material-symbols-outlined text-base animate-spin">progress_activity</span>
+                ) : (
+                  <span className="material-symbols-outlined text-base">download</span>
+                )}
+              </button>
+
+              {exportMenuOpen && !exporting && (
+                <div className="absolute right-0 top-full mt-2 z-50 w-64 bg-theme-primary border border-theme-tertiary rounded-xl shadow-2xl overflow-hidden py-1">
+                  <button
+                    onClick={() => handleExport("pdf")}
+                    className="w-full flex items-start gap-2.5 px-3 py-2 text-left hover:bg-theme-quaternary transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-base text-theme-secondary mt-0.5">picture_as_pdf</span>
+                    <span>
+                      <span className="block text-sm text-theme-primary">PDF</span>
+                      <span className="block text-[11px] text-theme-secondary">Una página por slide</span>
+                    </span>
+                  </button>
+
+                  <div className="my-1 border-t border-theme-tertiary" />
+
+                  <button
+                    onClick={() => handleExport("pptx-image")}
+                    className="w-full flex items-start gap-2.5 px-3 py-2 text-left hover:bg-theme-quaternary transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-base text-theme-secondary mt-0.5">image</span>
+                    <span>
+                      <span className="block text-sm text-theme-primary">PowerPoint · imagen</span>
+                      <span className="block text-[11px] text-theme-secondary">Idéntico al diseño, no editable</span>
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => handleExport("pptx-editable")}
+                    className="w-full flex items-start gap-2.5 px-3 py-2 text-left hover:bg-theme-quaternary transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-base text-theme-secondary mt-0.5">edit_note</span>
+                    <span>
+                      <span className="block text-sm text-theme-primary">PowerPoint · editable</span>
+                      <span className="block text-[11px] text-theme-secondary">Texto editable en PowerPoint</span>
+                    </span>
+                  </button>
+                </div>
+              )}
+
+              {exporting && (
+                <div className="absolute right-0 top-full mt-2 z-50 w-56 bg-theme-primary border border-theme-tertiary rounded-xl shadow-2xl px-3 py-2.5">
+                  <div className="flex items-center gap-2 text-sm text-theme-primary">
+                    <span className="material-symbols-outlined text-base animate-spin text-blue-400">progress_activity</span>
+                    Generando {exporting.label}…
+                  </div>
+                  <div className="text-xs text-theme-secondary mt-1">
+                    Slide {exporting.current} / {exporting.total}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {onShareClick && (
               <button
