@@ -1,5 +1,6 @@
 import { generateWithGemini, generateWithGeminiFallback, buildCompressedHistory } from "../services/geminiService.js"
 import { generateWithChatGPT } from "../services/chatgptService.js"
+import { generateWithNvidia, isNvidiaModel } from "../services/nvidiaService.js"
 import { pool } from "../config/database.js"
 import { getTemplateCatalog, getTemplateFiles, getSlidesPlusContent, getTemplateStyleContext, matchExplicitTemplate, matchTemplateByTrigger } from "../services/templateService.js"
 import { buildTemplateStyleBlock, injectAuthoritativeStyles } from "./geminiController.js"
@@ -120,6 +121,15 @@ export const slidesAgentController = async (req, res) => {
 				}
 				const data = JSON.parse(r.raw)
 				rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || ""
+			} else if (isNvidiaModel(model)) {
+				const r = await generateWithNvidia({ system: systemPrompt, message: fullMessage, history: convoHistory, model })
+				if (!r.ok) {
+					let details; try { details = JSON.parse(r.raw) } catch { details = r.raw }
+					console.error("[SlidesAgent] NVIDIA error:", r.status)
+					return res.status(502).json({ error: "NVIDIA upstream error", status: r.status, details })
+				}
+				const data = JSON.parse(r.raw)
+				rawText = data.text || ""
 			} else {
 				const r = await generateWithChatGPT({ system: systemPrompt, message: fullMessage, history: convoHistory, model })
 				if (!r.ok) {
@@ -216,6 +226,12 @@ ${agentResponse.slides.map((s, i) => `--- Slide ${i + 1} ---\n${s}`).join("\n\n"
 							if (r.ok) {
 								const d = JSON.parse(r.raw)
 								restyleRaw = d.candidates?.[0]?.content?.parts?.[0]?.text || ""
+							}
+						} else if (isNvidiaModel(model)) {
+							const r = await generateWithNvidia({ system: restyleSystem, message: restyleMessage, model })
+							if (r.ok) {
+								const d = JSON.parse(r.raw)
+								restyleRaw = d.text || ""
 							}
 						} else {
 							const r = await generateWithChatGPT({ system: restyleSystem, message: restyleMessage, model })

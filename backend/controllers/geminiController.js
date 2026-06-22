@@ -1,5 +1,6 @@
 import { generateWithGemini, generateWithGeminiFallback, buildCompressedHistory } from "../services/geminiService.js"
 import { generateWithChatGPT } from "../services/chatgptService.js"
+import { generateWithNvidia, isNvidiaModel } from "../services/nvidiaService.js"
 import { pool } from "../config/database.js"
 import { getTemplateFiles, getTemplateStyleContext, pickTemplateForMessage } from "../services/templateService.js"
 
@@ -191,6 +192,21 @@ export const generateWithGeminiController = async (req, res) => {
 					return res.status(502).json({ error: "Gemini upstream error", status: r.status, details })
 				}
 				return res.type("application/json").send(applyStylesToGeminiRaw(r.raw, styleBlock))
+			}
+
+			// NVIDIA NIM: OpenAI-compatible, devuelve { text } igual que ChatGPT.
+			if (isNvidiaModel(model)) {
+				const r = await generateWithNvidia({ ...body, model })
+				if (!r.ok) {
+					let details
+					try { details = JSON.parse(r.raw) } catch { details = r.raw }
+					console.error("[NVIDIA] upstream error:", r.status, typeof details === "object" ? JSON.stringify(details).slice(0, 300) : String(details).slice(0, 300))
+					return res.status(502).json({ error: "NVIDIA upstream error", status: r.status, details })
+				}
+				const data = JSON.parse(r.raw)
+				let text = data.text || ""
+				if (styleBlock) text = injectAuthoritativeStyles(text, styleBlock)
+				return res.json({ text })
 			}
 
 			const r = await generateWithChatGPT({ ...body, model })
