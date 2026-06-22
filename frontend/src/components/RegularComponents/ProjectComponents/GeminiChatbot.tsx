@@ -46,9 +46,38 @@ function normalizeLLMText(data: any): string {
     || data?.text || "No response";
 }
 
+// ¿El mensaje pide CREAR una presentación completa nueva (vs. editar una slide
+// existente)? Sirve para decidir si abrir el wizard de onboarding. Heurística:
+// verbo de creación + objeto "presentación/slides", y NO un verbo de edición
+// puntual sobre una slide.
+function isNewDeckRequest(msg: string): boolean {
+  const s = msg.toLowerCase();
+  // Edición puntual → no es deck nuevo.
+  const editHints = [
+    "esta slide", "este slide", "la slide", "el slide", "slide actual",
+    "agregá una slide", "agrega una slide", "añadí una slide", "anade una slide",
+    "cambiá el", "cambia el", "cambiá la", "cambia la", "editá", "edita ",
+    "modificá", "modifica ", "corregí", "corrige ", "ajustá", "ajusta ",
+  ];
+  if (editHints.some((k) => s.includes(k))) return false;
+  // Verbos de creación de un deck completo.
+  const createHints = [
+    "presentación", "presentacion", "presentaciones", "slides", "slide deck",
+    "presentation", "deck", "slideshow", "diapositivas", "charla", "exposición", "exposicion",
+  ];
+  const createVerbs = [
+    "hace", "hacé", "haz", "crea", "creá", "cre", "genera", "generá", "armá", "arma",
+    "make", "create", "generate", "build", "design", "diseñá", "diseña", "quiero", "necesito",
+  ];
+  const hasObject = createHints.some((k) => s.includes(k));
+  const hasVerb = createVerbs.some((v) => s.includes(v));
+  // Si menciona presentación/slides y suena a pedido de creación → deck nuevo.
+  return hasObject && hasVerb;
+}
+
 function classifyPrompt(msg: string): "slides" | "code" | "chat" {
   const s = msg.toLowerCase();
-  const slidesHints = ["slides", "slide deck", "presentation", "deck", "slideshow", "diapositivas"];
+  const slidesHints = ["slides", "slide deck", "presentation", "deck", "slideshow", "diapositivas", "presentación", "presentacion", "presentaciones", "diapositiva", "diapos", "charla", "exposición", "exposicion"];
   if (slidesHints.some((k) => s.includes(k))) return "slides";
   const codeVerbs = ["generate", "create", "write", "build", "implement", "refactor", "convert"];
   const langs = ["html", "css", "javascript", "typescript", "react", "tsx", "jsx", "python", "java", "c#", "php", "go", "rust", "sql", "tailwind", "component"];
@@ -1034,17 +1063,16 @@ export default function GeminiChatbot({
     setAttachedFiles([]);
     if (textareaRef.current) { textareaRef.current.style.height = "auto"; textareaRef.current.style.height = "48px"; }
 
-    // Onboarding wizard: si es una presentación nueva (no hay slides aún, no hay
-    // historial, sin archivos) y el mensaje pide slides, preguntamos primero en
-    // vez de generar directo. El mensaje del usuario queda guardado para usarlo
-    // como tema una vez completado el wizard.
-    const isFirstSlidesRequest =
-      (!slides || slides.length === 0) &&
-      messages.length === 0 &&
+    // Onboarding wizard: aparece siempre que el mensaje pida crear/generar una
+    // presentación COMPLETA y nueva (no una edición puntual de slides ya
+    // existentes), y no haya archivos adjuntos. El mensaje queda guardado como
+    // tema para usarlo al completar el wizard.
+    const wantsNewDeck =
       uploadedAttachments.length === 0 &&
-      classifyPrompt(userMsg) === "slides";
+      classifyPrompt(userMsg) === "slides" &&
+      isNewDeckRequest(userMsg);
 
-    if (isFirstSlidesRequest) {
+    if (wantsNewDeck) {
       setWizard({ originalMsg: userMsg });
       return;
     }
@@ -1054,12 +1082,26 @@ export default function GeminiChatbot({
 
   /* ── wizard de onboarding ── */
   const handleWizardComplete = (result: WizardResult) => {
-    const topic = wizard?.originalMsg || "una presentación";
     setWizard(null);
+    // Limpiar el verbo de creación del mensaje original para dejar solo el TEMA
+    // (ej. "hazme una presentación sobre Nike" → "Nike").
+    const raw = (wizard?.originalMsg || "").trim();
+    const topic = raw
+      .replace(/^(hace|hacé|haz|crea|creá|cre[aá]?|genera|generá|armá|arma|make|create|generate|build|design|diseñá|diseña|quiero|necesito)\b/i, "")
+      .replace(/\b(una|un|me|por\s*favor|please|a)\b/gi, " ")
+      .replace(/\b(presentación|presentacion|presentaciones|slides?|slide deck|presentation|deck|slideshow|diapositivas?|charla|exposición|exposicion)\b/gi, " ")
+      .replace(/\b(sobre|acerca de|de|about|on)\b/i, " ")
+      .replace(/\s+/g, " ")
+      .trim() || raw;
+
+    // El template/estilo va PRIMERO y enfático: el backend elige el template a
+    // partir del mensaje, así que mencionarlo al inicio y por su nombre exacto
+    // hace que gane sobre cualquier otra señal.
     const prompt =
+      `Usá el template "${result.templateName}" (${result.templateLabel}) para TODAS las slides, replicando su estilo visual exacto. ` +
       `Creá una presentación de ${result.count} slides sobre: ${topic}. ` +
-      `Audiencia: ${result.audience}. ` +
-      `Usá el estilo "${result.templateLabel}" (template ${result.templateName}) de forma consistente en todas las slides.`;
+      `Audiencia: ${result.audience}. Objetivo: ${result.tone}. ` +
+      `Densidad: ${result.density}. Idioma: ${result.language}. Imágenes: ${result.images}.`;
     processMessage(prompt);
   };
 
