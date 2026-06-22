@@ -180,7 +180,7 @@ export const slidesAgentController = async (req, res) => {
 			["replace_all", "replace_slide", "insert_after"].includes(agentResponse.action)
 
 		if (needsRestyle) {
-			console.log(`[SlidesAgent] Template: ${agentResponse.template} — running restyle pass`)
+			console.log(`[SlidesAgent] Template: ${agentResponse.template} — running restyle pass (batched)`)
 			const styleCtx = getTemplateStyleContext(agentResponse.template)
 			if (styleCtx) {
 				const restyleSystem = `You are a slide HTML restyler. You receive:
@@ -193,12 +193,10 @@ Your job: rewrite each slide to faithfully reproduce the template's visual ident
 CRITICAL RULES:
 - Keep all text content (titles, subtitles, bullets, body text) EXACTLY as-is word for word.
 - Use the template's classes, colors, backgrounds, and layout patterns on every slide.
-- FIRST <section> only: include a <style> tag with the @import fonts + full CSS block. All other sections have NO <style> tag.
-- Every section: style="width:1920px;height:1080px;overflow:hidden;position:relative;background:var(--paper, #fff);"
+- Do NOT include any <style> tag — the full stylesheet is injected automatically by the system. Just use the template's classes and CSS variables on the HTML.
+- Every section: style="width:1920px;height:1080px;overflow:hidden;position:relative;"
 - All values in px only — no vw, vh, %, clamp(). The CSS provided is already converted.
-- In the <style> block: replace any "html, body" or "body" selectors with "section" so styles apply inside the iframe.
 - Vary layouts slide to slide — don't make every slide a title+bullets column.
-- The background of every slide must use the template's CSS variables (--paper, --bg, --c-bg, etc.).
 - Return ONLY a valid JSON array of strings: ["<section>...</section>", "<section>...</section>", ...]
 - No markdown fences, no explanation text, no wrapper object — ONLY the JSON array.`
 
@@ -206,65 +204,75 @@ CRITICAL RULES:
 					? `\nEXAMPLE SLIDES FROM THIS TEMPLATE (use these as structural reference — note which classes are used and how elements are positioned):\n${styleCtx.exampleSlides.join("\n\n")}\n`
 					: ""
 
-				const restyleMessage = `TEMPLATE CSS (already in px, embed this in the first <section>'s <style> tag):
+				// Una sola función que enruta al modelo correcto y devuelve el texto crudo.
+				const callRestyle = async (message) => {
+					if (admin) {
+						const model = requestedModel || "gpt-4o"
+						if (model.startsWith("gemini-")) {
+							const r = await generateWithGemini({ system: restyleSystem, message, model })
+							return r.ok ? (JSON.parse(r.raw).candidates?.[0]?.content?.parts?.[0]?.text || "") : ""
+						} else if (isNvidiaModel(model)) {
+							const r = await generateWithNvidia({ system: restyleSystem, message, model })
+							return r.ok ? (JSON.parse(r.raw).text || "") : ""
+						}
+						const r = await generateWithChatGPT({ system: restyleSystem, message, model })
+						return r.ok ? (JSON.parse(r.raw).text || "") : ""
+					}
+					const r = await generateWithGeminiFallback({ system: restyleSystem, message })
+					return r.ok ? (JSON.parse(r.raw).candidates?.[0]?.content?.parts?.[0]?.text || "") : ""
+				}
+
+				// Parseo tolerante: intenta JSON.parse; si viene truncado, recupera las
+				// <section> completas con regex en vez de descartar el lote entero.
+				const parseSectionsTolerant = (raw) => {
+					if (!raw) return []
+					const cleaned = raw.replace(/^```[\w]*\n?/m, "").replace(/\n?```$/m, "").trim()
+					try {
+						const arr = JSON.parse(cleaned)
+						if (Array.isArray(arr)) return arr.filter(s => typeof s === "string" && s.includes("<section"))
+					} catch { /* truncado o no-JSON: caer al regex */ }
+					return cleaned.match(/<section[\s\S]*?<\/section>/gi) || []
+				}
+
+				const draft = agentResponse.slides
+				const cssBlock = `TEMPLATE CSS (reference only — do NOT reproduce it, the system injects it):
 \`\`\`css
 ${styleCtx.fonts}
 
 ${styleCtx.css}
 \`\`\`
-${exampleSlideStr}
-DRAFT SLIDES TO RESTYLE (keep all content, apply template visual identity):
-${agentResponse.slides.map((s, i) => `--- Slide ${i + 1} ---\n${s}`).join("\n\n")}`
+${exampleSlideStr}`
 
-				let restyleRaw = ""
+				// Reestilizar en lotes chicos (4 slides) para no truncar la respuesta.
+				const BATCH = 4
+				const out = []
+				let anyFailed = false
 				try {
-					if (admin) {
-						const model = requestedModel || "gpt-4o"
-						const isGemini = model.startsWith("gemini-")
-						if (isGemini) {
-							const r = await generateWithGemini({ system: restyleSystem, message: restyleMessage, model })
-							if (r.ok) {
-								const d = JSON.parse(r.raw)
-								restyleRaw = d.candidates?.[0]?.content?.parts?.[0]?.text || ""
-							}
-						} else if (isNvidiaModel(model)) {
-							const r = await generateWithNvidia({ system: restyleSystem, message: restyleMessage, model })
-							if (r.ok) {
-								const d = JSON.parse(r.raw)
-								restyleRaw = d.text || ""
-							}
-						} else {
-							const r = await generateWithChatGPT({ system: restyleSystem, message: restyleMessage, model })
-							if (r.ok) {
-								const d = JSON.parse(r.raw)
-								restyleRaw = d.text || ""
-							}
+					for (let i = 0; i < draft.length; i += BATCH) {
+						const batch = draft.slice(i, i + BATCH)
+						const msg = `${cssBlock}
+DRAFT SLIDES TO RESTYLE (keep all content, apply template visual identity). Return a JSON array with exactly ${batch.length} restyled <section> strings:
+${batch.map((s, j) => `--- Slide ${i + j + 1} ---\n${s}`).join("\n\n")}`
+						let sections = []
+						try { sections = parseSectionsTolerant(await callRestyle(msg)) } catch { sections = [] }
+						// Si el lote no devolvió lo suficiente, completar con los originales
+						// (mejor una slide sin restyle que perder su contenido).
+						if (sections.length < batch.length) {
+							anyFailed = true
+							for (let k = sections.length; k < batch.length; k++) sections.push(batch[k])
 						}
-					} else {
-						const r = await generateWithGeminiFallback({ system: restyleSystem, message: restyleMessage })
-						if (r.ok) {
-							const d = JSON.parse(r.raw)
-							restyleRaw = d.candidates?.[0]?.content?.parts?.[0]?.text || ""
-						}
-					}
-
-					if (restyleRaw) {
-						const restyleCleaned = restyleRaw.replace(/^```[\w]*\n?/m, "").replace(/\n?```$/m, "").trim()
-						const restyled = JSON.parse(restyleCleaned)
-						if (Array.isArray(restyled) && restyled.length > 0) {
-							// Don't trust the model to reproduce the 14KB stylesheet — inject
-							// the authoritative template style block deterministically, replacing
-							// whatever (often partial) <style> the model emitted.
-							const styleBlock = buildTemplateStyleBlock(styleCtx)
-							const joined = injectAuthoritativeStyles(restyled.join("\n"), styleBlock)
-							const fixedSlides = joined.match(/<section[\s\S]*?<\/section>/gi) || restyled
-							agentResponse.slides = fixedSlides
-							console.log(`[SlidesAgent] Restyle pass done: ${fixedSlides.length} slides`)
-						}
+						out.push(...sections.slice(0, batch.length))
 					}
 				} catch (e) {
-					console.error("[SlidesAgent] Restyle pass failed, using original slides:", e.message)
-					// Fall through — return original slides if restyle fails
+					console.error("[SlidesAgent] Restyle batching error:", e.message)
+				}
+
+				if (out.length > 0) {
+					// Inyectar el stylesheet autoritativo una sola vez, de forma determinista.
+					const styleBlock = buildTemplateStyleBlock(styleCtx)
+					const joined = injectAuthoritativeStyles(out.join("\n"), styleBlock)
+					agentResponse.slides = joined.match(/<section[\s\S]*?<\/section>/gi) || out
+					console.log(`[SlidesAgent] Restyle done: ${agentResponse.slides.length} slides${anyFailed ? " (some batches fell back to draft)" : ""}`)
 				}
 			}
 		}
