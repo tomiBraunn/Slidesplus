@@ -16,6 +16,7 @@ import { Spinner } from "../../ui/spinner";
 import { Timer } from "../../ui/timer";
 import { useAnimatedText } from "../../ui/animated-text";
 import ComponentsModal from "./ComponentsModal";
+import SlidesWizard, { type WizardResult } from "./SlidesWizard";
 
 type ChatMsg = {
   id: string;
@@ -714,6 +715,9 @@ export default function GeminiChatbot({
   const [selectedModel, setSelectedModel] = useState(localStorage.getItem("selectedModel") || "gpt-4o");
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [showComponents, setShowComponents] = useState(false);
+  // Wizard de onboarding (estilo Claude): se muestra inline cuando el usuario
+  // pide su primera presentación, antes de generar.
+  const [wizard, setWizard] = useState<{ originalMsg: string } | null>(null);
 
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
 
@@ -739,6 +743,9 @@ export default function GeminiChatbot({
     { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro", provider: "gemini" },
     { id: "gemini-2.0-flash", label: "Gemini 2.0 Flash", provider: "gemini" },
     { id: "gemini-2.0-flash-lite", label: "Gemini 2.0 Flash Lite", provider: "gemini" },
+    { id: "nvidia/llama-4", label: "Llama 4 Maverick (NVIDIA)", provider: "nvidia" },
+    { id: "nvidia/qwen", label: "Qwen 3.5 397B (NVIDIA)", provider: "nvidia" },
+    { id: "nvidia/deepseek", label: "DeepSeek V4 Pro (NVIDIA)", provider: "nvidia" },
   ];
 
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -1026,7 +1033,41 @@ export default function GeminiChatbot({
     setInputValue("");
     setAttachedFiles([]);
     if (textareaRef.current) { textareaRef.current.style.height = "auto"; textareaRef.current.style.height = "48px"; }
+
+    // Onboarding wizard: si es una presentación nueva (no hay slides aún, no hay
+    // historial, sin archivos) y el mensaje pide slides, preguntamos primero en
+    // vez de generar directo. El mensaje del usuario queda guardado para usarlo
+    // como tema una vez completado el wizard.
+    const isFirstSlidesRequest =
+      (!slides || slides.length === 0) &&
+      messages.length === 0 &&
+      uploadedAttachments.length === 0 &&
+      classifyPrompt(userMsg) === "slides";
+
+    if (isFirstSlidesRequest) {
+      setWizard({ originalMsg: userMsg });
+      return;
+    }
+
     await processMessage(userMsg, uploadedAttachments);
+  };
+
+  /* ── wizard de onboarding ── */
+  const handleWizardComplete = (result: WizardResult) => {
+    const topic = wizard?.originalMsg || "una presentación";
+    setWizard(null);
+    const prompt =
+      `Creá una presentación de ${result.count} slides sobre: ${topic}. ` +
+      `Audiencia: ${result.audience}. ` +
+      `Usá el estilo "${result.templateLabel}" (template ${result.templateName}) de forma consistente en todas las slides.`;
+    processMessage(prompt);
+  };
+
+  const handleWizardCancel = () => {
+    // Cancelar = generar directo con el mensaje original, sin wizard.
+    const msg = wizard?.originalMsg;
+    setWizard(null);
+    if (msg) processMessage(msg);
   };
 
   /* ── onNew for assistant-ui suggestions ── */
@@ -1133,7 +1174,7 @@ export default function GeminiChatbot({
             )}
 
             {/* Empty state */}
-            {!loadingHistory && messages.length === 0 && (
+            {!loadingHistory && messages.length === 0 && !wizard && (
               <div className="text-center text-theme-secondary mt-12 space-y-3">
                 <p className="text-sm">How can I help you today?</p>
                 <p className="text-xs text-theme-secondary">Ask me to create slides, write code, or chat</p>
@@ -1226,6 +1267,13 @@ export default function GeminiChatbot({
                 </React.Fragment>
               );
             })}
+
+            {/* Onboarding wizard (inline) */}
+            {wizard && (
+              <div className="animate-fadeIn">
+                <SlidesWizard onComplete={handleWizardComplete} onCancel={handleWizardCancel} />
+              </div>
+            )}
 
             {/* Loading indicator */}
             {loading && (

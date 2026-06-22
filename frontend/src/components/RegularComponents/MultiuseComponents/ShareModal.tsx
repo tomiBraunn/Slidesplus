@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect, useRef } from 'react'
 import { urlbackend } from '../../../config.js'
+import { exportToPdf, exportToPptxImage, exportToPptxEditable } from '../../../utils/export'
 
 interface Collaborator {
     id?: string
@@ -27,6 +28,7 @@ interface ShareModalProps {
     projectId: string | null
     isOpen: boolean
     onClose: () => void
+    slides?: string[]
 }
 
 const normalizeAvatar = (avatar?: string): string | undefined => {
@@ -45,7 +47,7 @@ const getInitials = (firstName?: string, lastName?: string, username?: string): 
     return '?'
 }
 
-export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClose }) => {
+export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClose, slides = [] }) => {
     const [collaborators, setCollaborators] = useState<Collaborator[]>([])
     const [searchQuery, setSearchQuery] = useState('')
     const [searchResults, setSearchResults] = useState<UserSearchResult[]>([])
@@ -56,6 +58,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
     const [projectName, setProjectName] = useState<string>('')
     const [isPublic, setIsPublic] = useState(false)
     const [linkCopied, setLinkCopied] = useState(false)
+    const [exporting, setExporting] = useState<null | { label: string; current: number; total: number }>(null)
     const searchRef = useRef<HTMLDivElement>(null)
     const [mounted, setMounted] = useState(false)
     const [show, setShow] = useState(false)
@@ -250,21 +253,44 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
         setTimeout(() => setLinkCopied(false), 2000)
     }
 
+    const handleExport = async (format: 'pdf' | 'pptx-image' | 'pptx-editable') => {
+        if (!slides || slides.length === 0 || exporting) return
+        const label =
+            format === 'pdf' ? 'PDF'
+            : format === 'pptx-image' ? 'PowerPoint (image)'
+            : 'PowerPoint (editable)'
+        const name = projectName || 'presentation'
+        setExporting({ label, current: 0, total: slides.length })
+        const onProgress = (current: number, total: number) => setExporting({ label, current, total })
+        try {
+            if (format === 'pdf') await exportToPdf(slides, name, onProgress)
+            else if (format === 'pptx-image') await exportToPptxImage(slides, name, onProgress)
+            else await exportToPptxEditable(slides, name, onProgress)
+        } catch (err) {
+            console.error('Export failed:', err)
+            setError('Export failed. Please try again.')
+        } finally {
+            setExporting(null)
+        }
+    }
+
     if (!mounted) return null
 
     return (
         <div
-            className={[
-                "fixed z-50 inset-0 flex items-center justify-center p-4",
-                "bg-black/40 transition-[backdrop-filter,opacity] duration-200 ease-out",
-                show ? "opacity-100 backdrop-blur-xl" : "opacity-0 backdrop-blur-0",
-            ].join(" ")}
+            className="fixed z-50 inset-0"
             onMouseDown={handleClose}
-            onTransitionEnd={handleTransitionEnd}
         >
             <div
                 onMouseDown={(e) => e.stopPropagation()}
-                className={`bg-theme-primary text-theme-primary rounded-xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col shadow-2xl transform transition-all duration-200 ease-out ${show ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
+                onTransitionEnd={handleTransitionEnd}
+                className={[
+                    "absolute top-24 right-2 bg-theme-primary text-theme-primary rounded-xl",
+                    "w-[400px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-2rem)] overflow-hidden flex flex-col",
+                    "shadow-2xl border border-theme-tertiary",
+                    "transform transition-all duration-200 ease-out",
+                    show ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4",
+                ].join(" ")}
             >
                 <div className="px-6 py-4">
                     <div className="flex items-center justify-between">
@@ -455,6 +481,45 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                                         content_copy
                                     </span>
                                 </button>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="mt-6 pt-6 border-t border-theme-tertiary">
+                        <div className="text-xs font-semibold text-theme-secondary uppercase tracking-wide mb-3">Download</div>
+                        {exporting ? (
+                            <div className="flex items-center gap-3 py-2.5 px-2">
+                                <div className="w-9 h-9 rounded-full bg-theme-tertiary flex items-center justify-center">
+                                    <span className="material-symbols-outlined animate-spin text-blue-400" style={{ fontSize: 20 }}>progress_activity</span>
+                                </div>
+                                <div>
+                                    <div className="text-sm font-medium">Generating {exporting.label}…</div>
+                                    <div className="text-xs text-theme-secondary">Slide {exporting.current} / {exporting.total}</div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-1">
+                                {[
+                                    { fmt: 'pdf', icon: 'picture_as_pdf', title: 'PDF', sub: 'One page per slide' },
+                                    { fmt: 'pptx-image', icon: 'image', title: 'PowerPoint · image', sub: 'Looks identical, not editable' },
+                                    { fmt: 'pptx-editable', icon: 'edit_note', title: 'PowerPoint · editable', sub: 'Editable text in PowerPoint' },
+                                ].map((opt) => (
+                                    <button
+                                        key={opt.fmt}
+                                        onClick={() => handleExport(opt.fmt as any)}
+                                        disabled={slides.length === 0}
+                                        className="w-full flex items-center gap-3 py-2.5 px-2 -mx-2 hover:bg-theme-hover rounded-lg transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed"
+                                    >
+                                        <div className="w-9 h-9 rounded-full bg-theme-tertiary flex items-center justify-center flex-shrink-0">
+                                            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{opt.icon}</span>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-sm font-medium">{opt.title}</div>
+                                            <div className="text-xs text-theme-secondary truncate">{opt.sub}</div>
+                                        </div>
+                                        <span className="material-symbols-outlined text-theme-secondary flex-shrink-0" style={{ fontSize: 20 }}>download</span>
+                                    </button>
+                                ))}
                             </div>
                         )}
                     </div>

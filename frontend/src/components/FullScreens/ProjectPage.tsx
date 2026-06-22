@@ -19,7 +19,7 @@ import { urlbackend } from "../../config.js"
 import { Spinner } from "../ui/spinner"
 import MonacoEditor from "@monaco-editor/react"
 
-type ProjectMode = "code" | "visual" | "ai"
+type ProjectMode = "code" | "visual" | "ai" | "edit"
 type SaveState = "idle" | "saving" | "saved" | "error"
 
 interface User {
@@ -40,8 +40,7 @@ function getCookie(name: string): string | null {
 function getDefaultMode(): ProjectMode {
   const savedMode = getCookie("defaultMode");
   if (savedMode === "code") return "code";
-  // VISUAL MODE comentado temporalmente — si la cookie tenía "visual", fallback a "ai"
-  // if (savedMode === "visual") return "visual";
+  if (savedMode === "visual") return "visual";
   if (savedMode === "chat") return "ai";
   return "ai";
 }
@@ -158,7 +157,7 @@ function ColorSwatch({ value, onChange }: { value: string; onChange: (v: string)
 
 function EditPanel({
   slideHtml, onApply, onClose,
-  onStartPickMode, pickMode, targetIndex
+  onStartPickMode, pickMode, targetIndex, targetNonce = 0, projectId
 }: {
   slideHtml: string
   onApply: (newHtml: string) => void
@@ -166,18 +165,32 @@ function EditPanel({
   onStartPickMode: () => void
   pickMode: boolean
   targetIndex: number
+  targetNonce?: number
+  projectId?: string | null
 }) {
   const [props, setProps] = useState<CSSProps | null>(null)
   const [activeEl, setActiveEl] = useState<HTMLElement | null>(null)
   const [cssText, setCssText] = useState("")
   const [fontOpen, setFontOpen] = useState(false)
+  // Contenido editable: texto (textContent) o src de imagen, según el elemento.
+  const [textContent, setTextContent] = useState("")
+  const [imgSrc, setImgSrc] = useState("")
+  const [uploadingImg, setUploadingImg] = useState(false)
   const domRef = useRef<Document | null>(null)
   const allElsRef = useRef<HTMLElement[]>([])
+
+  // ¿El elemento activo es texto editable? (no contiene otros elementos hijos)
+  const isTextEl = !!activeEl && activeEl.tagName.toLowerCase() !== "img" && activeEl.children.length === 0
+  const isImgEl = !!activeEl && activeEl.tagName.toLowerCase() === "img"
 
   useEffect(() => {
     onStartPickMode()
   }, [])
 
+  // Recuerda para qué selección ya cargamos los campos del formulario, para no
+  // pisarlos en cada cambio de slideHtml (las propias ediciones del panel lo
+  // cambian). Solo reseteamos los inputs cuando cambia la SELECCIÓN.
+  const loadedKeyRef = useRef<string>("")
   useEffect(() => {
     const parser = new DOMParser()
     const doc = parser.parseFromString(slideHtml, "text/html")
@@ -190,12 +203,76 @@ function EditPanel({
     }) as HTMLElement[]
     allElsRef.current = all
     const el = all[targetIndex] || all[0]
-    if (el) {
-      setActiveEl(el)
+    if (!el) return
+    // El domRef siempre se refresca; activeEl debe apuntar al nodo de ESTE doc.
+    setActiveEl(el)
+    // Los campos del formulario solo se (re)cargan cuando cambia la SELECCIÓN
+    // (índice o un nuevo pick), no en cada re-render por edición propia — así
+    // escribir no se pisa ni se traba, pero pickear el mismo índice sí recarga.
+    const selKey = `${targetIndex}:${targetNonce}`
+    if (loadedKeyRef.current !== selKey) {
+      loadedKeyRef.current = selKey
       setProps(parseCSSProps(el.style as any))
       setCssText(el.getAttribute("style") || "")
+      setTextContent(el.children.length === 0 ? (el.textContent || "") : "")
+      setImgSrc(el.tagName.toLowerCase() === "img" ? (el.getAttribute("src") || "") : "")
     }
-  }, [slideHtml, targetIndex])
+  }, [slideHtml, targetIndex, targetNonce])
+
+  // Propaga el cambio del slide hacia arriba, pero con debounce: escribir en el
+  // textarea actualiza el estado local al instante (fluido) y recién tras una
+  // pausa se reescribe el doc (Yjs + autosave + preview). Sin esto, cada tecla
+  // disparaba un ciclo completo y se sentía trabado.
+  const applyDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const scheduleApply = () => {
+    if (!domRef.current) return
+    if (applyDebounceRef.current) clearTimeout(applyDebounceRef.current)
+    applyDebounceRef.current = setTimeout(() => {
+      const section = domRef.current?.querySelector("section")
+      if (section) onApply(section.outerHTML)
+    }, 400)
+  }
+  // Limpiar timer pendiente al desmontar.
+  useEffect(() => () => { if (applyDebounceRef.current) clearTimeout(applyDebounceRef.current) }, [])
+
+  // Cambiar el texto del elemento seleccionado (local inmediato, propaga debounced).
+  const updateText = (value: string) => {
+    setTextContent(value)
+    if (!activeEl) return
+    activeEl.textContent = value
+    scheduleApply()
+  }
+
+  // Cambiar el src de la imagen seleccionada (local inmediato, propaga debounced).
+  const updateImgSrc = (value: string) => {
+    setImgSrc(value)
+    if (!activeEl) return
+    activeEl.setAttribute("src", value)
+    scheduleApply()
+  }
+
+  // Subir un archivo de imagen al backend y usar su URL como nuevo src.
+  const uploadImage = async (file: File) => {
+    if (!projectId) return
+    setUploadingImg(true)
+    try {
+      const token = localStorage.getItem("token")
+      const formData = new FormData()
+      formData.append("file", file)
+      const res = await fetch(`${urlbackend}/projects/${projectId}/upload`, {
+        method: "POST",
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: formData,
+      })
+      if (!res.ok) throw new Error("upload failed")
+      const data = await res.json()
+      if (data.url) updateImgSrc(data.url)
+    } catch (err) {
+      console.error("Image upload failed:", err)
+    } finally {
+      setUploadingImg(false)
+    }
+  }
 
   // Write the current props onto the active element and push the updated slide
   // up. Called live on every field change so edits show immediately.
@@ -246,7 +323,7 @@ function EditPanel({
   const stripPx = (v: string) => v.replace("px", "")
 
   return (
-    <div className="absolute inset-0 z-30 bg-theme-primary border-l border-theme-tertiary overflow-hidden flex flex-col">
+    <div className="absolute inset-0 bg-theme-primary border-l border-theme-tertiary overflow-hidden flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-theme-tertiary flex-shrink-0">
         <span className="text-xs font-semibold text-theme-primary">Edit</span>
@@ -267,8 +344,49 @@ function EditPanel({
       </div>
 
       <div className="overflow-y-auto flex-1 scrollbar-custom">
+        {/* CONTENT — text or image, depending on the selected element */}
+        {(isTextEl || isImgEl) && (
+          <>
+            <div className="px-3 pt-3 pb-1">
+              <span className="text-[9px] font-semibold tracking-widest text-theme-secondary uppercase">Content</span>
+            </div>
+            {isTextEl && (
+              <div className="px-3 pb-2">
+                <textarea
+                  value={textContent}
+                  onChange={e => updateText(e.target.value)}
+                  rows={2}
+                  placeholder="Text…"
+                  className="w-full bg-theme-quaternary border border-theme-tertiary rounded-lg px-2 py-1.5 text-[11px] text-theme-primary resize-none focus:outline-none focus:border-blue-500"
+                />
+              </div>
+            )}
+            {isImgEl && (
+              <div className="px-3 pb-2 space-y-1.5">
+                <input
+                  value={imgSrc}
+                  onChange={e => updateImgSrc(e.target.value)}
+                  placeholder="Image URL…"
+                  className="w-full bg-theme-quaternary border border-theme-tertiary rounded-lg px-2 py-1.5 text-[11px] text-theme-primary focus:outline-none focus:border-blue-500"
+                />
+                <label className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 text-[11px] font-medium rounded-lg border border-theme-tertiary bg-theme-quaternary text-theme-primary hover:border-theme-secondary cursor-pointer transition-colors">
+                  <span className="material-symbols-outlined" style={{ fontSize: 13 }}>upload</span>
+                  {uploadingImg ? "Uploading…" : "Upload image"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={uploadingImg}
+                    onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(f); e.currentTarget.value = "" }}
+                  />
+                </label>
+              </div>
+            )}
+          </>
+        )}
+
         {/* TYPOGRAPHY */}
-        <div className="px-3 pt-3 pb-1">
+        <div className="px-3 pt-3 pb-1 border-t border-theme-tertiary">
           <span className="text-[9px] font-semibold tracking-widest text-theme-secondary uppercase">Typography</span>
         </div>
         <PropRow label="Font">
@@ -430,9 +548,25 @@ function ProjectPageContent({ role }: { role: string | null }) {
   const [initialAIPrompt, setInitialAIPrompt] = useState<string | null>(null)
   const [useLegacyVisualEditor, setUseLegacyVisualEditor] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
-  const [showEditPanel, setShowEditPanel] = useState(false)
+  // Edit es un modo más (como code/ai). showEditPanel se deriva de `mode` para no
+  // reescribir todas las referencias; setShowEditPanel mapea a entrar/salir del
+  // modo edit (al salir volvemos a code).
+  const showEditPanel = mode === "edit"
+  // Mapea el viejo setShowEditPanel a entrar/salir del modo edit. Usa el updater
+  // de setMode (no lee `mode` del closure) para ser seguro desde listeners que se
+  // montan una sola vez (keydown global).
+  const setShowEditPanel = (next: boolean | ((v: boolean) => boolean)) => {
+    setMode((m) => {
+      const want = typeof next === "function" ? next(m === "edit") : next
+      if (want) return "edit"
+      return m === "edit" ? "code" : m
+    })
+  }
   const [editPickMode, setEditPickMode] = useState(false)
   const [editTargetIndex, setEditTargetIndex] = useState(0)
+  // Se incrementa en cada "pick" de elemento, para forzar al EditPanel a recargar
+  // los campos aunque el índice elegido sea el mismo que el cargado.
+  const [editTargetNonce, setEditTargetNonce] = useState(0)
   const [isEditingSlide, setIsEditingSlide] = useState(false)
   const [tweakMode, setTweakMode] = useState(false)
   const [tweakElement, setTweakElement] = useState<string | null>(null)
@@ -671,9 +805,10 @@ function ProjectPageContent({ role }: { role: string | null }) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        // Esc cierra Tweak y cancela el pick-mode, pero NO saca del modo Edit
+        // (Edit es un modo como Code/AI; se sale con el toggle o Alt+1/3).
         setTweakMode(false)
         setTweakElement(null)
-        setShowEditPanel(false)
         setEditPickMode(false)
       }
       // Undo / Redo (document-level). Ctrl/Cmd+Z, Ctrl/Cmd+Y or Ctrl/Cmd+Shift+Z.
@@ -693,15 +828,15 @@ function ProjectPageContent({ role }: { role: string | null }) {
         setMode('code')
       } else if (e.altKey && e.key === '2') {
         e.preventDefault()
-        setMode('ai')
-      } else if (e.altKey && e.key === '3') {
-        e.preventDefault()
         if (slidesRef.current[currentSlideRef.current]) {
           // Edit and Tweak are mutually exclusive.
           exitTweakModeRef.current()
           setTweakElement(null)
           setShowEditPanel(v => !v)
         }
+      } else if (e.altKey && e.key === '3') {
+        e.preventDefault()
+        setMode('ai')
       } else if (e.altKey && e.key === '4') {
         e.preventDefault()
         if (slidesRef.current[currentSlideRef.current]) {
@@ -1049,11 +1184,18 @@ Return ONLY the modified <section> HTML. Rules:
     if (!iframe) return
     const doc = iframe.contentDocument || iframe.contentWindow?.document
     if (!doc) return
+    // Quitar cualquier script/listener de pick-mode previo: si quedó colgado de
+    // una activación anterior, el botón "select element" parecía no responder.
+    doc.getElementById("edit-pick-script")?.remove()
+    if (typeof (iframe.contentWindow as any)?.__editPickCleanup === "function") {
+      try { (iframe.contentWindow as any).__editPickCleanup() } catch { /* noop */ }
+    }
     const script = doc.createElement("script")
     script.id = "edit-pick-script"
     script.textContent = `
-      if (!window.__editPickActive) {
-        window.__editPickActive = true;
+      (function() {
+        // Limpiar estado anterior siempre (sin guarda que bloquee re-activar).
+        if (typeof window.__editPickCleanup === 'function') { try { window.__editPickCleanup(); } catch(e){} }
         const style = document.createElement('style');
         style.id = '__edit-pick-style';
         style.textContent = '*:hover { outline: 2px solid rgba(99,102,241,0.8) !important; cursor: crosshair !important; }';
@@ -1061,15 +1203,21 @@ Return ONLY the modified <section> HTML. Rules:
         const TAGS = ['h1','h2','h3','h4','p','div','span','img','button','a','ul','li'];
         const section = document.querySelector('section');
         const allEls = section ? Array.from(section.querySelectorAll('*')).filter(el => TAGS.includes(el.tagName.toLowerCase())) : [];
-        document.addEventListener('click', function __editPick(e) {
+        function onPick(e) {
           e.preventDefault(); e.stopPropagation();
           const idx = allEls.indexOf(e.target);
           window.parent.postMessage({ type: 'edit-element', index: idx >= 0 ? idx : 0 }, '*');
+          window.__editPickCleanup();
+        }
+        window.__editPickCleanup = function() {
           document.getElementById('__edit-pick-style')?.remove();
-          document.removeEventListener('click', __editPick, true);
+          document.removeEventListener('click', onPick, true);
           window.__editPickActive = false;
-        }, true);
-      }
+          window.__editPickCleanup = null;
+        };
+        window.__editPickActive = true;
+        document.addEventListener('click', onPick, true);
+      })();
     `
     doc.body.appendChild(script)
   }
@@ -1084,6 +1232,7 @@ Return ONLY the modified <section> HTML. Rules:
       if (e.data?.type === "edit-element") {
         setEditPickMode(false)
         setEditTargetIndex(typeof e.data.index === "number" ? e.data.index : 0)
+        setEditTargetNonce(n => n + 1)
         const iframe = livePreviewRef.current
         if (iframe) {
           const doc = iframe.contentDocument || iframe.contentWindow?.document
@@ -1144,6 +1293,7 @@ Return ONLY the modified <section> HTML. Rules:
         projectId={projectId}
         isOpen={shareModalOpen}
         onClose={() => setShareModalOpen(false)}
+        slides={slides}
       />
 
       <div className="flex-1 overflow-hidden">
@@ -1350,7 +1500,9 @@ Return ONLY the modified <section> HTML. Rules:
               <EditPanel
                 slideHtml={slides[currentSlide]}
                 targetIndex={editTargetIndex}
+                targetNonce={editTargetNonce}
                 pickMode={editPickMode}
+                projectId={projectId}
                 onStartPickMode={enterEditPickMode}
                 onApply={(newHtml) => {
                   const updatedSlides = [...slides]

@@ -1,11 +1,94 @@
 // @ts-nocheck
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { useParams } from "react-router-dom"
 import { urlbackend } from "../../config.js"
 import { ShareModal } from "../RegularComponents/MultiuseComponents/ShareModal"
 import AppIconWithoutLink from "../RegularComponents/MultiuseComponents/AppIconWithoutLink"
 import SEO from "../SEO"
 import { getAuthToken } from "../../utils/getAuthToken"
+import { useCollabDoc } from "../../hooks/useCollabDoc"
+
+// Extrae las <section> de un documento HTML completo (el formato del Y.Doc).
+function extractSectionsFromDoc(html: string): string[] {
+  if (!html) return []
+  const matches = html.match(/<section[\s\S]*?<\/section>/gi)
+  return matches ? matches.map((s) => s.trim()) : []
+}
+
+// Construye el documento del iframe del visor a partir de las slides. `startIndex`
+// es el slide que debe quedar activo al cargar — clave para que, cuando el doc se
+// actualiza en vivo, el espectador no salte de vuelta al slide 1.
+function buildViewerDoc(slidesHtml: string, startIndex: number): string {
+  return `<!doctype html>
+<html>
+<head>
+<meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'>
+<style>
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; overflow: hidden; background: black; width: 100vw; height: 100vh; }
+.slides-container { width: 1920px; height: 1080px; position: absolute; overflow: hidden; background: black; transform-origin: top left; }
+section { width: 1920px; height: 1080px; position: absolute; top: 0; left: 0; display: none !important; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; padding: 0; margin: 0; }
+section.active { display: flex !important; }
+</style>
+</head>
+<body>
+<div class="slides-container" id="slides-container">
+${slidesHtml}
+</div>
+<script>
+let currentSlide = ${startIndex};
+let isTransitioning = false;
+const slides = document.querySelectorAll('section');
+const container = document.getElementById('slides-container');
+
+function updateScale() {
+  const baseWidth = 1920, baseHeight = 1080;
+  const viewportWidth = window.innerWidth, viewportHeight = window.innerHeight;
+  const scale = Math.min(viewportWidth / baseWidth, viewportHeight / baseHeight);
+  container.style.transform = 'scale(' + scale + ')';
+  const offsetX = (viewportWidth - baseWidth * scale) / 2;
+  const offsetY = (viewportHeight - baseHeight * scale) / 2;
+  container.style.left = offsetX + 'px';
+  container.style.top = offsetY + 'px';
+}
+updateScale();
+window.addEventListener('resize', updateScale);
+
+function updateSlide(index) {
+  if (slides.length === 0) return;
+  if (index < 0 || index >= slides.length) return;
+  if (isTransitioning) return;
+  if (index === currentSlide) return;
+  isTransitioning = true;
+  if (slides[currentSlide]) slides[currentSlide].classList.remove('active');
+  currentSlide = index;
+  if (slides[currentSlide]) slides[currentSlide].classList.add('active');
+  window.parent.postMessage({ type: 'slideChange', slide: currentSlide }, '*');
+  isTransitioning = false;
+}
+
+// Activar el slide inicial (clamp por si se borraron slides y el índice quedó fuera de rango).
+if (slides.length > 0) {
+  if (currentSlide >= slides.length) currentSlide = slides.length - 1;
+  slides[currentSlide].classList.add('active');
+  window.parent.postMessage({ type: 'slideChange', slide: currentSlide }, '*');
+}
+
+window.addEventListener('message', (event) => {
+  if (event.data.type === 'nextSlide') updateSlide(currentSlide + 1);
+  else if (event.data.type === 'prevSlide') updateSlide(currentSlide - 1);
+  else if (event.data.type === 'goToSlide') updateSlide(event.data.slide);
+});
+
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); updateSlide(currentSlide + 1); }
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); updateSlide(currentSlide - 1); }
+});
+</script>
+</body>
+</html>`
+}
 
 export default function ProjectViewPage() {
   const { id } = useParams<{ id: string }>()
@@ -30,6 +113,47 @@ export default function ProjectViewPage() {
   useEffect(() => {
     currentSlideRef.current = currentSlide
   }, [currentSlide])
+
+  // ── Live updates vía Yjs: el visor se conecta como peer (solo lectura) al
+  // mismo Y.Doc colaborativo que el editor. Cuando el presentador edita, el doc
+  // se propaga y regeneramos el iframe preservando el slide actual. ──
+  const loadSnapshot = useCallback(async (): Promise<string | undefined> => {
+    if (!id) return undefined
+    try {
+      const token = await getAuthToken()
+      const res = await fetch(`${urlbackend}/projects/${id}/slides`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      const data = await res.json()
+      const slides = data.ok ? data.slides : (data.slides || [])
+      if (!slides || slides.length === 0) return undefined
+      const html = slides
+        .sort((a: any, b: any) => a.position - b.position)
+        .map((s: any) => s.html)
+        .join("\n")
+      return `<!doctype html><html><head><meta charset='utf-8'></head><body>${html}</body></html>`
+    } catch {
+      return undefined
+    }
+  }, [id])
+
+  const { doc: liveDoc, ready: liveReady } = useCollabDoc({
+    projectId: id,
+    enabled: !!id,
+    user: null,
+    loadSnapshot,
+  })
+
+  // Regenerar el iframe cada vez que cambia el doc en vivo, conservando el slide
+  // activo. Solo actúa una vez que Yjs sincronizó, para no pisar la carga inicial.
+  useEffect(() => {
+    if (!liveReady) return
+    const sections = extractSectionsFromDoc(liveDoc)
+    setTotalSlides(sections.length)
+    const startIndex = sections.length > 0 ? Math.min(currentSlideRef.current, sections.length - 1) : 0
+    setDoc(buildViewerDoc(sections.join("\n"), startIndex))
+    setLoading(false)
+  }, [liveDoc, liveReady])
 
   useEffect(() => {
     totalSlidesRef.current = totalSlides
@@ -194,34 +318,6 @@ export default function ProjectViewPage() {
 
         const project = data.ok ? data.project : data
 
-        // Fetch slides separately like ProjectPage does
-        const slidesResponse = await fetch(`${urlbackend}/projects/${id}/slides`, {
-          headers,
-        })
-
-        if (!slidesResponse.ok) {
-          setErrorMessage("Failed to load slides")
-          setError(true)
-          setLoading(false)
-          return
-        }
-
-        const slidesData = await slidesResponse.json()
-
-        let slides = slidesData.ok ? slidesData.slides : (slidesData.slides || [])
-
-        // If no slides found, try parsing from document field (fallback for old projects)
-        if (slides.length === 0 && project.document) {
-          const parser = new DOMParser()
-          const doc = parser.parseFromString(project.document, 'text/html')
-          const sections = doc.querySelectorAll('section')
-
-          slides = Array.from(sections).map((section, index) => ({
-            html: section.outerHTML,
-            position: index
-          }))
-        }
-
         if (!project) {
           setErrorMessage("Invalid response from server")
           setError(true)
@@ -245,154 +341,9 @@ export default function ProjectViewPage() {
           } catch (err) {
           }
         }
-
-        const slidesHtml = slides
-          .sort((a: any, b: any) => a.position - b.position)
-          .map((slide: any) => slide.html)
-          .join("\n")
-
-        setTotalSlides(slides.length)
-
-        const fullDoc = `<!doctype html>
-<html>
-<head>
-<meta charset='utf-8'>
-<meta name='viewport' content='width=device-width, initial-scale=1'>
-<style>
-* {
-  box-sizing: border-box;
-}
-html, body {
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  background: black;
-  width: 100vw;
-  height: 100vh;
-}
-.slides-container {
-  width: 1920px;
-  height: 1080px;
-  position: absolute;
-  overflow: hidden;
-  background: black;
-  transform-origin: top left;
-}
-section {
-  width: 1920px;
-  height: 1080px;
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: none !important;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  padding: 0;
-  margin: 0;
-}
-section.active {
-  display: flex !important;
-}
-</style>
-</head>
-<body>
-<div class="slides-container" id="slides-container">
-${slidesHtml}
-</div>
-<script>
-let currentSlide = 0;
-let isTransitioning = false;
-const slides = document.querySelectorAll('section');
-const container = document.getElementById('slides-container');
-
-// Calculate and apply scale based on viewport
-function updateScale() {
-  const baseWidth = 1920;
-  const baseHeight = 1080;
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
-
-  const scaleX = viewportWidth / baseWidth;
-  const scaleY = viewportHeight / baseHeight;
-  const scale = Math.min(scaleX, scaleY);
-
-  container.style.transform = 'scale(' + scale + ')';
-
-  // Center the container
-  const scaledWidth = baseWidth * scale;
-  const scaledHeight = baseHeight * scale;
-  const offsetX = (viewportWidth - scaledWidth) / 2;
-  const offsetY = (viewportHeight - scaledHeight) / 2;
-
-  container.style.left = offsetX + 'px';
-  container.style.top = offsetY + 'px';
-}
-
-updateScale();
-window.addEventListener('resize', updateScale);
-
-function updateSlide(index) {
-  if (slides.length === 0) return;
-  if (index < 0 || index >= slides.length) return;
-  if (isTransitioning) return;
-  if (index === currentSlide) return;
-
-  isTransitioning = true;
-
-  // Remove active from old slide
-  if (slides[currentSlide]) {
-    slides[currentSlide].classList.remove('active');
-  }
-
-  // Update current slide index
-  currentSlide = index;
-
-  // Add active to new slide
-  if (slides[currentSlide]) {
-    slides[currentSlide].classList.add('active');
-  }
-
-  // Send message to parent
-  window.parent.postMessage({ type: 'slideChange', slide: currentSlide }, '*');
-
-  // Allow next transition immediately since there's no CSS transition
-  isTransitioning = false;
-}
-
-// Initialize first slide
-if (slides.length > 0) {
-  slides[0].classList.add('active');
-  window.parent.postMessage({ type: 'slideChange', slide: 0 }, '*');
-}
-
-window.addEventListener('message', (event) => {
-  if (event.data.type === 'nextSlide') {
-    updateSlide(currentSlide + 1);
-  } else if (event.data.type === 'prevSlide') {
-    updateSlide(currentSlide - 1);
-  } else if (event.data.type === 'goToSlide') {
-    updateSlide(event.data.slide);
-  }
-});
-
-// Handle keyboard navigation inside iframe
-window.addEventListener('keydown', (e) => {
-  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
-    e.preventDefault();
-    updateSlide(currentSlide + 1);
-  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-    e.preventDefault();
-    updateSlide(currentSlide - 1);
-  }
-});
-</script>
-</body>
-</html>`
-
-        setDoc(fullDoc)
-        setLoading(false)
+        // Las slides (y su carga inicial) las maneja el Y.Doc en vivo; aquí solo
+        // traemos metadata (nombre, owner). El loader se oculta cuando Yjs
+        // sincroniza y produce el primer doc.
       } catch (err) {
         setErrorMessage(err instanceof Error ? err.message : "Unknown error")
         setError(true)
