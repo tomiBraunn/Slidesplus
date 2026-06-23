@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React, { useEffect, useState, useRef, useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import { useLocation } from "react-router-dom"
 import ProjectNavBar from "../RegularComponents/ProjectComponents/ProjectNavBar"
 import { FullscreenLoader } from "../ui/FullscreenLoader"
@@ -168,6 +169,7 @@ function EditPanel({
   targetNonce?: number
   projectId?: string | null
 }) {
+  const { t } = useTranslation()
   const [props, setProps] = useState<CSSProps | null>(null)
   const [activeEl, setActiveEl] = useState<HTMLElement | null>(null)
   const [cssText, setCssText] = useState("")
@@ -326,7 +328,7 @@ function EditPanel({
     <div className="absolute inset-0 bg-theme-primary border-l border-theme-tertiary overflow-hidden flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-theme-tertiary flex-shrink-0">
-        <span className="text-xs font-semibold text-theme-primary">Edit</span>
+        <span className="text-xs font-semibold text-theme-primary">{t("editPanel.title")}</span>
         <button onClick={onClose} className="text-theme-secondary hover:text-theme-primary transition-colors p-0.5">
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
@@ -339,7 +341,7 @@ function EditPanel({
           className={`w-full flex items-center gap-1.5 px-2 py-1.5 text-[11px] font-medium rounded-lg border transition-all ${pickMode ? "border-blue-500 bg-blue-500/10 text-blue-400 animate-pulse" : activeEl ? "border-theme-tertiary bg-theme-quaternary text-theme-primary hover:border-theme-secondary" : "border-dashed border-theme-tertiary text-theme-secondary hover:border-theme-primary hover:text-theme-primary"}`}
         >
           <span className="material-symbols-outlined flex-shrink-0" style={{ fontSize: 13 }}>ads_click</span>
-          {pickMode ? "Click an element…" : activeEl ? `${activeEl.tagName.toLowerCase()}${activeEl.textContent?.trim() ? ` — ${activeEl.textContent.trim().slice(0, 24)}` : ""}` : "Select element"}
+          {pickMode ? t("editPanel.pickModePrompt") : activeEl ? `${activeEl.tagName.toLowerCase()}${activeEl.textContent?.trim() ? ` — ${activeEl.textContent.trim().slice(0, 24)}` : ""}` : t("editPanel.selectElementPrompt")}
         </button>
       </div>
 
@@ -348,7 +350,7 @@ function EditPanel({
         {(isTextEl || isImgEl) && (
           <>
             <div className="px-3 pt-3 pb-1">
-              <span className="text-[9px] font-semibold tracking-widest text-theme-secondary uppercase">Content</span>
+              <span className="text-[9px] font-semibold tracking-widest text-theme-secondary uppercase">{t("editPanel.contentSection")}</span>
             </div>
             {isTextEl && (
               <div className="px-3 pb-2">
@@ -356,7 +358,7 @@ function EditPanel({
                   value={textContent}
                   onChange={e => updateText(e.target.value)}
                   rows={2}
-                  placeholder="Text…"
+                  placeholder={t("editPanel.textPlaceholder")}
                   className="w-full bg-theme-quaternary border border-theme-tertiary rounded-lg px-2 py-1.5 text-[11px] text-theme-primary resize-none focus:outline-none focus:border-blue-500"
                 />
               </div>
@@ -366,12 +368,12 @@ function EditPanel({
                 <input
                   value={imgSrc}
                   onChange={e => updateImgSrc(e.target.value)}
-                  placeholder="Image URL…"
+                  placeholder={t("editPanel.imageUrlPlaceholder")}
                   className="w-full bg-theme-quaternary border border-theme-tertiary rounded-lg px-2 py-1.5 text-[11px] text-theme-primary focus:outline-none focus:border-blue-500"
                 />
                 <label className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 text-[11px] font-medium rounded-lg border border-theme-tertiary bg-theme-quaternary text-theme-primary hover:border-theme-secondary cursor-pointer transition-colors">
                   <span className="material-symbols-outlined" style={{ fontSize: 13 }}>upload</span>
-                  {uploadingImg ? "Uploading…" : "Upload image"}
+                  {uploadingImg ? t("editPanel.uploadingButton") : t("editPanel.uploadImageButton")}
                   <input
                     type="file"
                     accept="image/*"
@@ -387,9 +389,9 @@ function EditPanel({
 
         {/* TYPOGRAPHY */}
         <div className="px-3 pt-3 pb-1 border-t border-theme-tertiary">
-          <span className="text-[9px] font-semibold tracking-widest text-theme-secondary uppercase">Typography</span>
+          <span className="text-[9px] font-semibold tracking-widest text-theme-secondary uppercase">{t("editPanel.typographySection")}</span>
         </div>
-        <PropRow label="Font">
+        <PropRow label={t("editPanel.fontLabel")}>
           <div className="relative flex-1">
             <button
               onClick={() => setFontOpen(v => !v)}
@@ -416,36 +418,36 @@ function EditPanel({
         </PropRow>
         <div className="flex">
           <div className="flex-1 border-r border-theme-tertiary">
-            <PropRow label="Size">
+            <PropRow label={t("editPanel.sizeLabel")}>
               <PropInput value={stripPx(props.fontSize)} onChange={v => update("fontSize", v)} suffix="px" />
             </PropRow>
           </div>
           <div className="flex-1">
-            <PropRow label="Weight">
+            <PropRow label={t("editPanel.weightLabel")}>
               <PropInput value={props.fontWeight} onChange={v => update("fontWeight", v)} suffix="" />
             </PropRow>
           </div>
         </div>
         <div className="flex">
           <div className="flex-1 border-r border-theme-tertiary">
-            <PropRow label="Color">
+            <PropRow label={t("editPanel.colorLabel")}>
               <ColorSwatch value={props.color} onChange={v => update("color", v)} />
             </PropRow>
           </div>
           <div className="flex-1">
-            <PropRow label="Align">
+            <PropRow label={t("editPanel.alignLabel")}>
               <PropInput value={props.textAlign} onChange={v => update("textAlign", v)} />
             </PropRow>
           </div>
         </div>
         <div className="flex">
           <div className="flex-1 border-r border-theme-tertiary">
-            <PropRow label="Line Height">
+            <PropRow label={t("editPanel.lineHeightLabel")}>
               <PropInput value={props.lineHeight} onChange={v => update("lineHeight", v)} />
             </PropRow>
           </div>
           <div className="flex-1">
-            <PropRow label="Tracking">
+            <PropRow label={t("editPanel.trackingLabel")}>
               <PropInput value={stripPx(props.letterSpacing)} onChange={v => update("letterSpacing", v)} suffix="px" />
             </PropRow>
           </div>
@@ -453,16 +455,16 @@ function EditPanel({
 
         {/* SIZE */}
         <div className="px-3 pt-3 pb-1 mt-1 border-t border-theme-tertiary">
-          <span className="text-[9px] font-semibold tracking-widest text-theme-secondary uppercase">Size</span>
+          <span className="text-[9px] font-semibold tracking-widest text-theme-secondary uppercase">{t("editPanel.sizeSection")}</span>
         </div>
         <div className="flex">
           <div className="flex-1 border-r border-theme-tertiary">
-            <PropRow label="Width">
+            <PropRow label={t("editPanel.widthLabel")}>
               <PropInput value={stripPx(props.width)} onChange={v => update("width", v)} suffix="px" />
             </PropRow>
           </div>
           <div className="flex-1">
-            <PropRow label="Height">
+            <PropRow label={t("editPanel.heightLabel")}>
               <PropInput value={stripPx(props.height)} onChange={v => update("height", v)} suffix="px" />
             </PropRow>
           </div>
@@ -470,37 +472,37 @@ function EditPanel({
 
         {/* BOX */}
         <div className="px-3 pt-3 pb-1 mt-1 border-t border-theme-tertiary">
-          <span className="text-[9px] font-semibold tracking-widest text-theme-secondary uppercase">Box</span>
+          <span className="text-[9px] font-semibold tracking-widest text-theme-secondary uppercase">{t("editPanel.boxSection")}</span>
         </div>
         <div className="flex">
           <div className="flex-1 border-r border-theme-tertiary">
-            <PropRow label="Fill">
+            <PropRow label={t("editPanel.fillLabel")}>
               <ColorSwatch value={props.backgroundColor} onChange={v => update("backgroundColor", v)} />
             </PropRow>
           </div>
           <div className="flex-1">
-            <PropRow label="Opacity">
+            <PropRow label={t("editPanel.opacityLabel")}>
               <PropInput value={props.opacity === "1" ? "100" : String(Math.round(Number(props.opacity) * 100))} onChange={v => update("opacity", String(Number(v) / 100))} suffix="%" />
             </PropRow>
           </div>
         </div>
-        <PropRow label="Padding">
+        <PropRow label={t("editPanel.paddingLabel")}>
           <PropInput value={stripPx(props.padding)} onChange={v => update("padding", v)} suffix="px" />
         </PropRow>
-        <PropRow label="Margin">
+        <PropRow label={t("editPanel.marginLabel")}>
           <PropInput value={stripPx(props.margin)} onChange={v => update("margin", v)} suffix="px" />
         </PropRow>
-        <PropRow label="Border">
+        <PropRow label={t("editPanel.borderLabel")}>
           <PropInput value={props.border} onChange={v => update("border", v)} suffix="px" />
         </PropRow>
-        <PropRow label="Border Radius">
+        <PropRow label={t("editPanel.borderRadiusLabel")}>
           <PropInput value={stripPx(props.borderRadius)} onChange={v => update("borderRadius", v)} suffix="px" />
         </PropRow>
 
         {/* CSS Editor — al final del scroll */}
         <div className="border-t border-theme-tertiary mt-1">
           <div className="px-3 pt-2.5 pb-1">
-            <span className="text-[9px] font-semibold tracking-widest text-theme-secondary uppercase">CSS</span>
+            <span className="text-[9px] font-semibold tracking-widest text-theme-secondary uppercase">{t("editPanel.cssSection")}</span>
           </div>
           <div style={{ height: 140 }}>
             <MonacoEditor
@@ -532,6 +534,7 @@ function EditPanel({
 /* ─────────────────────────────────────────────────────────── */
 
 function ProjectPageContent({ role }: { role: string | null }) {
+  const { t } = useTranslation()
   const isViewer = role === 'viewer'
   const location = useLocation()
   const [mode, setMode] = useState<ProjectMode>(getDefaultMode())
@@ -1319,7 +1322,7 @@ Return ONLY the modified <section> HTML. Rules:
                   <div className="absolute inset-0 z-20 flex items-start justify-center pt-4 pointer-events-none">
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-600/95 text-white text-xs font-medium rounded-full shadow-lg select-none">
                       <span className="material-symbols-outlined text-white" style={{ fontSize: 13 }}>ads_click</span>
-                      Click on an element · Esc to cancel
+                      {t("tweak.pickPrompt")}
                     </div>
                   </div>
                 )}
@@ -1328,7 +1331,7 @@ Return ONLY the modified <section> HTML. Rules:
               <div className="border border-theme-tertiary rounded-3xl overflow-hidden flex flex-col flex-shrink-0" style={{ maxHeight: '28vh', minHeight: '80px' }}>
                 <div className="flex items-center gap-2 px-4 py-3 border-b border-theme-tertiary">
                   <span className="text-xs text-theme-secondary">
-                    {slides.length > 0 ? `${currentSlide + 1} / ${slides.length}` : 'No slides'}
+                    {slides.length > 0 ? `${currentSlide + 1} / ${slides.length}` : t("editPanel.noSlides")}
                   </span>
                 </div>
                 <div className="flex gap-2 overflow-x-auto overflow-y-auto p-4 scrollbar-custom">
@@ -1440,7 +1443,7 @@ Return ONLY the modified <section> HTML. Rules:
                   <div className="flex items-center justify-between px-4 py-3 border-b border-theme-tertiary">
                     <div className="flex items-center gap-2 text-sm font-medium text-theme-primary">
                       <span className="material-symbols-outlined text-blue-400" style={{ fontSize: 18 }}>ads_click</span>
-                      Tweak element
+                      {t("tweak.title")}
                     </div>
                     <button
                       onClick={() => setTweakElement(null)}
@@ -1458,7 +1461,7 @@ Return ONLY the modified <section> HTML. Rules:
                   <div className="p-4 pt-3">
                     <textarea
                       ref={tweakInputRef as any}
-                      placeholder="What should change on this element?"
+                      placeholder={t("tweak.placeholder")}
                       rows={2}
                       className="w-full bg-theme-quaternary border border-theme-tertiary rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none focus:border-blue-500 transition-colors text-theme-primary placeholder:text-theme-secondary"
                       onKeyDown={e => {
@@ -1475,7 +1478,7 @@ Return ONLY the modified <section> HTML. Rules:
                       }}
                     />
                     <div className="flex items-center justify-between mt-2">
-                      <span className="text-[11px] text-theme-secondary">Enter to send · Esc to cancel</span>
+                      <span className="text-[11px] text-theme-secondary">{t("tweak.helpText")}</span>
                       <button
                         onClick={() => {
                           const el = tweakInputRef.current as unknown as HTMLTextAreaElement | null
@@ -1489,7 +1492,7 @@ Return ONLY the modified <section> HTML. Rules:
                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors"
                       >
                         <span className="material-symbols-outlined" style={{ fontSize: 14 }}>ads_click</span>
-                        Tweak
+                        {t("tweak.sendButton")}
                       </button>
                     </div>
                   </div>

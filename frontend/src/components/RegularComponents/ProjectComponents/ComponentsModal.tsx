@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import SpotlightCard from "../MultiuseComponents/SpotlightCard";
 import { getTemplateCatalog, getCachedCatalog, type Template } from "../../../utils/templateCatalog";
 
@@ -19,6 +20,7 @@ function TemplateCard({ template, onApplyStyle, onRegenerate }: {
   onApplyStyle: (name: string) => void;
   onRegenerate: (name: string) => void;
 }) {
+  const { t } = useTranslation();
   const [loaded, setLoaded] = useState(false);
 
   const displayName = template.name
@@ -69,13 +71,13 @@ function TemplateCard({ template, onApplyStyle, onRegenerate }: {
             onClick={(e) => { e.stopPropagation(); onApplyStyle(template.name); }}
             className="px-2 py-1 text-xs font-medium rounded-lg border border-theme-tertiary bg-theme-primary hover:bg-theme-hover text-theme-primary transition-colors"
           >
-            Style
-          </button>
+            {t("componentsModal.styleBtn")}
+            </button>
           <button
             onClick={(e) => { e.stopPropagation(); onRegenerate(template.name); }}
             className="px-2 py-1 text-xs font-medium rounded-lg border border-[#7182FF]/40 bg-[#7182FF]/10 hover:bg-[#7182FF]/20 text-[#7182FF] transition-colors"
           >
-            Regen
+            {t("componentsModal.regenBtn")}
           </button>
         </div>
       </div>
@@ -88,6 +90,7 @@ function TemplatesSection({ onApplyStyle, onRegenerate, onClose }: {
   onRegenerate: (name: string) => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const [templates, setTemplates] = useState<Template[]>(() => getCachedCatalog() ?? []);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
@@ -111,12 +114,12 @@ function TemplatesSection({ onApplyStyle, onRegenerate, onClose }: {
     <div className="flex flex-col h-full min-h-0">
       <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-theme-tertiary flex-shrink-0">
         <div>
-          <h3 className="text-sm font-semibold text-theme-primary">Templates</h3>
-          <p className="text-xs text-theme-secondary mt-0.5">{templates.length} templates available</p>
+          <h3 className="text-sm font-semibold text-theme-primary">{t("componentsModal.templateSection")}</h3>
+          <p className="text-xs text-theme-secondary mt-0.5">{t("componentsModal.templatesAvailable", { count: templates.length })}</p>
         </div>
         <input
           type="text"
-          placeholder="Search styles..."
+          placeholder={t("componentsModal.searchPlaceholder")}
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="w-52 px-3 py-1.5 text-sm bg-theme-quaternary border border-theme-tertiary rounded-lg text-theme-primary placeholder:text-theme-secondary focus:outline-none focus:border-[#7182FF] transition-colors"
@@ -130,7 +133,7 @@ function TemplatesSection({ onApplyStyle, onRegenerate, onClose }: {
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex items-center justify-center h-40 text-sm text-theme-secondary">
-            No templates found
+            {t("componentsModal.noTemplatesFound")}
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-min content-start">
@@ -172,6 +175,7 @@ function GameCard({ game, onInsert, inserting }: {
   onInsert: (game: GameComponent) => void;
   inserting: boolean;
 }) {
+  const { t } = useTranslation();
   const [loaded, setLoaded] = useState(false);
 
   return (
@@ -215,7 +219,7 @@ function GameCard({ game, onInsert, inserting }: {
           disabled={inserting}
           className="mt-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-theme-inverted text-theme-inverted hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {inserting ? "Insertando..." : "Insertar"}
+          {inserting ? t("componentsModal.inserting") : t("componentsModal.insertBtn")}
         </button>
       </div>
     </SpotlightCard>
@@ -226,6 +230,7 @@ function GamesSection({ onInsertComponent, onClose }: {
   onInsertComponent: (sections: string[]) => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const [inserting, setInserting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -241,7 +246,7 @@ function GamesSection({ onInsertComponent, onClose }: {
       onInsertComponent(sections.map(s => s.trim()));
       onClose();
     } catch (e: any) {
-      setError(e?.message || "Could not insert component");
+      setError(e?.message || t("componentsModal.insertFailed"));
     } finally {
       setInserting(null);
     }
@@ -250,8 +255,8 @@ function GamesSection({ onInsertComponent, onClose }: {
   return (
     <div className="flex flex-col h-full min-h-0">
       <div className="px-5 py-3 border-b border-theme-tertiary flex-shrink-0">
-        <h3 className="text-sm font-semibold text-theme-primary">Games</h3>
-        <p className="text-xs text-theme-secondary mt-0.5">Componentes interactivos para insertar como slide</p>
+        <h3 className="text-sm font-semibold text-theme-primary">{t("componentsModal.gamesSection")}</h3>
+        <p className="text-xs text-theme-secondary mt-0.5">{t("componentsModal.interactiveComponents")}</p>
       </div>
 
       <div className="flex-1 overflow-y-auto p-5">
@@ -272,10 +277,11 @@ function GamesSection({ onInsertComponent, onClose }: {
 
 /* ── Modal shell with sidebar ──────────────────────────────────────── */
 
-const SIDEBAR_ITEMS: { key: SectionKey; label: string; icon: React.ReactNode }[] = [
+const SIDEBAR_ITEMS: { key: SectionKey; label: string; tKey: string; icon: React.ReactNode }[] = [
   {
     key: "templates",
     label: "Templates",
+    tKey: "componentsModal.templatesTab",
     icon: (
       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
@@ -285,6 +291,7 @@ const SIDEBAR_ITEMS: { key: SectionKey; label: string; icon: React.ReactNode }[]
   {
     key: "games",
     label: "Games",
+    tKey: "componentsModal.gamesTab",
     icon: (
       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -295,6 +302,7 @@ const SIDEBAR_ITEMS: { key: SectionKey; label: string; icon: React.ReactNode }[]
 ];
 
 export default function ComponentsModal({ isOpen, onClose, onApplyStyle, onRegenerate, onInsertComponent }: Props) {
+  const { t } = useTranslation();
   const [active, setActive] = useState<SectionKey>("templates");
 
   // Keep the modal mounted (preserving loaded preview iframes); just hide it.
@@ -311,7 +319,7 @@ export default function ComponentsModal({ isOpen, onClose, onApplyStyle, onRegen
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-theme-tertiary flex-shrink-0">
-          <h2 className="text-base font-semibold text-theme-primary">Componentes</h2>
+          <h2 className="text-base font-semibold text-theme-primary">{t("componentsModal.title")}</h2>
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg text-theme-secondary hover:text-theme-primary hover:bg-theme-quaternary transition-colors"
@@ -337,7 +345,7 @@ export default function ComponentsModal({ isOpen, onClose, onApplyStyle, onRegen
                 }`}
               >
                 {item.icon}
-                {item.label}
+                {t(item.tKey)}
               </button>
             ))}
           </nav>

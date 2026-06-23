@@ -13,6 +13,7 @@ import { urlbackend } from "../../config.js"
 import { getAuthToken } from "../../utils/getAuthToken"
 import { getTemplateCatalog, getCachedCatalog } from "../../utils/templateCatalog"
 import { motion, AnimatePresence } from "framer-motion"
+import { useTranslation } from "react-i18next"
 
 type Project = {
   id: string
@@ -51,6 +52,7 @@ type User = {
 
 function HomePage() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   // Read viewMode from cookies
   const getViewModeFromCookie = (): "grid" | "list" => {
@@ -154,7 +156,7 @@ function HomePage() {
           return
         }
         const data = await res.json().catch(() => ({}))
-        setErr(data?.message || "Failed to load projects")
+        setErr(data?.message || t("home.failedToLoadProjects"))
         return
       }
       const data = await res.json()
@@ -174,7 +176,7 @@ function HomePage() {
       setProjects(mapped)
       setFilteredProjects(mapped)
     } catch {
-      setErr("Server connection error")
+      setErr(t("home.serverConnectionError"))
     } finally {
       setLoading(false)
     }
@@ -214,14 +216,14 @@ function HomePage() {
           return
         }
         const data = await res.json().catch(() => ({}))
-        alert(data?.message || "Failed to delete project")
+        alert(data?.message || t("home.failedToDeleteProject"))
         return
       }
       setProjects((prev) => prev.filter((p) => p.id !== selected.id))
       setFilteredProjects((prev) => prev.filter((p) => p.id !== selected.id))
       setShowPreview(false)
     } catch {
-      alert("Server connection error")
+      alert(t("home.serverConnectionError"))
     }
   }
 
@@ -300,11 +302,11 @@ function HomePage() {
     setAiError("")
     const prompt = aiTitle.trim()
     if (!prompt) {
-      setAiError("No prompt.")
+      setAiError(t("home.aiNoPrompt"))
       return
     }
     if (prompt.length > 500) {
-      setAiError("Prompt can't be longer than 500 characters.")
+      setAiError(t("home.aiPromptTooLong"))
       return
     }
 
@@ -330,13 +332,13 @@ function HomePage() {
       try {
         data = await res.json()
       } catch (e) {
-        setAiError(`Server error (${res.status}). Check backend logs.`)
+        setAiError(t("home.aiServerError", { status: res.status }))
         setAiCreating(false)
         return
       }
 
       if (!res.ok) {
-        setAiError(data?.message || data?.detail || `Failed to create project (${res.status}).`)
+        setAiError(data?.message || data?.detail || t("home.aiFailedToCreate", { status: res.status }))
         setAiCreating(false)
         return
       }
@@ -353,7 +355,7 @@ function HomePage() {
       navigate(`/p/${project.id}`, { state: { openAIChat: true, aiPrompt: prompt } })
     } catch (e) {
       setAiCreating(false)
-      setAiError("Error connecting to the server.")
+      setAiError(t("home.aiConnectionError"))
     }
   }
 
@@ -400,7 +402,7 @@ function HomePage() {
                     <>
                       <textarea
                         key="ai-input"
-                        placeholder="Describe your presentation idea..."
+                        placeholder={t("home.aiPanelPlaceholder")}
                         value={aiTitle}
                         onChange={(e) => setAiTitle(e.target.value)}
                         onKeyDown={(e) => {
@@ -421,7 +423,7 @@ function HomePage() {
                     <input
                       key="search-input"
                       type="text"
-                      placeholder="Search for your projects"
+                      placeholder={t("home.searchProjectsPlaceholder")}
                       defaultValue=""
                       onChange={(e) => filterProjects(e.target.value)}
                       className="text-theme-primary placeholder-theme-secondary focus:outline-none w-full bg-transparent"
@@ -477,7 +479,7 @@ function HomePage() {
                     : "text-theme-secondary hover:text-theme-primary"
                     }`}
                 >
-                  My designs
+                  {t("home.myDesignsTab")}
                 </button>
                 <button
                   type="button"
@@ -488,7 +490,7 @@ function HomePage() {
                     } ${isMobile ? "p-2" : "px-4 py-2"}`}
                 >
                   {!isMobile && (
-                    <span className="text-sm font-medium">Create with AI</span>
+                    <span className="text-sm font-medium">{t("home.createWithAITab")}</span>
                   )}
                   <span
                     className="material-symbols-outlined text-lg"
@@ -504,7 +506,7 @@ function HomePage() {
                     : "text-theme-secondary hover:text-theme-primary"
                     }`}
                 >
-                  Templates
+                  {t("home.templatesTab")}
                 </button>
               </div>
             </div>
@@ -525,11 +527,11 @@ function HomePage() {
               <div className="flex items-center justify-between py-2 w-full flex-shrink-0">
                 <div className="flex items-baseline gap-3">
                   <h2 className="text-2xl font-semibold text-theme-primary">
-                    {activeTab === "my-designs" ? "My designs" : "Templates"}
+                    {activeTab === "my-designs" ? t("home.myDesignsTab") : t("home.templatesTab")}
                   </h2>
                   {activeTab === "my-designs" && !loading && !err && projects.length > 0 && (
                     <span className="text-sm text-theme-secondary tabular-nums">
-                      {filteredProjects.length} {filteredProjects.length === 1 ? "project" : "projects"}
+                      {t("home.projectCount", { count: filteredProjects.length })}
                     </span>
                   )}
                 </div>
@@ -540,7 +542,7 @@ function HomePage() {
                       className="px-4 py-2 rounded-full bg-theme-inverted text-theme-inverted border border-theme-tertiary transition-all flex items-center gap-2"
                     >
                       <span className="material-symbols-outlined text-lg">add</span>
-                      <span className="text-sm font-medium">Create project</span>
+                      <span className="text-sm font-medium">{t("home.createProjectButton")}</span>
                     </button>
                   )}
                   {activeTab === "my-designs" && (
@@ -587,14 +589,14 @@ function HomePage() {
                             cloud_off
                           </span>
                           <div>
-                            <p className="text-theme-primary font-medium">Couldn't load your projects</p>
+                            <p className="text-theme-primary font-medium">{t("home.errorLoadingProjects")}</p>
                             <p className="text-theme-secondary text-sm mt-1">{err}</p>
                           </div>
                           <button
                             onClick={fetchProjects}
                             className="px-4 py-2 rounded-full border border-theme-tertiary text-theme-primary text-sm font-medium hover:bg-theme-hover transition-colors"
                           >
-                            Try again
+                            {t("home.tryAgainButton")}
                           </button>
                         </div>
                       )
@@ -607,9 +609,9 @@ function HomePage() {
                             </span>
                           </div>
                           <div>
-                            <p className="text-theme-primary font-medium">Start your first deck</p>
+                            <p className="text-theme-primary font-medium">{t("home.emptyStateTitle")}</p>
                             <p className="text-theme-secondary text-sm mt-1 max-w-xs">
-                              Describe an idea and let AI draft it, start from a template, or build it slide by slide.
+                              {t("home.emptyStateDescription")}
                             </p>
                           </div>
                           <div className="flex flex-wrap items-center justify-center gap-2">
@@ -620,19 +622,19 @@ function HomePage() {
                               <span className="material-symbols-outlined text-lg" style={{ color: "#5560E0" }}>
                                 auto_awesome
                               </span>
-                              Create with AI
+                              {t("home.createWithAIButton")}
                             </button>
                             <button
                               onClick={() => setShowCreate(true)}
                               className="px-4 py-2 rounded-full border border-theme-tertiary text-theme-primary text-sm font-medium hover:bg-theme-hover transition-colors"
                             >
-                              Blank project
+                              {t("home.blankProjectButton")}
                             </button>
                             <button
                               onClick={() => { setActiveTab("templates"); setShowAIPanel(false) }}
                               className="px-4 py-2 rounded-full border border-theme-tertiary text-theme-primary text-sm font-medium hover:bg-theme-hover transition-colors"
                             >
-                              Browse templates
+                              {t("home.browseTemplatesButton")}
                             </button>
                           </div>
                         </div>
@@ -642,7 +644,7 @@ function HomePage() {
                         <div className="flex flex-col items-center justify-center gap-2 p-12 col-span-full text-center">
                           <span className="material-symbols-outlined text-theme-secondary">search_off</span>
                           <p className="text-theme-secondary text-sm max-w-xs">
-                            No projects match your search.
+                            {t("home.noSearchResults")}
                           </p>
                         </div>
                       )
@@ -684,7 +686,7 @@ function HomePage() {
                   <div className="flex-shrink-0">
                     <input
                       type="text"
-                      placeholder="Search templates..."
+                      placeholder={t("home.searchTemplatesPlaceholder")}
                       value={templateSearch}
                       onChange={e => setTemplateSearch(e.target.value)}
                       className="w-full sm:w-72 px-4 py-2 text-sm bg-theme-quaternary border border-theme-tertiary rounded-full text-theme-primary placeholder:text-theme-secondary focus:outline-none focus:border-[#9C9C9C] transition-colors"
@@ -819,7 +821,7 @@ function HomePage() {
                     onClick={() => { setShowCreate(true); setSelectedTemplate(null) }}
                     className="px-4 py-2 text-sm font-medium rounded-full bg-theme-inverted text-theme-inverted transition-colors"
                   >
-                    Use template
+                    {t("home.useTemplateButton")}
                   </button>
                   <button
                     onClick={() => setSelectedTemplate(null)}

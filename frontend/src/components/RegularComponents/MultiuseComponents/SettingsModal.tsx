@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React, { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { urlbackend } from "../../../config.js";
 import { getAuthToken } from "../../../utils/getAuthToken";
 import BasicModal from "./BasicModal";
@@ -43,6 +44,8 @@ function setCookie(name: string, value: string, days: number = 365) {
 }
 
 export default function SettingsModal({ onClose }: Props) {
+  const { t, i18n } = useTranslation();
+  const currentLang = (i18n.resolvedLanguage || "en").startsWith("es") ? "es" : "en";
   const [mounted, setMounted] = useState(false);
   const [show, setShow] = useState(false);
   const [section, setSection] = useState<Section>("profile");
@@ -59,7 +62,6 @@ export default function SettingsModal({ onClose }: Props) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [language, setLanguage] = useState("en");
   const [defaultMode, setDefaultMode] = useState<ProjectMode>("chat");
   const [spotifyConnected, setSpotifyConnected] = useState(false);
   const [isConnectingSpotify, setIsConnectingSpotify] = useState(false);
@@ -114,13 +116,13 @@ export default function SettingsModal({ onClose }: Props) {
           setLastName(data.user.last_name);
           setUsername(data.user.username);
         } else {
-          setStatusMessage("Failed to fetch user.");
+          setStatusMessage(t("settings.failedToFetchUser"));
           setStatusType("error");
           clearStatusLater();
         }
       } catch (error) {
         console.error("Error fetching user:", error);
-        setStatusMessage("Error fetching user.");
+        setStatusMessage(t("settings.errorFetchingUser"));
         setStatusType("error");
         clearStatusLater();
       } finally {
@@ -192,14 +194,14 @@ export default function SettingsModal({ onClose }: Props) {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setStatusMessage("Please select an image file.");
+      setStatusMessage(t("settings.pleaseSelectImage"));
       setStatusType("error");
       clearStatusLater();
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setStatusMessage("File size must be less than 5MB.");
+      setStatusMessage(t("settings.fileSizeLimit"));
       setStatusType("error");
       clearStatusLater();
       return;
@@ -223,18 +225,18 @@ export default function SettingsModal({ onClose }: Props) {
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
-        setStatusMessage("Avatar uploaded.");
+        setStatusMessage(t("settings.avatarUploaded"));
         setStatusType("success");
         clearStatusLater();
       } else {
         const error = await response.json();
-        setStatusMessage(error.message || "Error uploading avatar.");
+        setStatusMessage(error.message || t("settings.errorUploadingAvatar"));
         setStatusType("error");
         clearStatusLater();
       }
     } catch (error) {
       console.error("Error:", error);
-      setStatusMessage("Error uploading avatar.");
+      setStatusMessage(t("settings.errorUploadingAvatar"));
       setStatusType("error");
       clearStatusLater();
     } finally {
@@ -260,18 +262,18 @@ export default function SettingsModal({ onClose }: Props) {
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
-        setStatusMessage("Avatar deleted.");
+        setStatusMessage(t("settings.avatarDeleted"));
         setStatusType("success");
         clearStatusLater();
       } else {
         const error = await response.json();
-        setStatusMessage(error.message || "Error deleting avatar.");
+        setStatusMessage(error.message || t("settings.errorDeletingAvatar"));
         setStatusType("error");
         clearStatusLater();
       }
     } catch (error) {
       console.error("Error:", error);
-      setStatusMessage("Error deleting avatar.");
+      setStatusMessage(t("settings.errorDeletingAvatar"));
       setStatusType("error");
       clearStatusLater();
     } finally {
@@ -282,7 +284,7 @@ export default function SettingsModal({ onClose }: Props) {
   const handleDefaultModeChange = (mode: ProjectMode) => {
     setDefaultMode(mode);
     setCookie("defaultMode", mode);
-    setStatusMessage(`Default mode set to ${mode === "chat" ? "AI Chat" : mode === "code" ? "Code Editor" : "Visual Editor"}.`);
+    setStatusMessage(t("settings.defaultModeSet", { mode: mode === "chat" ? t("settings.aiChat") : mode === "code" ? t("settings.codeEditor") : t("settings.visualEditor") }));
     setStatusType("success");
     clearStatusLater();
   };
@@ -306,7 +308,7 @@ export default function SettingsModal({ onClose }: Props) {
           if (statusData.connected) {
             clearInterval(pollInterval);
             setSpotifyConnected(true);
-            setStatusMessage("Spotify connected successfully!");
+            setStatusMessage(t("settings.spotifyConnected"));
             setStatusType("success");
             clearStatusLater();
             setIsConnectingSpotify(false);
@@ -319,7 +321,7 @@ export default function SettingsModal({ onClose }: Props) {
       }
     } catch (error) {
       console.error("Error connecting Spotify:", error);
-      setStatusMessage("Failed to connect Spotify.");
+      setStatusMessage(t("settings.failedConnectSpotify"));
       setStatusType("error");
       clearStatusLater();
       setIsConnectingSpotify(false);
@@ -335,13 +337,13 @@ export default function SettingsModal({ onClose }: Props) {
       });
       if (response.ok) {
         setSpotifyConnected(false);
-        setStatusMessage("Spotify disconnected.");
+        setStatusMessage(t("settings.spotifyDisconnected"));
         setStatusType("info");
         clearStatusLater();
       }
     } catch (error) {
       console.error("Error disconnecting Spotify:", error);
-      setStatusMessage("Failed to disconnect Spotify.");
+      setStatusMessage(t("settings.failedDisconnectSpotify"));
       setStatusType("error");
       clearStatusLater();
     }
@@ -360,7 +362,7 @@ export default function SettingsModal({ onClose }: Props) {
 
       if (newPassword && currentPassword) {
         if (newPassword !== confirmPassword) {
-          setStatusMessage("New passwords do not match.");
+          setStatusMessage(t("settings.passwordsDoNotMatch"));
           setStatusType("error");
           setIsSaving(false);
           clearStatusLater();
@@ -373,13 +375,13 @@ export default function SettingsModal({ onClose }: Props) {
       if (Object.keys(updates).length === 0) {
         if (user?.avatar !== originalAvatar) {
           setOriginalAvatar(user?.avatar ?? null);
-          setStatusMessage("Profile updated.");
+          setStatusMessage(t("settings.profileUpdated"));
           setStatusType("success");
           setIsSaving(false);
           clearStatusLater();
           return;
         }
-        setStatusMessage("No changes to save.");
+        setStatusMessage(t("settings.noChangesToSave"));
         setStatusType("info");
         setIsSaving(false);
         clearStatusLater();
@@ -402,18 +404,18 @@ export default function SettingsModal({ onClose }: Props) {
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
-        setStatusMessage("Profile updated successfully.");
+        setStatusMessage(t("settings.profileUpdatedSuccessfully"));
         setStatusType("success");
         clearStatusLater();
       } else {
         const error = await response.json();
-        setStatusMessage(error.message || "Error updating profile.");
+        setStatusMessage(error.message || t("settings.errorUpdatingProfile"));
         setStatusType("error");
         clearStatusLater();
       }
     } catch (error) {
       console.error("Error:", error);
-      setStatusMessage("Error saving profile.");
+      setStatusMessage(t("settings.errorSavingProfile"));
       setStatusType("error");
       clearStatusLater();
     } finally {
@@ -447,17 +449,17 @@ export default function SettingsModal({ onClose }: Props) {
         setProjectCount(0);
         setShowDeleteProjects(false);
         setDeleteConfirmText("");
-        setStatusMessage("All projects deleted successfully.");
+        setStatusMessage(t("settings.allProjectsDeleted"));
         setStatusType("success");
         clearStatusLater();
       } else {
-        setStatusMessage("Error deleting projects.");
+        setStatusMessage(t("settings.errorDeletingProjects"));
         setStatusType("error");
         clearStatusLater();
       }
     } catch (error) {
       console.error("Error:", error);
-      setStatusMessage("Error deleting projects.");
+      setStatusMessage(t("settings.errorDeletingProjects"));
       setStatusType("error");
       clearStatusLater();
     }
@@ -484,7 +486,7 @@ export default function SettingsModal({ onClose }: Props) {
           <div className="flex items-center mb-6">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-2xl animate-spin-slow">settings</span>
-              <h2 className="text-lg font-semibold">Settings</h2>
+              <h2 className="text-lg font-semibold">{t("settings.title")}</h2>
             </div>
             { }
           </div>
@@ -499,7 +501,7 @@ export default function SettingsModal({ onClose }: Props) {
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
                 person
               </span>
-              <span className="text-sm">Profile</span>
+              <span className="text-sm">{t("settings.tabProfile")}</span>
             </button>
 
             <button
@@ -510,7 +512,7 @@ export default function SettingsModal({ onClose }: Props) {
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
                 folder
               </span>
-              <span className="text-sm">Projects</span>
+              <span className="text-sm">{t("settings.tabProjects")}</span>
             </button>
           </div>
         </div>
@@ -521,7 +523,7 @@ export default function SettingsModal({ onClose }: Props) {
               <button
                 onClick={handleClose}
                 className="flex items-center justify-center rounded-full p-1.5 hover:bg-theme-hover"
-                aria-label="Close"
+                aria-label={t("settings.close")}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
                   close
@@ -543,11 +545,11 @@ export default function SettingsModal({ onClose }: Props) {
 
             {section === "profile" && (
               <div className="max-w-2xl">
-                <h3 className="text-2xl font-semibold mb-6">Profile</h3>
+                <h3 className="text-2xl font-semibold mb-6">{t("settings.sectionProfile")}</h3>
 
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium mb-3 text-theme-secondary">Profile Picture</label>
+                    <label className="block text-sm font-medium mb-3 text-theme-secondary">{t("settings.profilePicture")}</label>
                     <div className="flex items-center gap-4">
                       <div className="relative">
                         <div
@@ -555,7 +557,7 @@ export default function SettingsModal({ onClose }: Props) {
                           style={{ width: 80, height: 80 }}
                         >
                           {src ? (
-                            <img src={src} alt="User" className="w-full h-full object-cover" />
+                            <img src={src} alt={t("settings.userAvatarAlt")} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-theme-secondary font-bold text-2xl">
                               {usernameInitial}
@@ -574,14 +576,14 @@ export default function SettingsModal({ onClose }: Props) {
                           disabled={isUploading}
                           className="px-4 py-2 rounded-lg bg-theme-secondary hover:bg-theme-tertiary disabled:opacity-50 text-sm"
                         >
-                          Upload Photo
+                          {t("settings.uploadPhoto")}
                         </button>
                         <button
                           onClick={handleDeleteAvatar}
                           disabled={isUploading}
                           className="px-4 py-2 rounded-lg border border-theme-tertiary hover:bg-theme-hover disabled:opacity-50 text-sm"
                         >
-                          Delete Avatar
+                          {t("settings.deleteAvatar")}
                         </button>
                       </div>
                     </div>
@@ -589,7 +591,7 @@ export default function SettingsModal({ onClose }: Props) {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-2 text-theme-secondary">First Name</label>
+                      <label className="block text-sm font-medium mb-2 text-theme-secondary">{t("settings.firstName")}</label>
                       <input
                         type="text"
                         value={firstName}
@@ -598,7 +600,7 @@ export default function SettingsModal({ onClose }: Props) {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-2 text-theme-secondary">Last Name</label>
+                      <label className="block text-sm font-medium mb-2 text-theme-secondary">{t("settings.lastName")}</label>
                       <input
                         type="text"
                         value={lastName}
@@ -609,7 +611,7 @@ export default function SettingsModal({ onClose }: Props) {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2 text-theme-secondary">Username</label>
+                    <label className="block text-sm font-medium mb-2 text-theme-secondary">{t("settings.username")}</label>
                     <input
                       type="text"
                       value={username}
@@ -619,8 +621,8 @@ export default function SettingsModal({ onClose }: Props) {
                   </div>
 
                   <div className="border-t border-theme-tertiary pt-6">
-                    <h4 className="text-lg font-semibold mb-4">Default Project Mode</h4>
-                    <p className="text-sm text-theme-secondary mb-4">Choose which mode opens by default when you open a project</p>
+                    <h4 className="text-lg font-semibold mb-4">{t("settings.defaultProjectMode")}</h4>
+                    <p className="text-sm text-theme-secondary mb-4">{t("settings.defaultProjectModeDescription")}</p>
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         onClick={() => handleDefaultModeChange("code")}
@@ -630,7 +632,7 @@ export default function SettingsModal({ onClose }: Props) {
                           }`}
                       >
                         <span className="material-symbols-outlined text-2xl">code</span>
-                        <span className="text-sm font-medium">Code Editor</span>
+                        <span className="text-sm font-medium">{t("settings.codeEditor")}</span>
                       </button>
 
                       {/* VISUAL MODE - comentado temporalmente, descomentar para reactivar
@@ -654,13 +656,37 @@ export default function SettingsModal({ onClose }: Props) {
                           }`}
                       >
                         <span className="material-symbols-outlined text-2xl">chat</span>
-                        <span className="text-sm font-medium">AI Chat</span>
+                        <span className="text-sm font-medium">{t("settings.aiChat")}</span>
                       </button>
                     </div>
                   </div>
 
                   <div className="border-t border-theme-tertiary pt-6">
-                    <h4 className="text-lg font-semibold mb-4">Integrations</h4>
+                    <h4 className="text-lg font-semibold mb-4">{t("settings.language")}</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => i18n.changeLanguage("en")}
+                        className={`flex items-center justify-center gap-2 px-4 py-4 rounded-lg border-2 transition-all ${currentLang === "en"
+                          ? "border-blue-500 bg-blue-500/10"
+                          : "border-theme-tertiary hover:border-theme-secondary hover:bg-theme-hover"
+                          }`}
+                      >
+                        <span className="text-sm font-medium">{t("settings.languageEnglish")}</span>
+                      </button>
+                      <button
+                        onClick={() => i18n.changeLanguage("es")}
+                        className={`flex items-center justify-center gap-2 px-4 py-4 rounded-lg border-2 transition-all ${currentLang === "es"
+                          ? "border-blue-500 bg-blue-500/10"
+                          : "border-theme-tertiary hover:border-theme-secondary hover:bg-theme-hover"
+                          }`}
+                      >
+                        <span className="text-sm font-medium">{t("settings.languageSpanish")}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-theme-tertiary pt-6">
+                    <h4 className="text-lg font-semibold mb-4">{t("settings.integrations")}</h4>
                     <div className="bg-theme-quaternary border border-theme-tertiary rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -670,8 +696,8 @@ export default function SettingsModal({ onClose }: Props) {
                             </svg>
                           </div>
                           <div>
-                            <p className="font-medium">Spotify</p>
-                            <p className="text-sm text-theme-secondary">Connect your Spotify account</p>
+                            <p className="font-medium">{t("settings.spotify")}</p>
+                            <p className="text-sm text-theme-secondary">{t("settings.connectSpotifyAccount")}</p>
                           </div>
                         </div>
                         {spotifyConnected ? (
@@ -679,7 +705,7 @@ export default function SettingsModal({ onClose }: Props) {
                             onClick={handleSpotifyDisconnect}
                             className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 text-sm font-medium"
                           >
-                            Disconnect
+                            {t("settings.disconnect")}
                           </button>
                         ) : (
                           <button
@@ -687,7 +713,7 @@ export default function SettingsModal({ onClose }: Props) {
                             disabled={isConnectingSpotify}
                             className="px-4 py-2 rounded-lg bg-[#1DB954] text-white hover:bg-[#1ed760] text-sm font-medium disabled:opacity-50"
                           >
-                            {isConnectingSpotify ? "Connecting..." : "Connect"}
+                            {isConnectingSpotify ? t("settings.connecting") : t("settings.connect")}
                           </button>
                         )}
                       </div>
@@ -695,11 +721,11 @@ export default function SettingsModal({ onClose }: Props) {
                   </div>
 
                   <div className="border-t border-theme-tertiary pt-6">
-                    <h4 className="text-lg font-semibold mb-4">Change Password</h4>
+                    <h4 className="text-lg font-semibold mb-4">{t("settings.changePassword")}</h4>
 
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium mb-2 text-theme-secondary">Current Password</label>
+                        <label className="block text-sm font-medium mb-2 text-theme-secondary">{t("settings.currentPassword")}</label>
                         <input
                           type="password"
                           value={currentPassword}
@@ -708,7 +734,7 @@ export default function SettingsModal({ onClose }: Props) {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium mb-2 text-theme-secondary">New Password</label>
+                        <label className="block text-sm font-medium mb-2 text-theme-secondary">{t("settings.newPassword")}</label>
                         <input
                           type="password"
                           value={newPassword}
@@ -717,7 +743,7 @@ export default function SettingsModal({ onClose }: Props) {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium mb-2 text-theme-secondary">Confirm New Password</label>
+                        <label className="block text-sm font-medium mb-2 text-theme-secondary">{t("settings.confirmNewPassword")}</label>
                         <input
                           type="password"
                           value={confirmPassword}
@@ -733,15 +759,15 @@ export default function SettingsModal({ onClose }: Props) {
 
             {section === "projects" && (
               <div className="max-w-2xl">
-                <h3 className="text-2xl font-semibold mb-6">Projects</h3>
+                <h3 className="text-2xl font-semibold mb-6">{t("settings.sectionProjects")}</h3>
 
                 <div className="space-y-6">
                   <div className="bg-theme-quaternary border border-theme-tertiary rounded-lg p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div>
-                        <h4 className="text-lg font-semibold mb-1">Delete All Projects</h4>
+                        <h4 className="text-lg font-semibold mb-1">{t("settings.deleteAllProjectsHeader")}</h4>
                         <p className="text-sm text-theme-secondary">
-                          You have {projectCount} project{projectCount !== 1 ? "s" : ""}
+                          {t("settings.youHaveProjects", { count: projectCount })}
                         </p>
                       </div>
                       <span className="material-symbols-outlined text-red-500" style={{ fontSize: 32 }}>
@@ -749,22 +775,22 @@ export default function SettingsModal({ onClose }: Props) {
                       </span>
                     </div>
                     <p className="text-sm text-theme-secondary mb-4">
-                      This action will permanently delete all your projects. This cannot be undone.
+                      {t("settings.deleteAllProjectsWarning")}
                     </p>
                     <button
                       onClick={() => setShowDeleteProjects(true)}
                       disabled={projectCount === 0}
                       className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium text-white"
                     >
-                      Delete All Projects
+                      {t("settings.deleteAllProjectsButton")}
                     </button>
                   </div>
 
                   <div className="bg-theme-quaternary border border-theme-tertiary rounded-lg p-6">
-                    <h4 className="text-lg font-semibold mb-2">Export Projects</h4>
-                    <p className="text-sm text-theme-secondary mb-4">Download all your projects as a backup file</p>
+                    <h4 className="text-lg font-semibold mb-2">{t("settings.exportProjectsHeader")}</h4>
+                    <p className="text-sm text-theme-secondary mb-4">{t("settings.exportProjectsDescription")}</p>
                     <button disabled className="px-4 py-2 rounded-lg border border-theme-tertiary hover:bg-theme-hover disabled:opacity-50 disabled:cursor-not-allowed text-sm">
-                      Coming Soon
+                      {t("settings.comingSoon")}
                     </button>
                   </div>
                 </div>
@@ -775,14 +801,14 @@ export default function SettingsModal({ onClose }: Props) {
           {section === "profile" && (
             <div className="border-t border-theme-tertiary p-4 flex justify-end gap-2">
               <button onClick={handleClose} className="px-4 py-2 rounded-lg border border-theme-tertiary hover:bg-theme-hover">
-                Cancel
+                {t("settings.cancelButton")}
               </button>
               <button
                 onClick={handleSaveProfile}
                 disabled={isSaving}
                 className="px-4 py-2 rounded-lg bg-theme-inverted text-theme-inverted hover:brightness-95 disabled:opacity-50"
               >
-                {isSaving ? "Saving..." : "Save Changes"}
+                {isSaving ? t("settings.saving") : t("settings.saveChanges")}
               </button>
             </div>
           )}
@@ -793,8 +819,8 @@ export default function SettingsModal({ onClose }: Props) {
 
       <BasicModal
         open={showDeleteProjects}
-        title="Delete All Projects"
-        description={`This will permanently delete all ${projectCount} projects. Type "DELETE ALL" to confirm.`}
+        title={t("settings.deleteModalTitle")}
+        description={t("settings.deleteModalDescription", { count: projectCount })}
         onClose={() => {
           setDeleteConfirmText("");
           setShowDeleteProjects(false);
@@ -808,14 +834,14 @@ export default function SettingsModal({ onClose }: Props) {
               }}
               className="px-4 py-2 rounded-lg border border-theme-tertiary hover:bg-theme-hover"
             >
-              Cancel
+              {t("settings.cancelButton")}
             </button>
             <button
               onClick={handleDeleteAllProjects}
               disabled={deleteConfirmText !== "DELETE ALL"}
               className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white"
             >
-              Delete All
+              {t("settings.deleteAllConfirm")}
             </button>
           </>
         }

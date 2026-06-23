@@ -5,6 +5,7 @@
 // ÚLTIMO paso siempre es elegir el estilo (con previews visuales, que la IA no
 // puede inventar). Selección con teclas 1-4, Backspace = atrás, Esc = cancelar.
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getTemplateCatalog, getCachedCatalog } from "../../../utils/templateCatalog";
 
 export type WizardQuestion = {
@@ -140,6 +141,7 @@ export default function SlidesWizard({
   onComplete: (result: WizardResult) => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   const qs = FIXED_QUESTIONS;
   const totalSteps = qs.length + 1; // + el paso de estilo (último)
 
@@ -199,7 +201,7 @@ export default function SlidesWizard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, values, styleOptions]);
 
-  const title = isStyleStep ? "Elegí un estilo" : qs[step].question;
+  const title = isStyleStep ? t("wizard.chooseStyle") : qs[step].question;
 
   return (
     <div className="bg-theme-primary border border-theme-tertiary rounded-2xl overflow-hidden">
@@ -215,7 +217,7 @@ export default function SlidesWizard({
               <span key={i} className={`w-1.5 h-1.5 rounded-full ${i === step ? "bg-[#7182FF]" : i < step ? "bg-theme-secondary" : "bg-theme-tertiary"}`} />
             ))}
           </div>
-          <button onClick={onCancel} className="p-1 rounded-md text-theme-secondary hover:text-theme-primary hover:bg-theme-quaternary transition-colors" title="Cancelar (Esc)">
+          <button onClick={onCancel} className="p-1 rounded-md text-theme-secondary hover:text-theme-primary hover:bg-theme-quaternary transition-colors" title={t("wizard.cancelTitle")}>
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
           </button>
         </div>
@@ -253,8 +255,8 @@ export default function SlidesWizard({
 
       {/* Footer hint */}
       <div className="flex items-center justify-between px-4 py-2 border-t border-theme-tertiary">
-        <span className="text-[11px] text-theme-secondary">Tecla 1-{optionCount} para elegir</span>
-        <span className="text-[11px] text-theme-secondary">{step > 0 ? "Backspace para volver" : "Esc para cancelar"}</span>
+        <span className="text-[11px] text-theme-secondary">{t("wizard.keyHint", { count: optionCount })}</span>
+        <span className="text-[11px] text-theme-secondary">{step > 0 ? t("wizard.backHint") : t("wizard.cancelHint")}</span>
       </div>
     </div>
   );

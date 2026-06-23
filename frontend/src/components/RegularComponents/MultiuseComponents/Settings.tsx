@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { urlbackend } from "../../../config.js"
 
 const ADMIN_MODELS = [
@@ -8,10 +9,13 @@ const ADMIN_MODELS = [
 ]
 
 function Settings() {
+  const { t, i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedModel, setSelectedModel] = useState(localStorage.getItem("selectedModel") || "gpt-4o");
+  const lang = i18n.resolvedLanguage === "es" ? "es" : "en";
+  const setLang = (l: string) => i18n.changeLanguage(l);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -28,7 +32,7 @@ function Settings() {
   };
 
   const handleCleanAllProjects = async () => {
-    if (!confirm("Are you sure you want to delete all projects? This action cannot be undone.")) {
+    if (!confirm(t("settings.confirmCleanAll"))) {
       return;
     }
 
@@ -45,15 +49,15 @@ function Settings() {
 
       if (!res.ok) {
         const data = await res.json();
-        alert(data?.message || "Failed to delete projects.");
+        alert(data?.message || t("settings.cleanAllFailed"));
         setLoading(false);
         return;
       }
 
-      alert("All projects deleted successfully.");
+      alert(t("settings.cleanAllSuccess"));
       setIsOpen(false);
     } catch (e) {
-      alert("Error connecting to the server.");
+      alert(t("settings.serverError"));
     } finally {
       setLoading(false);
     }
@@ -79,14 +83,14 @@ function Settings() {
                   <span className="material-symbols-outlined text-white" style={{ fontSize: 35 }}>
                     settings
                   </span>
-                  <p className="text-white font-medium text-lg">Settings</p>
+                  <p className="text-white font-medium text-lg">{t("settings.title")}</p>
                 </div>
-                <p className="text-[#999999] text-sm">Options</p>
+                <p className="text-[#999999] text-sm">{t("settings.subtitle")}</p>
               </div>
               <button
                 className="flex items-center justify-center rounded-full p-2 hover:bg-white/10 text-white"
-                aria-label="Close"
-                title="Close"
+                aria-label={t("common.close")}
+                title={t("common.close")}
                 onClick={() => setIsOpen(false)}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 22 }}>
@@ -96,14 +100,32 @@ function Settings() {
             </div>
             <div className="flex items-start justify-start gap-2 w-full h-full px-4 pb-2">
               <div className="text-white rounded-xl border border-[#2B2B2B] bg-[#0f0f0f] w-full p-4 flex flex-col gap-3">
-                <button className="text-left px-4 py-2 rounded hover:bg-[#222]">Profile Picture</button>
-                <button className="text-left px-4 py-2 rounded hover:bg-[#222]">Change Info</button>
-                <button className="text-left px-4 py-2 rounded hover:bg-[#222]">Language</button>
+                <button className="text-left px-4 py-2 rounded hover:bg-[#222]">{t("settings.profilePicture")}</button>
+                <button className="text-left px-4 py-2 rounded hover:bg-[#222]">{t("settings.changeInfo")}</button>
+
+                {/* Language toggle */}
+                <div className="px-4 py-2">
+                  <p className="text-sm text-[#999999] mb-2">{t("settings.language")}</p>
+                  <div className="inline-flex rounded-lg border border-[#2B2B2B] overflow-hidden">
+                    {([
+                      ["en", t("settings.languageEnglish")],
+                      ["es", t("settings.languageSpanish")],
+                    ] as const).map(([code, label]) => (
+                      <button
+                        key={code}
+                        onClick={() => setLang(code)}
+                        className={`px-4 py-1.5 text-sm transition-colors ${lang === code ? "bg-white text-black font-medium" : "text-[#999] hover:bg-[#222]"}`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
                 {isAdmin && (
                   <div className="px-4 py-2">
-                    <p className="text-sm text-[#999999] mb-1">AI Model</p>
-                    <p className="text-xs text-[#666] mb-2">Admin access — GPT-4o powered</p>
+                    <p className="text-sm text-[#999999] mb-1">{t("settings.aiModel")}</p>
+                    <p className="text-xs text-[#666] mb-2">{t("settings.aiModelAdmin")}</p>
                     <div className="flex gap-2 flex-wrap">
                       {ADMIN_MODELS.map(m => (
                         <button
@@ -123,15 +145,15 @@ function Settings() {
                   </div>
                 )}
 
-                <button className="text-left px-4 py-2 rounded hover:bg-[#222]">Export Data</button>
+                <button className="text-left px-4 py-2 rounded hover:bg-[#222]">{t("settings.exportData")}</button>
                 <button
                   onClick={handleCleanAllProjects}
                   disabled={loading}
                   className="text-left px-4 py-2 rounded text-red-500 hover:bg-[#222] disabled:opacity-60"
                 >
-                  {loading ? "Deleting..." : "Clean all projects"}
+                  {loading ? t("settings.deleting") : t("settings.cleanAllProjects")}
                 </button>
-                <button className="text-left px-4 py-2 rounded text-red-500 hover:bg-[#222]">Sign Out</button>
+                <button className="text-left px-4 py-2 rounded text-red-500 hover:bg-[#222]">{t("common.signOut")}</button>
               </div>
             </div>
           </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import React, {
   createContext,
   useCallback,
@@ -137,6 +138,7 @@ export function ExpandableScreenContent({
   showCloseButton = true,
   closeButtonClassName,
 }: ExpandableScreenContentProps) {
+  const { t } = useTranslation()
   const { isExpanded, collapse, layoutId, contentRadius, animationDuration } = useExpandableScreen()
 
   return (
@@ -180,7 +182,7 @@ export function ExpandableScreenContent({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ delay: animationDuration * 0.4, duration: 0.15 }}
-                aria-label="Close"
+                aria-label={t("ui.close")}
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

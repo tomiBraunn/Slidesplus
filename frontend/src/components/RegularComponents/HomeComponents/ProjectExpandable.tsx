@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React, { useEffect, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { motion } from "framer-motion"
 import { useNavigate } from "react-router-dom"
 import {
@@ -64,6 +65,7 @@ const formatDate = (d?: string | Date | null) => {
 // ─── Tile (trigger) ───────────────────────────────────────────────────────────
 
 function ProjectTileInner({ project, listMode }: { project: Project; listMode?: boolean }) {
+  const { t } = useTranslation()
   const { expand } = useExpandableScreen()
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0.25)
@@ -138,7 +140,7 @@ function ProjectTileInner({ project, listMode }: { project: Project; listMode?: 
             <span className="material-symbols-outlined text-gray-400 opacity-50" style={{ fontSize: "35px" }}>
               crop_landscape
             </span>
-            <p className="text-[10px] text-gray-500">Empty project</p>
+            <p className="text-[10px] text-gray-500">{t("projectExpandable.empty")}</p>
           </div>
         )}
       </div>
@@ -203,6 +205,7 @@ function ProjectPreviewContent({ project, onDelete, onRename }: {
   onDelete?: (id: string) => void
   onRename?: (id: string, name: string) => void
 }) {
+  const { t } = useTranslation()
   const { collapse } = useExpandableScreen()
   const navigate = useNavigate()
 
@@ -341,11 +344,11 @@ function ProjectPreviewContent({ project, onDelete, onRename }: {
   const description = `${slides.length} slide${slides.length !== 1 ? "s" : ""}${formatDate(project.updated_at) ? " · " + formatDate(project.updated_at) : ""}`
 
   const actions = [
-    { icon: "delete", label: "Delete", onClick: () => setShowDelete(true) },
-    { icon: "edit", label: "Rename", onClick: () => setShowRename(true) },
-    { icon: "share", label: "Share", onClick: () => setShowShare(true) },
-    { icon: "slideshow", label: "Present", onClick: () => { collapse(); navigate(`/v/${project.id}`) } },
-    { icon: "open_in_new", label: "Open", onClick: () => { collapse(); navigate(`/p/${project.id}`) } },
+    { icon: "delete", label: t("projectExpandable.delete"), onClick: () => setShowDelete(true) },
+    { icon: "edit", label: t("projectExpandable.rename"), onClick: () => setShowRename(true) },
+    { icon: "share", label: t("projectExpandable.share"), onClick: () => setShowShare(true) },
+    { icon: "slideshow", label: t("projectExpandable.present"), onClick: () => { collapse(); navigate(`/v/${project.id}`) } },
+    { icon: "open_in_new", label: t("projectExpandable.open"), onClick: () => { collapse(); navigate(`/p/${project.id}`) } },
   ]
 
   return (
@@ -355,7 +358,7 @@ function ProjectPreviewContent({ project, onDelete, onRename }: {
         <div className="flex items-start flex-col min-w-0 flex-1 text-theme-primary">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined" style={{ fontSize: isMobile ? 24 : 35 }}>crop_landscape</span>
-            <p className="font-medium text-sm md:text-lg truncate select-text">{project.name || "Untitled"}</p>
+            <p className="font-medium text-sm md:text-lg truncate select-text">{project.name || t("projectExpandable.untitled")}</p>
           </div>
           {!isMobile && <p className="text-xs md:text-sm text-theme-secondary">{description}</p>}
         </div>
@@ -383,7 +386,7 @@ function ProjectPreviewContent({ project, onDelete, onRename }: {
           >
             {slides.length === 0 ? (
               <div className="min-w-full min-h-full flex items-center justify-center">
-                <p className="text-gray-400 text-lg">Empty presentation</p>
+                <p className="text-gray-400 text-lg">{t("projectExpandable.emptyPresentation")}</p>
               </div>
             ) : (
               <iframe ref={iframeRef} title="Project Preview" className="w-full h-full border-0" />
@@ -423,10 +426,10 @@ function ProjectPreviewContent({ project, onDelete, onRename }: {
         <div className={`flex items-center justify-center gap-1 md:gap-2 px-2 md:px-4 py-1.5 md:py-2.5 ${isMobile ? "w-full" : ""}`}>
           {actions.map((item) => (
             <button
-              key={item.label}
+              key={item.icon}
               onClick={item.onClick}
               className={`${isMobile ? "flex-1" : "min-w-[100px]"} flex items-center justify-center bg-theme-quaternary backdrop-blur-xl border border-theme-tertiary text-theme-primary transition-colors duration-300 hover:bg-theme-hover rounded-3xl p-1.5 md:p-2.5`}
-              disabled={item.label === "Open" && !project.id}
+              disabled={item.icon === "open_in_new" && !project.id}
             >
               <div className="flex items-center justify-center gap-1 text-theme-primary">
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }}>{item.icon}</span>
@@ -440,13 +443,13 @@ function ProjectPreviewContent({ project, onDelete, onRename }: {
       {/* Delete modal */}
       <BasicModal
         open={showDelete}
-        title="Delete project"
-        description={`Please type "${project.name}" to confirm deletion.`}
+        title={t("projectExpandable.deleteProject")}
+        description={t("projectExpandable.confirmDelete", { name: project.name })}
         onClose={() => { setConfirmText(""); setShowDelete(false) }}
         actions={
           <>
-            <button onClick={() => { setConfirmText(""); setShowDelete(false) }} disabled={busy} className="px-4 py-2 rounded-lg border hover:bg-theme-hover">Cancel</button>
-            <button onClick={doDelete} disabled={confirmText !== project.name || busy} className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50">Delete</button>
+            <button onClick={() => { setConfirmText(""); setShowDelete(false) }} disabled={busy} className="px-4 py-2 rounded-lg border hover:bg-theme-hover">{t("projectExpandable.cancel")}</button>
+            <button onClick={doDelete} disabled={confirmText !== project.name || busy} className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50">{t("projectExpandable.deleteButton")}</button>
           </>
         }
       >
@@ -461,12 +464,12 @@ function ProjectPreviewContent({ project, onDelete, onRename }: {
       {/* Rename modal */}
       <BasicModal
         open={showRename}
-        title="Rename project"
+        title={t("projectExpandable.renameProject")}
         onClose={() => setShowRename(false)}
         actions={
           <>
-            <button onClick={() => setShowRename(false)} disabled={busy} className="px-4 py-2 rounded-lg border hover:bg-theme-hover">Cancel</button>
-            <button onClick={doRename} disabled={!renameText.trim() || busy} className="px-4 py-2 rounded-lg bg-[#d0d0d0] text-black hover:brightness-95 disabled:opacity-50">Save</button>
+            <button onClick={() => setShowRename(false)} disabled={busy} className="px-4 py-2 rounded-lg border hover:bg-theme-hover">{t("projectExpandable.cancel")}</button>
+            <button onClick={doRename} disabled={!renameText.trim() || busy} className="px-4 py-2 rounded-lg bg-[#d0d0d0] text-black hover:brightness-95 disabled:opacity-50">{t("projectExpandable.save")}</button>
           </>
         }
       >

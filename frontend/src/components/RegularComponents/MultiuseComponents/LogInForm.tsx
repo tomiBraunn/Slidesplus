@@ -4,8 +4,10 @@ import { toast } from "sonner";
 import { urlbackend } from "../../../config.js";
 import { supabase } from "../../../utils/supabaseClient";
 import { FullscreenLoader } from "../../ui/FullscreenLoader";
+import { useTranslation } from "react-i18next";
 
 function LogInForm() {
+  const { t } = useTranslation();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -21,13 +23,13 @@ function LogInForm() {
         },
       });
       if (error) {
-        toast.error(error.message || "Google login failed");
+        toast.error(error.message || t("login.googleError"));
       } else {
         setRedirecting(true);
       }
     } catch (err) {
       console.error("Google login error:", err);
-      toast.error("Error connecting to Google");
+      toast.error(t("login.googleError"));
     }
   };
 
@@ -40,13 +42,13 @@ function LogInForm() {
         },
       });
       if (error) {
-        toast.error(error.message || "GitHub login failed");
+        toast.error(error.message || t("login.githubError"));
       } else {
         setRedirecting(true);
       }
     } catch (err) {
       console.error("GitHub login error:", err);
-      toast.error("Error connecting to GitHub");
+      toast.error(t("login.githubError"));
     }
   };
 
@@ -63,7 +65,7 @@ function LogInForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.message || "Error en login");
+        toast.error(data.message || t("login.loginError"));
         return;
       }
 
@@ -77,13 +79,13 @@ function LogInForm() {
       window.location.href = "/home";
     } catch (err) {
       console.error("Error:", err);
-      toast.error("Error de conexión con el servidor");
+      toast.error(t("settings.serverError"));
     }
   };
 
   const handleForgotPassword = async () => {
     const defaultEmail = identifier.includes("@") ? identifier : "";
-    const emailInput = window.prompt("Ingresá tu email para recuperar la contraseña:", defaultEmail)?.trim();
+    const emailInput = window.prompt(t("login.resetPrompt"), defaultEmail)?.trim();
 
     if (!emailInput) return;
 
@@ -94,16 +96,16 @@ function LogInForm() {
       });
 
       if (error) {
-        toast.error(error.message || "No se pudo enviar la recuperación");
+        toast.error(error.message || t("login.resetSendError"));
         return;
       }
 
-      toast.success("Te enviamos un mail para recuperar tu contraseña", {
-        description: "Seguí el link del mail para definir una nueva contraseña.",
+      toast.success(t("login.resetSendSuccess"), {
+        description: t("login.resetSendDescription"),
       });
     } catch (err) {
       console.error("Forgot password error:", err);
-      toast.error("Error de conexión con el servidor");
+      toast.error(t("settings.serverError"));
     } finally {
       setIsSendingReset(false);
     }
@@ -115,9 +117,9 @@ function LogInForm() {
     <div className="flex flex-col gap-6 relative z-10 w-full max-w-md px-4 sm:px-6">
       <div className="rounded-2xl border border-white/[0.06] bg-black/50 backdrop-blur-xl shadow-xl shadow-black/30">
         <div className="text-center px-4 sm:px-6 pt-6">
-          <h1 className="text-xl sm:text-2xl font-semibold">Welcome back!</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold">{t("login.title")}</h1>
           <p className="text-sm text-gray-400 mt-1">
-            Login with your Google or Github account
+            {t("login.subtitle")}
           </p>
         </div>
 
@@ -137,7 +139,7 @@ function LogInForm() {
                   height={24}
                   className="flex-shrink-0"
                 />
-                <span>Login with Google</span>
+                <span>{t("login.loginWithGoogle")}</span>
               </button>
 
               <button
@@ -152,20 +154,20 @@ function LogInForm() {
                   height={24}
                   className="flex-shrink-0"
                 />
-                <span>Login with GitHub</span>
+                <span>{t("login.loginWithGithub")}</span>
               </button>
             </div>
 
             <div className="relative text-center text-sm">
               <span className="relative z-10 px-3 text-gray-400">
-                Or continue with
+                {t("login.orContinueWith")}
               </span>
               {/* <div className="absolute inset-0 top-1/4 -translate-y-1/4 border-t border-[#2B2B2B]" /> */}
             </div>
 
             <div className="grid gap-2 sm:gap-3">
               <label htmlFor="identifier" className="text-sm font-medium">
-                Username/Email
+                {t("login.usernameEmailLabel")}
               </label>
               <input
                 id="identifier"
@@ -181,7 +183,7 @@ function LogInForm() {
             <div className="grid gap-2 sm:gap-3 relative">
               <div className="flex items-center gap-2 flex-wrap">
                 <label htmlFor="password" className="text-sm font-medium">
-                  Password
+                  {t("login.passwordLabel")}
                 </label>
                 <button
                   type="button"
@@ -189,7 +191,7 @@ function LogInForm() {
                   disabled={isSendingReset}
                   className="ml-auto text-xs sm:text-sm underline-offset-4 hover:underline text-gray-400 hover:text-gray-300 transition disabled:opacity-60"
                 >
-                  {isSendingReset ? "Enviando..." : "Forgot your password?"}
+                  {isSendingReset ? t("login.sending") : t("login.forgotPassword")}
                 </button>
               </div>
 
@@ -218,13 +220,19 @@ function LogInForm() {
               type="submit"
               className="w-full rounded-xl px-4 py-3 font-medium text-black bg-[#d0d0d0] cursor-pointer hover:bg-[#bcbcbc] transition mt-2"
             >
-              Login
+              {t("login.submitBtn")}
             </button>
 
             <div className="text-center text-sm">
-              <span className="text-gray-400">Don't have an account?</span>
+              <span className="text-gray-400">{t("login.noAccount")}</span>
               <a href="/signup" className="underline underline-offset-4 ml-1 text-white hover:text-gray-300 transition">
-                sign up
+                {t("login.signUpLink")}
+              </a>
+            </div>
+
+            <div className="text-center text-sm">
+              <a href="/" className="underline underline-offset-4 text-gray-400 hover:text-gray-300 transition">
+                {t("login.backToHome")}
               </a>
             </div>
           </form>

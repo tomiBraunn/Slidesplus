@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import React from 'react'
 
 interface ActiveUser {
@@ -23,11 +24,12 @@ const normalizeAvatar = (avatar?: string): string => {
     return `data:image/png;base64,${avatar}`
 }
 
-const getActivityText = (user: ActiveUser) => {
-    return `viewing slide ${user.current_slide + 1}`
+const getActivityText = (user: ActiveUser, t: (key: string, options?: any) => string) => {
+    return t("activeUsers.viewingSlide", { slide: user.current_slide + 1 })
 }
 
 export const ActiveUsers: React.FC<ActiveUsersProps> = ({ users, currentUserId, isConnected }) => {
+    const { t } = useTranslation()
     const otherUsers = users.filter(u => u.user_id !== currentUserId)
 
     if (otherUsers.length === 0 && !isConnected) {
@@ -40,7 +42,7 @@ export const ActiveUsers: React.FC<ActiveUsersProps> = ({ users, currentUserId, 
                 <div className="flex items-center gap-1.5">
                     <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-gray-500'}`} />
                     <span className="text-xs text-gray-400">
-                        {isConnected ? 'Live' : 'Offline'}
+                        {isConnected ? t('activeUsers.live') : t('activeUsers.offline')}
                     </span>
                 </div>
                 {otherUsers.length > 0 && (
@@ -51,7 +53,7 @@ export const ActiveUsers: React.FC<ActiveUsersProps> = ({ users, currentUserId, 
             </div>
 
             {otherUsers.length === 0 ? (
-                <p className="text-xs text-gray-500 py-2">No collaborators online</p>
+                <p className="text-xs text-gray-500 py-2">{t('activeUsers.noCollaborators')}</p>
             ) : (
                 <div className="space-y-2 max-h-[300px] overflow-y-auto">
                     {otherUsers.map((user) => (
@@ -82,7 +84,7 @@ export const ActiveUsers: React.FC<ActiveUsersProps> = ({ users, currentUserId, 
                                     }
                                 </p>
                                 <p className="text-xs text-gray-500 truncate">
-                                    {getActivityText(user)}
+                                    {getActivityText(user, t)}
                                 </p>
                             </div>
                         </div>

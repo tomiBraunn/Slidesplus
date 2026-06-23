@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React, { useEffect, useState, useRef } from "react"
+import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { urlbackend } from "../../../config.js"
 
@@ -29,6 +30,7 @@ type Props = {
 }
 
 export function VersionHistoryModal({ isOpen, onClose, projectId, onVersionRestored }: Props) {
+    const { t } = useTranslation()
     const navigate = useNavigate()
     const [versions, setVersions] = useState<Version[]>([])
     const [selectedVersion, setSelectedVersion] = useState<Version | null>(null)
@@ -100,7 +102,7 @@ export function VersionHistoryModal({ isOpen, onClose, projectId, onVersionResto
             }
         } catch (err) {
             console.error(err)
-            setError("No se pudo cargar el historial de versiones.")
+            setError(t("versionHistory.loadError"))
         } finally {
             setLoading(false)
         }
@@ -161,7 +163,7 @@ export function VersionHistoryModal({ isOpen, onClose, projectId, onVersionResto
             setSelectedVersion((cur) => (cur?.id === version.id ? full : cur))
         } catch (err) {
             console.error(err)
-            setError("No se pudo cargar la vista previa de esta versión.")
+            setError(t("versionHistory.detailError"))
         } finally {
             setDetailLoading(false)
         }
@@ -169,7 +171,7 @@ export function VersionHistoryModal({ isOpen, onClose, projectId, onVersionResto
 
     const handleRestore = async () => {
         if (!selectedVersion || !projectId) return
-        if (!confirm("¿Restaurar esta versión? Se sobrescribirá el contenido actual del proyecto.")) return
+        if (!confirm(t("versionHistory.confirmRestore"))) return
 
         setBusy(true)
         setError(null)
@@ -186,7 +188,7 @@ export function VersionHistoryModal({ isOpen, onClose, projectId, onVersionResto
             onClose()
         } catch (err) {
             console.error(err)
-            setError("Error al restaurar la versión.")
+            setError(t("versionHistory.restoreError"))
         } finally {
             setBusy(false)
         }
@@ -194,7 +196,7 @@ export function VersionHistoryModal({ isOpen, onClose, projectId, onVersionResto
 
     const handleDuplicate = async () => {
         if (!selectedVersion || !projectId) return
-        if (!confirm("¿Crear una copia nueva del proyecto con esta versión? El proyecto actual no se modificará.")) return
+        if (!confirm(t("versionHistory.confirmDuplicate"))) return
 
         setBusy(true)
         setError(null)
@@ -211,7 +213,7 @@ export function VersionHistoryModal({ isOpen, onClose, projectId, onVersionResto
             }
         } catch (err) {
             console.error(err)
-            setError("Error al crear la copia del proyecto.")
+            setError(t("versionHistory.duplicateError"))
         } finally {
             setBusy(false)
         }
@@ -233,7 +235,7 @@ export function VersionHistoryModal({ isOpen, onClose, projectId, onVersionResto
             await loadVersions()
         } catch (err) {
             console.error(err)
-            setError("No se pudo guardar la versión.")
+            setError(t("versionHistory.saveError"))
         } finally {
             setSavingVersion(false)
         }
@@ -247,10 +249,10 @@ export function VersionHistoryModal({ isOpen, onClose, projectId, onVersionResto
         const diffHours = Math.floor(diffMs / 3600000)
         const diffDays = Math.floor(diffMs / 86400000)
 
-        if (diffMins < 1) return "Just now"
-        if (diffMins < 60) return `${diffMins} min ago`
-        if (diffHours < 24) return `${diffHours}h ago`
-        if (diffDays < 7) return `${diffDays}d ago`
+        if (diffMins < 1) return t("versionHistory.justNow")
+        if (diffMins < 60) return t("versionHistory.minAgo", { count: diffMins })
+        if (diffHours < 24) return t("versionHistory.hAgo", { count: diffHours })
+        if (diffDays < 7) return t("versionHistory.dAgo", { count: diffDays })
         return d.toLocaleDateString()
     }
 
@@ -278,11 +280,11 @@ export function VersionHistoryModal({ isOpen, onClose, projectId, onVersionResto
                     <div className="p-4 border-b border-[#2B2B2B] flex items-center justify-between gap-2">
                         <h2 className="text-white font-semibold text-lg flex items-center gap-2">
                             <span className="material-symbols-outlined text-xl">history</span>
-                            Version History
+                            {t("versionHistory.title")}
                         </h2>
                         <button
                             onClick={() => setShowNameInput((v) => !v)}
-                            title="Guardar versión"
+                            title={t("versionHistory.saveVersionTooltip")}
                             className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
                         >
                             <span className="material-symbols-outlined text-lg">bookmark_add</span>
@@ -294,7 +296,7 @@ export function VersionHistoryModal({ isOpen, onClose, projectId, onVersionResto
                             <input
                                 value={newVersionName}
                                 onChange={(e) => setNewVersionName(e.target.value)}
-                                placeholder="Nombre de la versión"
+                                placeholder={t("versionHistory.versionNamePlaceholder")}
                                 className="w-full px-2 py-1.5 mb-2 rounded-md bg-[#1f1f1f] border border-[#2B2B2B] text-white text-sm outline-none focus:border-blue-500"
                                 onKeyDown={(e) => { if (e.key === "Enter") handleSaveVersion() }}
                                 autoFocus
@@ -304,17 +306,17 @@ export function VersionHistoryModal({ isOpen, onClose, projectId, onVersionResto
                                 disabled={savingVersion}
                                 className="w-full px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm rounded-md transition-colors"
                             >
-                                {savingVersion ? "Guardando…" : "Guardar versión"}
+                                {savingVersion ? t("versionHistory.saving") : t("versionHistory.saveVersionBtn")}
                             </button>
                         </div>
                     )}
 
                     <div className="flex-1 overflow-y-auto p-2">
                         {loading ? (
-                            <div className="text-center text-gray-400 py-4">Loading...</div>
+                            <div className="text-center text-gray-400 py-4">{t("versionHistory.loading")}</div>
                         ) : versions.length === 0 ? (
                             <div className="text-center text-gray-400 py-4 px-2 text-sm">
-                                No versions yet. Versions are created automatically every minute.
+                                {t("versionHistory.noVersions")}
                             </div>
                         ) : (
                             versions.map((v) => (
@@ -338,7 +340,7 @@ export function VersionHistoryModal({ isOpen, onClose, projectId, onVersionResto
                                                 {formatDate(v.created_at)}
                                             </p>
                                             <p className="text-gray-500 text-xs mt-0.5">
-                                                {v.slide_count} slides · {v.username || "Unknown"}
+                                                {t("versionHistory.slidesBy", { count: v.slide_count, username: v.username || "Unknown" })}
                                             </p>
                                         </div>
                                     </div>
@@ -349,7 +351,7 @@ export function VersionHistoryModal({ isOpen, onClose, projectId, onVersionResto
 
                     <div className="p-3 border-t border-[#2B2B2B] bg-[#1A1A1A]">
                         <p className="text-center text-gray-400 text-xs">
-                            Las versiones se guardan automáticamente cada minuto al editar
+                            {t("versionHistory.footerHint")}
                         </p>
                     </div>
                 </aside>
@@ -360,11 +362,11 @@ export function VersionHistoryModal({ isOpen, onClose, projectId, onVersionResto
                             <span className="material-symbols-outlined text-white text-2xl">preview</span>
                             <div>
                                 <h3 className="text-white font-medium">
-                                    {selectedVersion?.name || "Select a version"}
+                                    {selectedVersion?.name || t("versionHistory.selectVersion")}
                                 </h3>
                                 {selectedVersion && (
                                     <p className="text-gray-400 text-sm">
-                                        {selectedVersion.slide_count} slides · Created {formatDate(selectedVersion.created_at)}
+                                        {t("versionHistory.slidesBy", { count: selectedVersion.slide_count, username: formatDate(selectedVersion.created_at) })}
                                     </p>
                                 )}
                             </div>
@@ -387,16 +389,16 @@ export function VersionHistoryModal({ isOpen, onClose, projectId, onVersionResto
                         <div className="flex-1 rounded-xl border border-[#2B2B2B] bg-[#0f0f0f] overflow-hidden relative">
                             {detailLoading && (
                                 <div className="absolute inset-0 flex items-center justify-center text-gray-400 bg-[#0f0f0f]/70 z-10">
-                                    Cargando vista previa…
+                                    {t("versionHistory.loadingPreview")}
                                 </div>
                             )}
                             {!selectedVersion ? (
                                 <div className="flex items-center justify-center h-full text-gray-400">
-                                    Select a version to preview
+                                    {t("versionHistory.selectVersion")}
                                 </div>
                             ) : !detailLoading && (!selectedSlides || selectedSlides.length === 0) ? (
                                 <div className="flex items-center justify-center h-full text-gray-400 text-sm px-4 text-center">
-                                    Esta versión no tiene contenido para previsualizar.
+                                    {t("versionHistory.noContent")}
                                 </div>
                             ) : (
                                 <iframe
@@ -438,7 +440,7 @@ export function VersionHistoryModal({ isOpen, onClose, projectId, onVersionResto
                             className="px-4 py-2 bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-2"
                         >
                             <span className="material-symbols-outlined text-lg">content_copy</span>
-                            Crear copia
+                            {t("versionHistory.duplicateBtn")}
                         </button>
                         <button
                             onClick={handleRestore}
@@ -446,7 +448,7 @@ export function VersionHistoryModal({ isOpen, onClose, projectId, onVersionResto
                             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-2"
                         >
                             <span className="material-symbols-outlined text-lg">restore</span>
-                            {busy ? "Procesando…" : "Restaurar"}
+                            {busy ? t("versionHistory.processing") : t("versionHistory.restoreBtn")}
                         </button>
                     </div>
                 </div>

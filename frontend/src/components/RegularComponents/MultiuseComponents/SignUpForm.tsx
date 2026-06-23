@@ -2,8 +2,10 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "../../../utils/supabaseClient";
+import { useTranslation } from "react-i18next";
 
 function SignUpForm() {
+  const { t } = useTranslation();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -17,7 +19,7 @@ function SignUpForm() {
     e.preventDefault();
 
     if (password !== confirmPassword) {
-      toast.error("Las contraseñas no coinciden");
+      toast.error(t("signup.passwordMismatch"));
       return;
     }
 
@@ -38,7 +40,7 @@ function SignUpForm() {
       } as any);
 
       if (error) {
-        toast.error(error.message || "No se pudo crear la cuenta");
+        toast.error(error.message || t("signup.createAccountFailed"));
         return;
       }
 
@@ -58,18 +60,18 @@ function SignUpForm() {
             }),
           });
           if (!registerRes.ok) {
-            toast.error("No se pudo sincronizar el registro con el backend");
+            toast.error(t("signup.syncFailed"));
           }
         } catch (backendErr) {
           console.warn('Backend registration sync failed:', backendErr);
-          toast.error("No se pudo sincronizar el registro con el backend");
+          toast.error(t("signup.syncFailed"));
         }
       }
 
-      toast.success("Verifica tu casilla de mail", {
-        description: "Revisa tu bandeja y confirma tu cuenta para completar el registro.",
+      toast.success(t("signup.verifyEmail"), {
+        description: t("signup.verifyEmailDescription"),
         action: {
-          label: "Ir a login",
+          label: t("signup.goToLogin"),
           onClick: () => {
             window.location.href = "/login";
           },
@@ -81,7 +83,7 @@ function SignUpForm() {
       setConfirmPassword("");
 
     } catch (err: any) {
-      toast.error("Error de conexión con el servidor");
+      toast.error(t("settings.serverError"));
     }
   };
 
@@ -90,18 +92,18 @@ function SignUpForm() {
       <div className="relative z-10 w-full max-w-md px-4 sm:px-6">
         <div className="rounded-2xl border border-white/[0.06] bg-black/50 backdrop-blur-xl shadow-xl shadow-black/30">
           <div className="text-center px-4 sm:px-6 pt-6">
-            <p className="text-xl sm:text-2xl font-semibold">Create your account</p>
+            <p className="text-xl sm:text-2xl font-semibold">{t("signup.title")}</p>
           </div>
 
           <div className="px-4 sm:px-6 pb-6 pt-4">
             <form onSubmit={handleSubmit} className="grid gap-4 sm:gap-6">
 
               <div className="grid gap-2 sm:gap-3">
-                <label className="text-sm font-medium">Name</label>
+                <label className="text-sm font-medium">{t("signup.nameLabel")}</label>
                 <div className="flex flex-col sm:flex-row gap-3 w-full">
                   <input
                     type="text"
-                    placeholder="First Name"
+                    placeholder={t("signup.firstNamePlaceholder")}
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     required
@@ -109,7 +111,7 @@ function SignUpForm() {
                   />
                   <input
                     type="text"
-                    placeholder="Last Name"
+                    placeholder={t("signup.lastNamePlaceholder")}
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     required
@@ -119,7 +121,7 @@ function SignUpForm() {
               </div>
 
               <div className="grid gap-2 sm:gap-1">
-                <label className="text-sm font-medium">Username</label>
+                <label className="text-sm font-medium">{t("signup.usernameLabel")}</label>
                 <input
                   type="text"
                   value={username}
@@ -130,7 +132,7 @@ function SignUpForm() {
               </div>
 
               <div className="grid gap-2 sm:gap-1">
-                <label className="text-sm font-medium">Email</label>
+                <label className="text-sm font-medium">{t("signup.emailLabel")}</label>
                 <input
                   type="email"
                   value={email}
@@ -140,7 +142,7 @@ function SignUpForm() {
                 />
               </div>
               <div className="grid gap-2 sm:gap-1 relative">
-                <label className="text-sm font-medium">Password</label>
+                <label className="text-sm font-medium">{t("signup.passwordLabel")}</label>
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
@@ -161,7 +163,7 @@ function SignUpForm() {
                 </div>
               </div>
               <div className="grid gap-2 sm:gap-1 relative">
-                <label className="text-sm font-medium">Confirm Password</label>
+                <label className="text-sm font-medium">{t("signup.confirmPasswordLabel")}</label>
                 <div className="relative">
                   <input
                     type={showConfirmPassword ? "text" : "password"}
@@ -186,14 +188,14 @@ function SignUpForm() {
                 type="submit"
                 className="w-full rounded-xl px-4 py-3 font-medium text-black bg-[#d0d0d0] hover:bg-[#bcbcbc] transition cursor-pointer mt-2"
               >
-                Sign Up
+                {t("signup.submitBtn")}
               </button>
               <div className="text-center text-sm flex justify-center">
                 <p className="text-gray-400">
-                  Go back to
+                  {t("signup.goBack")}
                   <a href="/" className="underline underline-offset-4 ml-1 text-white hover:text-gray-300 transition">
-                     home
-                  </a>
+                     {t("signup.homeLink")}
+                   </a>
                 </p>
               </div>
             </form>

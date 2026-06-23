@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { urlbackend } from '../../../config.js'
 import SpotlightCard from '../MultiuseComponents/SpotlightCard'
 
@@ -38,6 +39,7 @@ const getInitials = (firstName?: string, lastName?: string, username?: string): 
 }
 
 function ProjectTile({ name, description, onClick, listMode = false, owner, collaborators = [], previewUrl, projectId }: Props) {
+    const { t } = useTranslation()
     const [slidePreview, setSlidePreview] = useState<string | null>(null)
     const containerRef = useRef<HTMLDivElement>(null)
     const [scale, setScale] = useState(0.25)
@@ -149,7 +151,7 @@ function ProjectTile({ name, description, onClick, listMode = false, owner, coll
                         <span className="material-symbols-outlined text-gray-400 opacity-50" style={{ fontSize: "35px" }}>
                             crop_landscape
                         </span>
-                        <p className='text-[10px] text-gray-500'>Empty project</p>
+                        <p className='text-[10px] text-gray-500'>{t("projectTile.emptyProject")}</p>
                     </div>
                 )}
             </div>

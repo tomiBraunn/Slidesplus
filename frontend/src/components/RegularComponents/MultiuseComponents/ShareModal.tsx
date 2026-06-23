@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { urlbackend } from '../../../config.js'
 import { exportToPdf, exportToPptxImage, exportToPptxEditable } from '../../../utils/export'
+import { useTranslation } from 'react-i18next'
 
 interface Collaborator {
     id?: string
@@ -48,6 +49,7 @@ const getInitials = (firstName?: string, lastName?: string, username?: string): 
 }
 
 export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClose, slides = [] }) => {
+    const { t } = useTranslation()
     const [collaborators, setCollaborators] = useState<Collaborator[]>([])
     const [searchQuery, setSearchQuery] = useState('')
     const [searchResults, setSearchResults] = useState<UserSearchResult[]>([])
@@ -180,16 +182,16 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
             const data = await res.json().catch(() => ({ ok: false, error: 'Server error' }))
 
             if (res.status === 403) {
-                setError('You do not have permission to add collaborators to this project')
+                setError(t('share.noPermission'))
             } else if (data.ok) {
                 setCollaborators(data.collaborators)
                 setSearchQuery('')
                 setShowSearchResults(false)
             } else {
-                setError(data.error || `Failed to add collaborator (${res.status})`)
+                setError(data.error || `${t('share.addCollabFailed')} (${res.status})`)
             }
         } catch (err) {
-            setError(`Network error: ${err instanceof Error ? err.message : 'Failed to add collaborator'}`)
+            setError(`${t('share.networkError')}: ${err instanceof Error ? err.message : t('share.addCollabFailed')}`)
         } finally {
             setLoading(false)
         }
@@ -213,11 +215,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
             if (data.ok) {
                 setCollaborators(data.collaborators)
             } else {
-                setError(data.error || 'Failed to remove collaborator')
+                setError(data.error || t('share.removeCollabFailed'))
             }
         } catch (err) {
             console.error('Error removing collaborator:', err)
-            setError('Failed to remove collaborator')
+            setError(t('share.removeCollabFailed'))
         }
     }
 
@@ -239,10 +241,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
             if (data.ok) {
                 setIsPublic(nextPublic)
             } else {
-                setError(data.error || 'Failed to update visibility')
+                setError(data.error || t('share.visibilityFailed'))
             }
         } catch (err) {
-            setError('Failed to update visibility')
+            setError(t('share.visibilityFailed'))
         }
     }
 
@@ -268,7 +270,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
             else await exportToPptxEditable(slides, name, onProgress)
         } catch (err) {
             console.error('Export failed:', err)
-            setError('Export failed. Please try again.')
+            setError(t('share.exportFailed'))
         } finally {
             setExporting(null)
         }
@@ -295,8 +297,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                 <div className="px-6 py-4">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h2 className="text-lg font-semibold">Share {projectName || 'presentation'}</h2>
-                            <p className="text-xs text-theme-secondary mt-1">Invite your friends to create with you</p>
+                            <h2 className="text-lg font-semibold">{t('share.title')} {projectName || 'presentation'}</h2>
+                            <p className="text-xs text-theme-secondary mt-1">{t('share.subtitle')}</p>
                         </div>
                         <button
                             onClick={handleClose}
@@ -315,7 +317,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 onFocus={() => searchQuery.length >= 2 && setShowSearchResults(true)}
-                                placeholder="Add email to invite"
+                                placeholder={t('share.addEmailPlaceholder')}
                                 className="flex-1 outline-none text-sm bg-transparent placeholder-theme-secondary"
                             />
                             <button className="p-1 hover:bg-theme-hover rounded transition-colors">
@@ -360,7 +362,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                     </div>
 
                     <div className="mb-6">
-                        <div className="text-xs font-semibold text-theme-secondary tracking-wide mb-3">People with access</div>
+                        <div className="text-xs font-semibold text-theme-secondary tracking-wide mb-3">{t('share.peopleWithAccess')}</div>
 
                         {owner && (
                             <div className="flex items-center justify-between py-2.5">
@@ -384,11 +386,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                                             {owner.firstName && owner.lastName
                                                 ? `${owner.firstName} ${owner.lastName}`
                                                 : owner.username}
-                                            <span className="text-theme-secondary text-xs ml-1">(you)</span>
+                                            <span className="text-theme-secondary text-xs ml-1">{t('share.youLabel')}</span>
                                         </div>
                                     </div>
                                 </div>
-                                <span className="text-xs text-theme-secondary">Owner</span>
+                                <span className="text-xs text-theme-secondary">{t('share.ownerRole')}</span>
                             </div>
                         )}
 
@@ -419,7 +421,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xs text-theme-secondary">Can edit</span>
+                                        <span className="text-xs text-theme-secondary">{t('share.canEdit')}</span>
                                         <button
                                             onClick={() => handleRemoveCollaborator(userId)}
                                             className="opacity-0 group-hover:opacity-100 text-theme-secondary hover:text-theme-primary transition-all p-1"
@@ -433,7 +435,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                     </div>
 
                     <div className="">
-                        <div className="text-xs font-semibold text-theme-secondary uppercase tracking-wide mb-3">General Access</div>
+                        <div className="text-xs font-semibold text-theme-secondary uppercase tracking-wide mb-3">{t('share.generalAccess')}</div>
                         <div className="flex items-center justify-between py-2.5 hover:bg-theme-hover rounded-lg px-2 -mx-2 cursor-pointer transition-colors" onClick={handleTogglePublic}>
                             <div className="flex items-center gap-3">
                                 <div className="w-9 h-9 rounded-full bg-theme-tertiary flex items-center justify-center">
@@ -443,15 +445,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                                 </div>
                                 <div>
                                     <div className="text-sm font-medium">
-                                        {isPublic ? "Anyone with the link" : "Restricted"}
+                                        {isPublic ? t('share.anyoneWithLink') : t('share.restricted')}
                                     </div>
                                     <div className="text-xs text-theme-secondary">
-                                        {isPublic ? "Can view" : "Only people with access"}
+                                        {isPublic ? t('share.canView') : t('share.onlyPeopleWithAccess')}
                                     </div>
                                 </div>
                             </div>
                             <button className="text-xs text-theme-secondary hover:text-theme-primary flex items-center gap-1">
-                                {isPublic ? "Can view" : "Change"}
+                                {isPublic ? t('share.canView') : t('share.change')}
                                 <span className="material-symbols-outlined" style={{ fontSize: 16 }}>chevron_right</span>
                             </button>
                         </div>
@@ -470,7 +472,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                                         </div>
                                         <div className="text-left">
                                             <div className="text-sm font-medium">
-                                                {linkCopied ? "Link copied!" : "Copy presentation link"}
+                                                {linkCopied ? t('share.linkCopied') : t('share.copyPresentationLink')}
                                             </div>
                                             <div className="text-xs text-theme-secondary truncate max-w-[200px]">
                                                 {`${window.location.origin}/v/${projectId}`}
@@ -486,23 +488,23 @@ export const ShareModal: React.FC<ShareModalProps> = ({ projectId, isOpen, onClo
                     </div>
 
                     <div className="mt-6 pt-6 border-t border-theme-tertiary">
-                        <div className="text-xs font-semibold text-theme-secondary uppercase tracking-wide mb-3">Download</div>
+                        <div className="text-xs font-semibold text-theme-secondary uppercase tracking-wide mb-3">{t('share.download')}</div>
                         {exporting ? (
                             <div className="flex items-center gap-3 py-2.5 px-2">
                                 <div className="w-9 h-9 rounded-full bg-theme-tertiary flex items-center justify-center">
                                     <span className="material-symbols-outlined animate-spin text-blue-400" style={{ fontSize: 20 }}>progress_activity</span>
                                 </div>
                                 <div>
-                                    <div className="text-sm font-medium">Generating {exporting.label}…</div>
-                                    <div className="text-xs text-theme-secondary">Slide {exporting.current} / {exporting.total}</div>
+                                    <div className="text-sm font-medium">{t('share.generating', { label: exporting.label })}</div>
+                                    <div className="text-xs text-theme-secondary">{t('share.slideProgress', { current: exporting.current, total: exporting.total })}</div>
                                 </div>
                             </div>
                         ) : (
                             <div className="space-y-1">
                                 {[
-                                    { fmt: 'pdf', icon: 'picture_as_pdf', title: 'PDF', sub: 'One page per slide' },
-                                    { fmt: 'pptx-image', icon: 'image', title: 'PowerPoint · image', sub: 'Looks identical, not editable' },
-                                    { fmt: 'pptx-editable', icon: 'edit_note', title: 'PowerPoint · editable', sub: 'Editable text in PowerPoint' },
+                                    { fmt: 'pdf', icon: 'picture_as_pdf', title: t('share.exportPdf'), sub: t('share.exportPdfSub') },
+                                    { fmt: 'pptx-image', icon: 'image', title: t('share.exportPptxImage'), sub: t('share.exportPptxImageSub') },
+                                    { fmt: 'pptx-editable', icon: 'edit_note', title: t('share.exportPptxEditable'), sub: t('share.exportPptxEditableSub') },
                                 ].map((opt) => (
                                     <button
                                         key={opt.fmt}

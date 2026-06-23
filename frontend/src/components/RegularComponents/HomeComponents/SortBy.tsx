@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from "react-i18next";
 
 type Props = {
   selected: string;
@@ -6,6 +7,7 @@ type Props = {
 };
 
 function SortBy({ selected, setSelected }: Props) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -40,7 +42,7 @@ function SortBy({ selected, setSelected }: Props) {
       <button
         onClick={toggleDropdown}
         className="flex items-center justify-center bg-theme-primary border border-theme-tertiary text-theme-primary hover:bg-theme-hover transition-colors duration-300 rounded-full h-full p-3 cursor-pointer select-none"
-        title="Sort projects"
+        title={t("sortBy.sortTitle")}
       >
         <span className="material-symbols-outlined">
           swap_vert
@@ -52,7 +54,7 @@ function SortBy({ selected, setSelected }: Props) {
                     ${showDropdown ? 'max-h-60 opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-5'}`}
       >
         <ul className="flex flex-col">
-          {["Recent", "Creation date", "A-Z"].map((option, index, arr) => (
+          {[t("sortBy.recent"), t("sortBy.creationDate"), t("sortBy.az")].map((option, index, arr) => (
             <li
               key={option}
               className={`flex items-center justify-between gap-2 cursor-pointer hover:bg-theme-hover px-3 py-2 ${index === arr.length - 1 && showDropdown ? 'rounded-b-xl' : ''}`}

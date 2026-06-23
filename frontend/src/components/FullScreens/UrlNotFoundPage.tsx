@@ -1,8 +1,10 @@
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import PixelBlast from '../ThirdPartyComponents/PixelBlast/PixelBlast';
 import PixelTrail from '../ThirdPartyComponents/PixelTrail/PixelTrail';
 
 function UrlNotFoundPage() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
 
     const goHome = () => {
@@ -50,7 +52,7 @@ function UrlNotFoundPage() {
                 onClick={goHome}
                 className="text-white rounded-xl border border-[#2B2B2B] bg-[#0f0f0f] hover:bg-[#161616] transition-colors cursor-pointer flex items-center justify-center px-5 py-2 select-none z-20"
             >
-                HOME PAGE
+                {t("notFound.homeBtn")}
             </button>
         </div>
     );

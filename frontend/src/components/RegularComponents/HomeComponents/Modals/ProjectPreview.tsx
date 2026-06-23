@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React, { useEffect, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import BasicModal from "../../MultiuseComponents/BasicModal"
 import { ShareModal } from "../../MultiuseComponents/ShareModal"
@@ -34,6 +35,7 @@ function ProjectPreview({
   onRename,
   actions,
 }: Props) {
+  const { t } = useTranslation()
   const [mounted, setMounted] = useState(false)
   const [show, setShow] = useState(false)
   const [showDelete, setShowDelete] = useState(false)
@@ -283,11 +285,11 @@ function ProjectPreview({
   }
 
   const defaultActions: ActionItem[] = [
-    { icon: "delete", label: "Delete", onClick: () => setShowDelete(true) },
-    { icon: "edit", label: "Rename", onClick: () => setShowRename(true) },
-    { icon: "share", label: "Share", onClick: () => setShowShare(true) },
-    { icon: "slideshow", label: "Present", onClick: goPresent },
-    { icon: "open_in_new", label: "Open", onClick: goOpen },
+    { icon: "delete", label: t("projectPreview.delete"), onClick: () => setShowDelete(true) },
+    { icon: "edit", label: t("projectPreview.rename"), onClick: () => setShowRename(true) },
+    { icon: "share", label: t("projectPreview.share"), onClick: () => setShowShare(true) },
+    { icon: "slideshow", label: t("projectPreview.present"), onClick: goPresent },
+    { icon: "open_in_new", label: t("projectPreview.open"), onClick: goOpen },
   ]
   const items = actions?.length ? actions : defaultActions
 
@@ -313,15 +315,15 @@ function ProjectPreview({
               <span className="material-symbols-outlined" style={{ fontSize: isMobile ? 24 : 35 }}>
                 crop_landscape
               </span>
-              <p className="font-medium text-sm md:text-lg truncate select-text">{name || "Untitled"}</p>
+              <p className="font-medium text-sm md:text-lg truncate select-text">{name || t("projectPreview.untitled")}</p>
             </div>
             {!isMobile && <p className="text-xs md:text-sm">{description}</p>}
           </div>
           <button
             onClick={handleClose}
             className="flex items-center justify-center rounded-full p-1.5 md:p-2 hover:bg-theme-hover text-theme-primary flex-shrink-0"
-            aria-label="Close"
-            title="Close"
+            aria-label={t("projectPreview.close")}
+            title={t("projectPreview.close")}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
               close
@@ -344,7 +346,7 @@ function ProjectPreview({
             >
               {slides.length === 0 ? (
                 <div className="min-w-full min-h-full flex items-center justify-center">
-                  <p className="text-gray-400 text-lg">Empty presentation - Add slides to get started!</p>
+                  <p className="text-gray-400 text-lg">{t("projectPreview.emptyPresentation")}</p>
                 </div>
               ) : (
                 <iframe ref={iframeRef} title="Project Preview" className="w-full h-full border-0" />
@@ -388,11 +390,11 @@ function ProjectPreview({
           <div className={`flex items-center justify-center gap-1 md:gap-2 px-2 md:px-4 py-1.5 md:py-2.5 ${isMobile ? 'w-full' : ''}`}>
             {items.map((item) => (
               <button
-                key={item.label}
+                key={item.icon}
                 onClick={item.onClick}
                 className={`${isMobile ? 'flex-1' : 'min-w-[100px]'} flex items-center justify-center bg-theme-quaternary backdrop-blur-xl border border-theme-tertiary text-theme-primary transition-colors duration-300 hover:bg-theme-hover rounded-3xl p-1.5 md:p-2.5`}
                 title={item.label}
-                disabled={item.label === "Open" && !projectId}
+                disabled={item.icon === "open_in_new" && !projectId}
               >
                 <div className="flex items-center justify-center gap-1 text-theme-primary">
                   <span className="material-symbols-outlined" style={{ fontSize: isMobile ? 18 : 18,}}>
@@ -407,8 +409,8 @@ function ProjectPreview({
 
         <BasicModal
           open={showDelete}
-          title="Delete project"
-          description={`Please type "${name}" to confirm deletion.`}
+title={t("projectPreview.deleteProject")}
+           description={t("projectPreview.confirmDelete", { name })}
           onClose={() => {
             setConfirmText("")
             setShowDelete(false)
@@ -423,14 +425,14 @@ function ProjectPreview({
                 disabled={busy}
                 className="px-4 py-2 rounded-lg border hover:bg-theme-hover"
               >
-                Cancel
+                {t("projectPreview.cancel")}
               </button>
               <button
                 onClick={doDelete}
                 disabled={confirmText !== name || busy}
                 className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50"
               >
-                Delete
+                {t("projectPreview.deleteButton")}
               </button>
             </>
           }
@@ -445,7 +447,7 @@ function ProjectPreview({
 
         <BasicModal
           open={showRename}
-          title="Rename project"
+          title={t("projectPreview.renameProject")}
           onClose={() => setShowRename(false)}
           actions={
             <>
@@ -454,14 +456,14 @@ function ProjectPreview({
                 disabled={busy}
                 className="px-4 py-2 rounded-lg border hover:bg-theme-hover"
               >
-                Cancel
+                {t("projectPreview.cancel")}
               </button>
               <button
                 onClick={doRename}
                 disabled={!renameText.trim() || busy}
                 className="px-4 py-2 rounded-lg bg-[#d0d0d0] text-black hover:brightness-95 disabled:opacity-50"
               >
-                Save
+                {t("projectPreview.save")}
               </button>
             </>
           }

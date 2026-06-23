@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { useTranslation } from "react-i18next"
 import { useEffect, useState, useRef, useCallback } from "react"
 import { useParams } from "react-router-dom"
 import { urlbackend } from "../../config.js"
@@ -91,6 +92,7 @@ window.addEventListener('keydown', (e) => {
 }
 
 export default function ProjectViewPage() {
+  const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const [doc, setDoc] = useState("")
   const [loading, setLoading] = useState(true)
@@ -102,7 +104,7 @@ export default function ProjectViewPage() {
   const [totalSlides, setTotalSlides] = useState(0)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [showControls, setShowControls] = useState(true)
-  const [projectName, setProjectName] = useState("Presentation")
+  const [projectName, setProjectName] = useState(t("projectView.presentation"))
   const [copied, setCopied] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -303,10 +305,10 @@ export default function ProjectViewPage() {
 
         if (!response.ok) {
           const statusText = response.status === 401
-            ? "Backend needs to be updated to support this endpoint"
+            ? t("projectView.errorBackend")
             : response.status === 404
-              ? "Project not found"
-              : `Server error (${response.status})`
+              ? t("projectView.errorNotFound")
+              : t("projectView.errorServer", { status: response.status })
 
           setErrorMessage(statusText)
           setError(true)
@@ -319,7 +321,7 @@ export default function ProjectViewPage() {
         const project = data.ok ? data.project : data
 
         if (!project) {
-          setErrorMessage("Invalid response from server")
+          setErrorMessage(t("projectView.errorInvalid"))
           setError(true)
           setLoading(false)
           return
@@ -345,7 +347,7 @@ export default function ProjectViewPage() {
         // traemos metadata (nombre, owner). El loader se oculta cuando Yjs
         // sincroniza y produce el primer doc.
       } catch (err) {
-        setErrorMessage(err instanceof Error ? err.message : "Unknown error")
+        setErrorMessage(err instanceof Error ? err.message : t("projectView.errorUnknown"))
         setError(true)
         setLoading(false)
       }
@@ -361,7 +363,7 @@ export default function ProjectViewPage() {
       <div className="w-screen h-screen bg-theme-primary flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading presentation...</p>
+          <p className="text-gray-400">{t("projectView.loading")}</p>
         </div>
       </div>
     )
@@ -371,18 +373,18 @@ export default function ProjectViewPage() {
     return (
       <div className="w-screen h-screen bg-theme-primary flex items-center justify-center">
         <div className="text-center max-w-2xl px-4">
-          <h1 className="text-4xl text-white mb-4">Presentation not available</h1>
+          <h1 className="text-4xl text-white mb-4">{t("projectView.notAvailable")}</h1>
           <p className="text-gray-400 mb-2">{errorMessage}</p>
           <p className="text-gray-500 text-sm mb-8">
             {errorMessage.includes("Backend")
-              ? "Your backend needs to implement the GET /projects/:id endpoint with slides support."
-              : "The presentation you're looking for doesn't exist or you don't have access."}
+              ? t("projectView.errorBackendHelp")
+              : t("projectView.errorAccessHelp")}
           </p>
           <button
             onClick={() => window.location.reload()}
             className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
           >
-            Retry
+            {t("projectView.retry")}
           </button>
         </div>
       </div>
@@ -413,7 +415,7 @@ export default function ProjectViewPage() {
             className="fixed top-4 right-4 flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-lg z-50"
           >
             <span className="material-symbols-outlined">share</span>
-            Share
+            {t("projectView.share")}
           </button>
         )}
 
@@ -432,7 +434,7 @@ export default function ProjectViewPage() {
             <button
               onClick={copyLink}
               className="p-2 text-white hover:bg-white/10 rounded-lg transition-colors"
-              title={copied ? "Link copied!" : "Copy link"}
+              title={copied ? t("projectView.linkCopied") : t("projectView.copyLink")}
             >
               <span className="material-symbols-outlined text-xl">
                 {copied ? 'check' : 'link'}
@@ -446,7 +448,7 @@ export default function ProjectViewPage() {
                 onClick={handlePrevSlide}
                 disabled={currentSlide === 0}
                 className="p-2 text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 rounded-lg"
-                title="Previous slide"
+                title={t("projectView.prevSlide")}
               >
                 <span className="material-symbols-outlined text-3xl">chevron_left</span>
               </button>
@@ -459,7 +461,7 @@ export default function ProjectViewPage() {
                 onClick={handleNextSlide}
                 disabled={currentSlide === totalSlides - 1}
                 className="p-2 text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 rounded-lg"
-                title="Next slide"
+                title={t("projectView.nextSlide")}
               >
                 <span className="material-symbols-outlined text-3xl">chevron_right</span>
               </button>
@@ -470,7 +472,7 @@ export default function ProjectViewPage() {
             <button
               onClick={toggleFullscreen}
               className="p-2 text-white hover:bg-white/10 rounded-lg transition-colors"
-              title="Fullscreen (F)"
+              title={t("projectView.fullscreen")}
             >
               <span className="material-symbols-outlined text-2xl">
                 {isFullscreen ? 'fullscreen_exit' : 'fullscreen'}

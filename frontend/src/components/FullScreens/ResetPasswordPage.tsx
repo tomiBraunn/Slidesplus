@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { useTranslation } from "react-i18next";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -7,6 +8,7 @@ import { urlbackend } from "../../config.js";
 import Threads from "../ThirdPartyComponents/Threads/Threads";
 
 export default function ResetPasswordPage() {
+	const { t } = useTranslation();
 	const navigate = useNavigate();
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
@@ -38,7 +40,7 @@ export default function ResetPasswordPage() {
 
 			const { error: updateError } = await supabase.auth.updateUser({ password });
 			if (updateError) {
-				toast.error(updateError.message || "No se pudo actualizar la contraseña");
+				toast.error(updateError.message || t("resetPassword.error"));
 				return;
 			}
 
@@ -59,11 +61,11 @@ export default function ResetPasswordPage() {
 
 			localStorage.removeItem("token");
 			await supabase.auth.signOut();
-			toast.success("Contraseña actualizada correctamente");
+			toast.success(t("resetPassword.success"));
 			navigate("/login");
 		} catch (err) {
 			console.error("Reset password error:", err);
-			toast.error("Error de conexión con el servidor");
+			toast.error(t("resetPassword.error"));
 		} finally {
 			setLoading(false);
 		}
@@ -74,14 +76,14 @@ export default function ResetPasswordPage() {
 			<div className="flex flex-col gap-6 relative z-10 w-full max-w-md px-4 sm:px-6">
 				<div className="rounded-2xl border border-[#2B2B2B] bg-[#0f0f0f]/90 backdrop-blur">
 					<div className="text-center px-4 sm:px-6 pt-6">
-						<h1 className="text-xl sm:text-2xl font-semibold">Reset your password</h1>
+						<h1 className="text-xl sm:text-2xl font-semibold">{t("resetPassword.title")}</h1>
 						<p className="text-sm text-gray-400 mt-1">Elegí una nueva contraseña para tu cuenta</p>
 					</div>
 
 					<div className="px-4 sm:px-6 pb-6 pt-4">
 						<form onSubmit={onSubmit} className="grid gap-4 sm:gap-6">
 							<div className="grid gap-2 sm:gap-3">
-								<label htmlFor="new-password" className="text-sm font-medium">New password</label>
+								<label htmlFor="new-password" className="text-sm font-medium">{t("resetPassword.newPasswordLabel")}</label>
 								<div className="relative">
 									<input
 										id="new-password"
@@ -105,7 +107,7 @@ export default function ResetPasswordPage() {
 							</div>
 
 							<div className="grid gap-2 sm:gap-3">
-								<label htmlFor="confirm-password" className="text-sm font-medium">Confirm new password</label>
+								<label htmlFor="confirm-password" className="text-sm font-medium">{t("resetPassword.confirmPasswordLabel")}</label>
 								<div className="relative">
 									<input
 										id="confirm-password"
@@ -133,7 +135,7 @@ export default function ResetPasswordPage() {
 								disabled={loading}
 								className="w-full rounded-xl px-4 py-3 font-medium text-black bg-[#d0d0d0] cursor-pointer hover:bg-[#bcbcbc] transition mt-2 disabled:opacity-60"
 							>
-								{loading ? "Updating..." : "Update password"}
+								{loading ? t("resetPassword.submitting") : t("resetPassword.submitBtn")}
 							</button>
 						</form>
 					</div>

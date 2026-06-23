@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { useTranslation } from "react-i18next";
 import React, { useState, useRef, useEffect } from "react";
 import SettingsModal from "../MultiuseComponents/SettingsModal";
 import { urlbackend } from "../../../config.js";
@@ -28,6 +29,7 @@ function ensureDataUrl(v?: string | null): string | undefined {
 }
 
 export default function UserPicture({ avatar, size = 38 }: Props) {
+  const { t } = useTranslation();
   const { theme, toggleTheme, isDark } = useTheme();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -136,9 +138,9 @@ export default function UserPicture({ avatar, size = 38 }: Props) {
   };
 
   const src = ensureDataUrl(avatar ?? user?.avatar ?? null);
-  const username = user?.username || "Guest";
+  const username = user?.username || t("user.guest");
   const userNumber = user?.user_number || 0;
-  const fullName = `${user?.first_name || ""} ${user?.last_name || ""}`.trim() || "User";
+  const fullName = `${user?.first_name || ""} ${user?.last_name || ""}`.trim() || t("user.defaultName");
 
   const toggleDropdown = () => setIsOpen(!isOpen);
   const handleLogout = async () => {
@@ -178,7 +180,7 @@ export default function UserPicture({ avatar, size = 38 }: Props) {
           onClick={toggleDropdown}
           className="rounded-full overflow-hidden bg-gray-200 cursor-pointer relative"
           style={{ width: size, height: size }}
-          title="User"
+          title={t("user.title")}
         >
           {src ? (
             <img src={src} alt="User" className="w-full h-full object-cover" draggable={false} />
@@ -249,7 +251,7 @@ export default function UserPicture({ avatar, size = 38 }: Props) {
                   <p className="text-xs text-gray-400 truncate">@{username}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-400 truncate">user #{userNumber}</p>
+              <p className="text-sm text-gray-400 truncate">{t("user.userNumber", { number: userNumber })}</p>
             </div>
           </div>
 
@@ -261,13 +263,13 @@ export default function UserPicture({ avatar, size = 38 }: Props) {
               }}
             >
               <span className="material-symbols-outlined text-xl">settings</span>
-              <span className="text-sm font-medium">Settings</span>
+              <span className="text-sm font-medium">{t("user.settings")}</span>
             </button>
 
             <button onClick={toggleTheme} className="justify-between hover:bg-theme-hover">
               <div className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-xl">{isDark ? "dark_mode" : "light_mode"}</span>
-                <span className="text-sm font-medium">{isDark ? "Dark" : "Light"}</span>
+                <span className="text-sm font-medium">{isDark ? t("user.themeDark") : t("user.themeLight")}</span>
               </div>
               <div className={`w-11 h-6 rounded-full transition-colors flex items-center ${isDark ? "bg-gray-600" : "bg-[#d0d0d0]"}`}>
                 <div className={`w-5 h-5 rounded-full transition-transform ${isDark ? "bg-white translate-x-0.5" : "bg-black translate-x-2.5"}`} />
@@ -276,7 +278,7 @@ export default function UserPicture({ avatar, size = 38 }: Props) {
 
             <button onClick={handleLogout} className="!text-red-400 hover:bg-theme-hover">
               <span className="material-symbols-outlined text-xl">logout</span>
-              <span className="text-sm font-medium">Log Out</span>
+              <span className="text-sm font-medium">{t("user.logOut")}</span>
             </button>
           </div>
         </div>

@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import AppIcon from "../MultiuseComponents/AppIcon";
 import UserPicture from "../MultiuseComponents/UserPicture";
 import { ActiveUsersAvatars } from "./ActiveUsers";
@@ -97,6 +98,7 @@ export default function ProjectNavBar({
   onVersionRestored,
   slides = [],
 }: Props) {
+  const { t } = useTranslation();
   const [user, setUser] = useState<User | null>(null);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -217,26 +219,26 @@ export default function ProjectNavBar({
               <span
                 onDoubleClick={handleNameDoubleClick}
                 className="text-theme-primary text-md truncate w-max-50 cursor-text"
-                title="Double-click to rename"
+                title={t("navbar.renameTooltip")}
               >
                 {name}
               </span>
             )}
             <span className="text-xs px-2 py-0.5 rounded-full border border-theme-tertiary text-theme-primary">
               {saveState === "saving"
-                ? "Saving…"
+                ? t("navbar.saveStateSaving")
                 : saveState === "saved"
-                  ? "Saved"
+                  ? t("navbar.saveStateSaved")
                   : saveState === "error"
-                    ? "Error"
-                    : "Idle"}
+                    ? t("navbar.saveStateError")
+                    : t("navbar.saveStateIdle")}
             </span>
             {/* Undo / Redo */}
             <div className="flex items-center gap-0.5">
               <button
                 onClick={onUndo}
                 disabled={!canUndo}
-                title="Undo (Ctrl+Z)"
+                title={t("navbar.undoTooltip")}
                 className="flex items-center justify-center w-7 h-7 rounded-lg text-theme-secondary hover:text-theme-primary hover:bg-theme-quaternary transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }}>undo</span>
@@ -244,7 +246,7 @@ export default function ProjectNavBar({
               <button
                 onClick={onRedo}
                 disabled={!canRedo}
-                title="Redo (Ctrl+Y)"
+                title={t("navbar.redoTooltip")}
                 className="flex items-center justify-center w-7 h-7 rounded-lg text-theme-secondary hover:text-theme-primary hover:bg-theme-quaternary transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }}>redo</span>
@@ -273,7 +275,7 @@ export default function ProjectNavBar({
               className="flex items-center gap-2 px-3 py-1.5 text-white rounded-full transition-colors text-sm font-medium appColorFade"
             >
               <span className="material-symbols-outlined text-base">play_arrow</span>
-              <p>Present</p>
+              <p>{t("navbar.present")}</p>
             </button>
 
 
@@ -296,7 +298,7 @@ export default function ProjectNavBar({
               <button
                 onClick={onToggleLegacyEditor}
                 className="flex items-center justify-center w-8 h-8 p-1 bg-theme-inverted text-theme-inverted rounded-full transition-colors text-sm"
-                title={useLegacyVisualEditor ? "Switch to new editor" : "Switch to legacy editor"}
+                title={useLegacyVisualEditor ? t("navbar.switchToNewEditor") : t("navbar.switchToLegacyEditor")}
               >
                 <span className="material-symbols-outlined text-base">
                   {useLegacyVisualEditor ? "layers" : "grid_view"}
@@ -313,7 +315,7 @@ export default function ProjectNavBar({
             <button
               onClick={onToggleTweakMode}
               disabled={isEditingSlide || !hasCurrentSlide}
-              title="Tweak (Alt+4)"
+              title={t("navbar.tweakTooltip")}
               className={`flex items-center justify-center w-8 h-8 p-1 rounded-full transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed ${tweakMode ? "bg-blue-500 text-white animate-pulse" : "bg-theme-inverted text-theme-inverted"}`}
             >
               <span className="material-symbols-outlined text-base">ads_click</span>
@@ -326,7 +328,7 @@ export default function ProjectNavBar({
                   ? "text-theme-inverted bg-theme-inverted"
                   : "text-theme-tertiary hover:text-theme-primary"
                   }`}
-                title="Code (Alt+1)"
+                title={t("navbar.codeTooltip")}
               >
                 code
               </span>
@@ -338,7 +340,7 @@ export default function ProjectNavBar({
                     ? "text-theme-inverted bg-theme-inverted cursor-pointer"
                     : "text-theme-tertiary hover:text-theme-primary cursor-pointer"
                   }`}
-                title="Edit (Alt+2)"
+                title={t("navbar.editTooltip")}
               >
                 edit
               </span>
@@ -348,7 +350,7 @@ export default function ProjectNavBar({
                   ? "text-theme-inverted bg-theme-inverted"
                   : "text-theme-tertiary hover:text-theme-primary"
                   }`}
-                title="AI (Alt+3)"
+                title={t("navbar.aiTooltip")}
               >
                 wand_stars
               </span>

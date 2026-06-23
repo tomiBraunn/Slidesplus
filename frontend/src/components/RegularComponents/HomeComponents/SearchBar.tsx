@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   onAddClick: () => void;
@@ -6,6 +7,7 @@ type Props = {
 };
 
 export default function SearchBar({ onAddClick, setFiltrar }: Props) {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -19,7 +21,7 @@ export default function SearchBar({ onAddClick, setFiltrar }: Props) {
       <div className="flex flex-1 items-center justify-start rounded-l-full w-fit h-fit min-h-[50px] bg-theme-primary border border-theme-tertiary text-theme-primary hover:bg-theme-hover transition-colors duration-300 bg-theme-primary border border-theme-tertiary text-theme-primary transition-colors duration-300Hover px-0.5">
         <input
           type="text"
-          placeholder="Search"
+          placeholder={t("search.placeholder")}
           value={search}
           onChange={handleChange}
           className="text-white px-4 rounded-l-full focus:outline-none w-full bg-transparent"

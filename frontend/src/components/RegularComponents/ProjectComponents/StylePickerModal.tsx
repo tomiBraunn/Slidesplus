@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import SpotlightCard from "../MultiuseComponents/SpotlightCard";
 import { getTemplateCatalog, getCachedCatalog, type Template } from "../../../utils/templateCatalog";
 
@@ -14,6 +15,7 @@ function TemplateCard({ template, onApplyStyle, onRegenerate }: {
   onApplyStyle: (name: string) => void;
   onRegenerate: (name: string) => void;
 }) {
+  const { t } = useTranslation();
   const [loaded, setLoaded] = useState(false);
 
   const displayName = template.name
@@ -66,13 +68,13 @@ function TemplateCard({ template, onApplyStyle, onRegenerate }: {
             onClick={(e) => { e.stopPropagation(); onApplyStyle(template.name); }}
             className="px-2 py-1 text-xs font-medium rounded-lg border border-theme-tertiary bg-theme-primary hover:bg-theme-hover text-theme-primary transition-colors"
           >
-            Style
-          </button>
+            {t("stylePicker.styleBtn")}
+            </button>
           <button
             onClick={(e) => { e.stopPropagation(); onRegenerate(template.name); }}
             className="px-2 py-1 text-xs font-medium rounded-lg border border-[#7182FF]/40 bg-[#7182FF]/10 hover:bg-[#7182FF]/20 text-[#7182FF] transition-colors"
           >
-            Regen
+            {t("stylePicker.regenBtn")}
           </button>
         </div>
       </div>
@@ -81,6 +83,7 @@ function TemplateCard({ template, onApplyStyle, onRegenerate }: {
 }
 
 export default function StylePickerModal({ isOpen, onClose, onApplyStyle, onRegenerate }: Props) {
+  const { t } = useTranslation();
   // Seed from the shared cache so reopening is instant.
   const [templates, setTemplates] = useState<Template[]>(() => getCachedCatalog() ?? []);
   const [search, setSearch] = useState("");
@@ -117,13 +120,13 @@ export default function StylePickerModal({ isOpen, onClose, onApplyStyle, onRege
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-theme-tertiary">
           <div>
-            <h2 className="text-base font-semibold text-theme-primary">Style Picker</h2>
-            <p className="text-xs text-theme-secondary mt-0.5">{templates.length} templates available</p>
+            <h2 className="text-base font-semibold text-theme-primary">{t("stylePicker.title")}</h2>
+            <p className="text-xs text-theme-secondary mt-0.5">{t("stylePicker.templatesAvailable", { count: templates.length })}</p>
           </div>
           <div className="flex items-center gap-3">
             <input
               type="text"
-              placeholder="Search styles..."
+              placeholder={t("stylePicker.searchPlaceholder")}
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-52 px-3 py-1.5 text-sm bg-theme-quaternary border border-theme-tertiary rounded-lg text-theme-primary placeholder:text-theme-secondary focus:outline-none focus:border-[#7182FF] transition-colors"
@@ -147,7 +150,7 @@ export default function StylePickerModal({ isOpen, onClose, onApplyStyle, onRege
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex items-center justify-center h-40 text-sm text-theme-secondary">
-              No templates found
+              {t("stylePicker.noTemplatesFound")}
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">

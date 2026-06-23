@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { urlbackend } from "../../../../config.js";
 
 type Props = {
@@ -8,6 +9,7 @@ type Props = {
 };
 
 function CreateProject({ onClose, onCreated }: Props) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -37,11 +39,11 @@ function CreateProject({ onClose, onCreated }: Props) {
 
     const name = title.trim();
     if (!name) {
-      setError("No title.");
+      setError(t("createProject.noTitleError"));
       return;
     }
     if (name.length > 120) {
-      setError("Title can't be longer than 120 characters.");
+      setError(t("createProject.titleTooLong"));
       return;
     }
 
@@ -61,7 +63,7 @@ function CreateProject({ onClose, onCreated }: Props) {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data?.message || "Failed to create project.");
+        setError(data?.message || t("createProject.createFailed"));
         setSubmitting(false);
         return;
       }
@@ -72,7 +74,7 @@ function CreateProject({ onClose, onCreated }: Props) {
       handleClose();
     } catch (e) {
       setSubmitting(false);
-      setError("Error connecting to the server.");
+      setError(t("createProject.serverError"));
     }
   };
 
@@ -102,14 +104,14 @@ function CreateProject({ onClose, onCreated }: Props) {
             close
           </span>
 
-          <h2 className="text-4xl text-theme-primary font-bold">New presentation</h2>
-          <p className="text-[10px] text-center">Use our templates, code your presentation, or use Ai to boost your designs</p>
+          <h2 className="text-4xl text-theme-primary font-bold">{t("createProject.title")}</h2>
+          <p className="text-[10px] text-center">{t("createProject.description")}</p>
 
           <div className="flex flex-col gap-2 w-min-full">
             <div className="flex gap-2 w-full">
               <input
                 type="text"
-                placeholder="Title"
+                placeholder={t("createProject.titlePlaceholder")}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 onKeyDown={onKeyDownInput}

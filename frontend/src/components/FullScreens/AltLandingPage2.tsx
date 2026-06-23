@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence, MotionConfig } from "framer-motion";
 import SEO from "../SEO";
 import AppIconWithoutLink from "../RegularComponents/MultiuseComponents/AppIconWithoutLink";
@@ -497,9 +498,10 @@ function SectionHeader({ title, id }: { title: string; id: string }) {
 
 export default function AltLandingPage2() {
   const navigate = useNavigate();
-  const [language, setLanguage] = useState<Language>(
-    () => (navigator.language?.startsWith("es") ? "es" : "en") as Language
-  );
+  // El idioma es global (compartido con la app vía i18next / toggle de Settings).
+  const { i18n } = useTranslation();
+  const language: Language = i18n.resolvedLanguage === "es" ? "es" : "en";
+  const setLanguage = (l: Language) => i18n.changeLanguage(l);
   const [introDone, setIntroDone] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
   const t = content[language];

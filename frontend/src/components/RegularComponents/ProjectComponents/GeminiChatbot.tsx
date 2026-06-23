@@ -6,6 +6,7 @@ import React, {
   useRef,
   useCallback,
 } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AssistantRuntimeProvider,
   useExternalStoreRuntime,
@@ -453,6 +454,7 @@ function CodeModal({ isOpen, onClose, codeBlock, onInsert, onReplace }: {
   codeBlock: { lang?: string; code: string; description: string };
   onInsert: (code: string) => void; onReplace: (code: string) => void;
 }) {
+  const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<"preview" | "code">("code");
   const canPreview = codeBlock.lang === "html" || looksLikeHTML(codeBlock.code);
   if (!isOpen) return null;
@@ -460,7 +462,7 @@ function CodeModal({ isOpen, onClose, codeBlock, onInsert, onReplace }: {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
       <div className="bg-theme-primary border border-theme-tertiary rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-theme-tertiary">
-          <h3 className="text-lg font-medium text-theme-primary">Code View</h3>
+          <h3 className="text-lg font-medium text-theme-primary">{t("chatbot.codeView")}</h3>
           <button onClick={onClose} className="p-1 text-theme-secondary hover:text-theme-primary transition-colors">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
@@ -469,7 +471,7 @@ function CodeModal({ isOpen, onClose, codeBlock, onInsert, onReplace }: {
           <div className="flex items-center justify-center gap-1 px-6 py-3 border-b border-theme-tertiary">
             {(["preview", "code"] as const).map((m) => (
               <button key={m} onClick={() => setViewMode(m)} className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${viewMode === m ? "bg-theme-inverted text-theme-inverted" : "bg-theme-primary text-theme-secondary hover:text-theme-primary"}`}>
-                {m.charAt(0).toUpperCase() + m.slice(1)}
+                  {m === "preview" ? t("common.preview") : t("common.code")}
               </button>
             ))}
           </div>
@@ -482,9 +484,9 @@ function CodeModal({ isOpen, onClose, codeBlock, onInsert, onReplace }: {
           )}
         </div>
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-theme-tertiary">
-          <button onClick={() => { onInsert(codeBlock.code); onClose(); }} className="px-4 py-2 text-sm font-medium bg-theme-primary hover:bg-[#52585A] text-theme-primary rounded-lg border border-theme-tertiary transition-all">Insert</button>
-          <button onClick={() => { onReplace(codeBlock.code); onClose(); }} className="px-4 py-2 text-sm font-medium bg-theme-primary hover:bg-[#52585A] text-theme-primary rounded-lg border border-theme-tertiary transition-all">Replace</button>
-          <button onClick={() => navigator.clipboard.writeText(codeBlock.code)} className="px-4 py-2 text-sm font-medium bg-theme-primary hover:bg-[#52585A] text-theme-primary rounded-lg border border-theme-tertiary transition-all">Copy</button>
+          <button onClick={() => { onInsert(codeBlock.code); onClose(); }} className="px-4 py-2 text-sm font-medium bg-theme-primary hover:bg-[#52585A] text-theme-primary rounded-lg border border-theme-tertiary transition-all">{t("common.insert")}</button>
+          <button onClick={() => { onReplace(codeBlock.code); onClose(); }} className="px-4 py-2 text-sm font-medium bg-theme-primary hover:bg-[#52585A] text-theme-primary rounded-lg border border-theme-tertiary transition-all">{t("common.replace")}</button>
+          <button onClick={() => navigator.clipboard.writeText(codeBlock.code)} className="px-4 py-2 text-sm font-medium bg-theme-primary hover:bg-[#52585A] text-theme-primary rounded-lg border border-theme-tertiary transition-all">{t("common.copy")}</button>
         </div>
       </div>
     </div>
@@ -495,6 +497,7 @@ function CodeModal({ isOpen, onClose, codeBlock, onInsert, onReplace }: {
 function SlidesPreviewModal({ isOpen, onClose, slides, onInsertSlides }: {
   isOpen: boolean; onClose: () => void; slides: string[]; onInsertSlides: (s: string[]) => void;
 }) {
+  const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
   const [show, setShow] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -567,7 +570,7 @@ function SlidesPreviewModal({ isOpen, onClose, slides, onInsertSlides }: {
             <div className="flex items-center bg-theme-quaternary rounded-lg p-0.5">
               {(["visual", "code"] as const).map((m) => (
                 <button key={m} onClick={() => setViewMode(m)} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${viewMode === m ? "bg-theme-secondary text-theme-primary" : "text-theme-secondary hover:text-theme-primary"}`}>
-                  {m.charAt(0).toUpperCase() + m.slice(1)}
+                {m === "preview" ? t("common.preview") : t("common.code")}
                 </button>
               ))}
             </div>
@@ -625,7 +628,7 @@ function SlidesPreviewModal({ isOpen, onClose, slides, onInsertSlides }: {
         {/* footer */}
         <div className="flex items-center justify-end px-5 py-3 border-t border-theme-tertiary flex-shrink-0">
           <button onClick={() => { onInsertSlides(slides); handleClose(); }} className="px-5 py-2 text-sm font-medium bg-theme-inverted text-theme-inverted rounded-lg hover:opacity-90 transition-all">
-            Insert {slides.length} Slide{slides.length > 1 ? "s" : ""}
+            {t("chatbot.insertSlides", { count: slides.length })}
           </button>
         </div>
       </div>
@@ -640,6 +643,7 @@ function InlineSlidePreview({ slides: s, msgIndex, onInsert, onOpenModal }: {
   onInsert: (s: string[]) => void;
   onOpenModal: (slides: string[], messageIndex: number) => void;
 }) {
+  const { t } = useTranslation();
   const [pi, setPi] = useState(0);
   const [inlineScale, setInlineScale] = useState(1);
   const inlineWrapperRef = useRef<HTMLDivElement>(null);
@@ -682,9 +686,9 @@ function InlineSlidePreview({ slides: s, msgIndex, onInsert, onOpenModal }: {
       </div>
       <div className="flex gap-2">
         <button onClick={() => onInsert(s)} className="flex-1 px-4 py-2.5 text-sm font-medium bg-[#d0d0d0] hover:bg-[#bcbcbc] text-black rounded-lg transition-all">
-          Insert {s.length} Slide{s.length > 1 ? "s" : ""}
+          {t("chatbot.insertSlides", { count: s.length })}
         </button>
-        <button onClick={() => onOpenModal(s, msgIndex)} className="p-2.5 text-theme-secondary hover:text-theme-primary bg-theme-primary hover:bg-[#52585A] rounded-lg border border-theme-tertiary transition-all" title="Open in modal">
+        <button onClick={() => onOpenModal(s, msgIndex)} className="p-2.5 text-theme-secondary hover:text-theme-primary bg-theme-primary hover:bg-[#52585A] rounded-lg border border-theme-tertiary transition-all" title={t("chatbot.openInModal")}>
           <span className="material-symbols-outlined" style={{ fontSize: 20 }}>visibility</span>
         </button>
       </div>
@@ -720,6 +724,7 @@ export default function GeminiChatbot({
   // in the conversation instead of firing a hidden background request.
   externalMessage?: { text: string; nonce: number } | null;
 }) {
+  const { t } = useTranslation();
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(true);
@@ -1257,8 +1262,8 @@ export default function GeminiChatbot({
           </pre>
           {showCode && (
             <div className="flex gap-2 p-3 border-t border-theme-tertiary bg-theme-primary">
-              {[["Insert", () => insertIntoEditor(msg.codeBlock!.code)], ["Replace", () => replaceEditor(msg.codeBlock!.code)], ["Copy", () => navigator.clipboard.writeText(msg.codeBlock!.code)]].map(([label, fn]) => (
-                <button key={label} onClick={(e) => { e.stopPropagation(); (fn as any)(); }} className="flex-1 px-3 py-2 text-xs font-medium bg-theme-primary hover:bg-[#52585A] text-theme-primary rounded-lg border border-theme-tertiary transition-all">{label}</button>
+              {[["common.insert", () => insertIntoEditor(msg.codeBlock!.code)], ["common.replace", () => replaceEditor(msg.codeBlock!.code)], ["common.copy", () => navigator.clipboard.writeText(msg.codeBlock!.code)]].map(([tKey, fn]) => (
+                <button key={tKey} onClick={(e) => { e.stopPropagation(); (fn as any)(); }} className="flex-1 px-3 py-2 text-xs font-medium bg-theme-primary hover:bg-[#52585A] text-theme-primary rounded-lg border border-theme-tertiary transition-all">{t(tKey)}</button>
               ))}
             </div>
           )}
@@ -1541,7 +1546,7 @@ export default function GeminiChatbot({
                 onChange={(e) => setInputValue(e.target.value)}
                 disabled={uploadingFiles}
                 className="flex-1 bg-theme-primary rounded-lg border border-[#52585A] px-4 py-3 text-sm focus:outline-none focus:border-[#3a3a3a] transition-colors disabled:opacity-50 resize-none overflow-y-auto min-h-[48px] max-h-[200px]"
-                placeholder="Message AI Assistant"
+                placeholder={t("chatbot.placeholder")}
                 rows={1}
                 style={{ height: "auto", minHeight: "48px" }}
                 onInput={(e) => { const t = e.target as HTMLTextAreaElement; t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 200) + "px"; }}
