@@ -1,0 +1,32 @@
+# Monorepo root — global safety net (each package also has its own .gitignore)
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build output
+dist/
+build/
+**/dist/
+**/build/
+.vite/
+
+# Secrets — never commit any env file with real values
+.env
+.env.*
+**/.env
+**/.env.*
+# ...but DO allow the documented templates
+!.env.example
+!**/.env.example
+!.env.template
+!**/.env.template
+
+# Logs / misc
+*.log
+npm-debug.log
+yarn-error.log
+nul
+
+# Local DB backups
+**/backups/
