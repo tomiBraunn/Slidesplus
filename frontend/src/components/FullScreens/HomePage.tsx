@@ -74,6 +74,21 @@ function HomePage() {
   const [user, setUser] = useState<User | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   const [showAIPanel, setShowAIPanel] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
+
+  // Collapse the header when scrolling down inside the project/template grid
+  // (the actual scroll container), with hysteresis to avoid flicker around the
+  // threshold. Disabled while the AI panel is open.
+  const handleMainScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (showAIPanel) return
+    const top = e.currentTarget.scrollTop
+    setCollapsed((prev) => (prev ? top > 30 : top > 70))
+  }
+
+  // Force-expand whenever the AI panel opens so the big search/panel is visible.
+  useEffect(() => {
+    if (showAIPanel) setCollapsed(false)
+  }, [showAIPanel])
 
   useEffect(() => {
     const checkMobile = () => {
@@ -375,15 +390,25 @@ function HomePage() {
   return (
     <>
       <div className="bg-theme-primary w-screen h-screen flex items-center justify-start flex-col gap-5 relative overflow-y-auto overflow-x-hidden">
-        <div className="bg-theme-primary flex flex-col items-center justify-start z-10 w-full">
+        <div className="bg-theme-primary flex flex-col items-center justify-start z-20 w-full sticky top-0">
           <NavBar user={user} />
           <div className="flex flex-col items-center justify-start text-white w-full max-w-[90vw] md:max-w-[70vw] px-4 md:px-0">
             <div className="searchbar flex flex-col items-center justify-start w-full gap-6">
-              <div className="flex flex-col items-center gap-2">
+              <div
+                className="flex flex-col items-center gap-2 overflow-hidden"
+                style={{
+                  maxHeight: collapsed ? 0 : (isMobile ? 70 : 120),
+                  opacity: collapsed ? 0 : 1,
+                  marginBottom: collapsed ? -24 : 0,
+                  transition: 'max-height 0.3s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.2s cubic-bezier(0.32, 0.72, 0, 1), margin 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
+                }}
+              >
                 <AppTextLogo size={isMobile ? 60 : 100} />
               </div>
 
-              <div className="relative w-full md:w-[70vw] flex items-center justify-center">
+              <div
+                className={`relative flex items-center justify-center transition-[width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${collapsed && !showAIPanel ? "w-full md:w-auto gap-2" : "w-full md:w-[70vw]"}`}
+              >
                 {showAIPanel && (
                   <button
                     onClick={handleAIPanelClose}
@@ -393,9 +418,9 @@ function HomePage() {
                   </button>
                 )}
                 <div
-                  className={`relative flex w-full gap-2 bg-theme-quaternary backdrop-blur-xl border border-theme-tertiary ${showAIPanel ? "rounded-3xl h-[60vh] flex-col items-start justify-start py-4 px-4 searchbar-glow-ai mt-10" : "rounded-full min-h-[50px] items-center justify-center px-4 searchbar-glow-subtle"}`}
+                  className={`relative flex gap-2 bg-theme-quaternary backdrop-blur-xl border border-theme-tertiary ${showAIPanel ? "w-full rounded-3xl h-[60vh] flex-col items-start justify-start py-4 px-4 searchbar-glow-ai mt-10" : collapsed ? "w-full md:w-[420px] rounded-full min-h-[44px] items-center justify-center px-4 searchbar-glow-subtle" : "w-full rounded-full min-h-[50px] items-center justify-center px-4 searchbar-glow-subtle"}`}
                   style={{
-                    transition: 'height 0.5s cubic-bezier(0.4, 0, 0.2, 1), padding 0.5s cubic-bezier(0.4, 0, 0.2, 1), margin 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
+                    transition: 'width 0.3s cubic-bezier(0.32, 0.72, 0, 1), height 0.4s cubic-bezier(0.32, 0.72, 0, 1), padding 0.4s cubic-bezier(0.32, 0.72, 0, 1), margin 0.4s cubic-bezier(0.32, 0.72, 0, 1)'
                   }}
                 >
                   {showAIPanel ? (
@@ -465,12 +490,45 @@ function HomePage() {
                     </div>
                   )}
                 </div>
+
+                {/* Compact controls shown only when the header is collapsed */}
+                {collapsed && !showAIPanel && activeTab === "my-designs" && (
+                  <motion.div
+                    initial={{ opacity: 0, transform: "translateX(12px) scale(0.95)" }}
+                    animate={{ opacity: 1, transform: "translateX(0px) scale(1)" }}
+                    exit={{ opacity: 0, transform: "translateX(12px) scale(0.95)" }}
+                    transition={{ type: "spring", duration: 0.4, bounce: 0.2 }}
+                    className="flex items-center gap-2 flex-shrink-0"
+                  >
+                    {!isMobile && (
+                      <button
+                        onClick={() => setShowCreate(true)}
+                        className="flex items-center justify-center bg-theme-inverted text-theme-inverted border border-theme-tertiary transition-transform duration-150 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] rounded-full p-3"
+                        title={t("home.createProjectButton")}
+                      >
+                        <span className="material-symbols-outlined">add</span>
+                      </button>
+                    )}
+                    <SortBy selected={sortOption} setSelected={handleSortChange} />
+                    {!isMobile && <ViewModeSwitch viewMode={viewMode} setViewMode={setViewMode} />}
+                  </motion.div>
+                )}
               </div>
 
               {aiError && showAIPanel && (
                 <p className="text-red-500 text-xs">{aiError}</p>
               )}
 
+              <div
+                className="flex items-center justify-center overflow-hidden"
+                style={{
+                  maxHeight: collapsed && !showAIPanel ? 0 : 60,
+                  opacity: collapsed && !showAIPanel ? 0 : 1,
+                  marginTop: collapsed && !showAIPanel ? -24 : 0,
+                  pointerEvents: collapsed && !showAIPanel ? 'none' : 'auto',
+                  transition: 'max-height 0.3s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.2s cubic-bezier(0.32, 0.72, 0, 1), margin 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
+                }}
+              >
               <div className="flex items-center gap-3 bg-theme-quaternary backdrop-blur-xl rounded-full p-1">
                 <button
                   onClick={() => { setActiveTab("my-designs"); setShowAIPanel(false) }}
@@ -509,6 +567,7 @@ function HomePage() {
                   {t("home.templatesTab")}
                 </button>
               </div>
+              </div>
             </div>
           </div>
         </div>
@@ -524,7 +583,17 @@ function HomePage() {
                 transition={{ duration: 0.3, ease: "easeInOut" }}
                 className="w-full md:max-w-7xl h-full flex flex-col"
               >
-              <div className="flex items-center justify-between py-2 w-full flex-shrink-0">
+              <div
+                className="flex items-center justify-between w-full flex-shrink-0 overflow-hidden"
+                style={{
+                  maxHeight: collapsed ? 0 : 60,
+                  opacity: collapsed ? 0 : 1,
+                  paddingTop: collapsed ? 0 : 8,
+                  paddingBottom: collapsed ? 0 : 8,
+                  pointerEvents: collapsed ? 'none' : 'auto',
+                  transition: 'max-height 0.3s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.2s cubic-bezier(0.32, 0.72, 0, 1), padding 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
+                }}
+              >
                 <div className="flex items-baseline gap-3">
                   <h2 className="text-2xl font-semibold text-theme-primary">
                     {activeTab === "my-designs" ? t("home.myDesignsTab") : t("home.templatesTab")}
@@ -556,6 +625,7 @@ function HomePage() {
 
               {activeTab === "my-designs" ? (
                 <div
+                  onScroll={handleMainScroll}
                   className={`gap-4 flex-1 overflow-y-auto overflow-x-hidden pb-8 ${isMobile ? "flex flex-col" : viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 auto-rows-min content-start transition-all duration-300" : "flex flex-col"
                     }`}
                 >
@@ -694,7 +764,7 @@ function HomePage() {
                   </div>
 
                   {templatesLoading ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 flex-1 overflow-y-auto auto-rows-min content-start">
+                    <div onScroll={handleMainScroll} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 flex-1 overflow-y-auto auto-rows-min content-start">
                       {Array.from({ length: 12 }).map((_, i) => (
                         <div key={i} className="rounded-[15px] bg-theme-quaternary border border-theme-tertiary p-1.5 flex flex-col gap-2">
                           <Skeleton className="w-full aspect-[16/9] rounded-[10px]" />
@@ -705,7 +775,7 @@ function HomePage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 flex-1 overflow-y-auto auto-rows-min content-start">
+                    <div onScroll={handleMainScroll} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 flex-1 overflow-y-auto auto-rows-min content-start">
                       {templates
                         .filter(t => !templateSearch || t.name.includes(templateSearch.toLowerCase()) || t.description.toLowerCase().includes(templateSearch.toLowerCase()))
                         .map(t => {
