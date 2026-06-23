@@ -60,19 +60,13 @@ function isNewDeckRequest(msg: string): boolean {
     "modificá", "modifica ", "corregí", "corrige ", "ajustá", "ajusta ",
   ];
   if (editHints.some((k) => s.includes(k))) return false;
-  // Verbos de creación de un deck completo.
+  // Menciona "presentación/slides/charla..." → es un deck nuevo. El verbo NO es
+  // obligatorio: "presentación sobre aviones" ya es un pedido de deck completo.
   const createHints = [
     "presentación", "presentacion", "presentaciones", "slides", "slide deck",
-    "presentation", "deck", "slideshow", "diapositivas", "charla", "exposición", "exposicion",
+    "presentation", "deck", "slideshow", "diapositivas", "diapositiva", "charla", "exposición", "exposicion",
   ];
-  const createVerbs = [
-    "hace", "hacé", "haz", "crea", "creá", "cre", "genera", "generá", "armá", "arma",
-    "make", "create", "generate", "build", "design", "diseñá", "diseña", "quiero", "necesito",
-  ];
-  const hasObject = createHints.some((k) => s.includes(k));
-  const hasVerb = createVerbs.some((v) => s.includes(v));
-  // Si menciona presentación/slides y suena a pedido de creación → deck nuevo.
-  return hasObject && hasVerb;
+  return createHints.some((k) => s.includes(k));
 }
 
 function classifyPrompt(msg: string): "slides" | "code" | "chat" {
@@ -747,6 +741,12 @@ export default function GeminiChatbot({
   // Wizard de onboarding (estilo Claude): se muestra inline cuando el usuario
   // pide su primera presentación, antes de generar.
   const [wizard, setWizard] = useState<{ originalMsg: string } | null>(null);
+  // Menú del botón "+" y sub-flujo de generación de imágenes con FLUX.
+  const [showPlusMenu, setShowPlusMenu] = useState(false);
+  const [imagePromptOpen, setImagePromptOpen] = useState(false);
+  const [imagePrompt, setImagePrompt] = useState("");
+  const [generatingImage, setGeneratingImage] = useState(false);
+  const plusMenuRef = useRef<HTMLDivElement>(null);
 
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
 
@@ -765,9 +765,8 @@ export default function GeminiChatbot({
     } catch {}
   }, []);
 
-  const ADMIN_MODELS = [
-    { id: "gpt-4o", label: "GPT-4o", provider: "openai" },
-    { id: "gpt-4o-mini", label: "GPT-4o Mini", provider: "openai" },
+  // Modelos gratis (Gemini + NVIDIA) — visibles para cualquier usuario.
+  const FREE_MODELS = [
     { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash", provider: "gemini" },
     { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro", provider: "gemini" },
     { id: "gemini-2.0-flash", label: "Gemini 2.0 Flash", provider: "gemini" },
@@ -776,6 +775,24 @@ export default function GeminiChatbot({
     { id: "nvidia/qwen", label: "Qwen 3.5 397B (NVIDIA)", provider: "nvidia" },
     { id: "nvidia/deepseek", label: "DeepSeek V4 Pro (NVIDIA)", provider: "nvidia" },
   ];
+  // Admin además ve los modelos pagos (GPT).
+  const ADMIN_ONLY_MODELS = [
+    { id: "gpt-4o", label: "GPT-4o", provider: "openai" },
+    { id: "gpt-4o-mini", label: "GPT-4o Mini", provider: "openai" },
+  ];
+  const ADMIN_MODELS = [...ADMIN_ONLY_MODELS, ...FREE_MODELS];
+  // Lista que ve el usuario según su rol.
+  const AVAILABLE_MODELS = isAdmin ? ADMIN_MODELS : FREE_MODELS;
+
+  // Cerrar el menú "+" al click afuera.
+  useEffect(() => {
+    if (!showPlusMenu) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (plusMenuRef.current && !plusMenuRef.current.contains(e.target as Node)) setShowPlusMenu(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [showPlusMenu]);
 
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   useEffect(() => { scrollToBottom(); }, [messages, loading]);
@@ -836,6 +853,42 @@ export default function GeminiChatbot({
     const updatedSlides = [...slides];
     updatedSlides[currentSlideIndex] = cleanSlide;
     setCode(`<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>${updatedSlides.join("\n")}</body></html>`);
+  };
+
+  // Genera una imagen con FLUX (backend) y la inserta en la slide actual como un
+  // <img> posicionado, listo para mover/editar en el modo Edit.
+  const generateImageAndInsert = async () => {
+    const prompt = imagePrompt.trim();
+    if (!prompt || generatingImage) return;
+    setGeneratingImage(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${urlbackend}/gemini/image`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ prompt }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) { setErrors({ form: data?.error || "No se pudo generar la imagen" }); return; }
+
+      const imgTag = `<img src="${data.url}" alt="${prompt.replace(/"/g, "")}" style="position:absolute; top:340px; left:660px; width:600px; height:auto; border-radius:12px;" />`;
+      if (slides && currentSlideIndex !== undefined && slides[currentSlideIndex]) {
+        // Insertar el <img> antes del </section> de la slide actual.
+        const cur = slides[currentSlideIndex];
+        const updated = [...slides];
+        updated[currentSlideIndex] = cur.replace(/<\/section>\s*$/i, `${imgTag}</section>`);
+        setCode(`<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body>${updated.join("\n")}</body></html>`);
+      } else {
+        // Sin slides aún: crear una con la imagen.
+        setCode(`<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head><body><section style="width:1920px;height:1080px;overflow:hidden;position:relative;background:#0a0a0a;">${imgTag}</section></body></html>`);
+      }
+      setImagePrompt("");
+      setImagePromptOpen(false);
+    } catch {
+      setErrors({ form: "Error al generar la imagen" });
+    } finally {
+      setGeneratingImage(false);
+    }
   };
 
   const insertSlidesAtPosition = (newSlides: string[]) => {
@@ -1073,18 +1126,34 @@ export default function GeminiChatbot({
       isNewDeckRequest(userMsg);
 
     if (wantsNewDeck) {
-      setWizard({ originalMsg: userMsg });
+      openWizard(userMsg);
       return;
     }
 
     await processMessage(userMsg, uploadedAttachments);
   };
 
+  // Abre el wizard fijo (sin IA): solo guarda la idea original como tema.
+  const openWizard = (idea: string) => {
+    setWizard({ originalMsg: idea });
+  };
+
+  // Traduce la respuesta de imágenes del wizard a una instrucción para el modelo.
+  const imagesInstruction = (v?: string) => {
+    switch (v) {
+      case "none": return "Sin imágenes; apoyate en tipografía, color y composición.";
+      case "some-ai": return "Usá algunas imágenes solo donde aporten; marcá esos lugares con placeholders descriptivos.";
+      case "many-ai": return "Usá imágenes en casi todas las slides; marcá cada una con un placeholder descriptivo.";
+      case "mix": return "Usá un mix de imágenes (algunas generadas, otras de stock) donde aporten.";
+      default: return "";
+    }
+  };
+
   /* ── wizard de onboarding ── */
   const handleWizardComplete = (result: WizardResult) => {
     setWizard(null);
-    // Limpiar el verbo de creación del mensaje original para dejar solo el TEMA
-    // (ej. "hazme una presentación sobre Nike" → "Nike").
+    const v = result.values || {};
+    // Limpiar el verbo de creación del mensaje original para dejar solo el TEMA.
     const raw = (wizard?.originalMsg || "").trim();
     const topic = raw
       .replace(/^(hace|hacé|haz|crea|creá|cre[aá]?|genera|generá|armá|arma|make|create|generate|build|design|diseñá|diseña|quiero|necesito)\b/i, "")
@@ -1094,14 +1163,23 @@ export default function GeminiChatbot({
       .replace(/\s+/g, " ")
       .trim() || raw;
 
-    // El template/estilo va PRIMERO y enfático: el backend elige el template a
-    // partir del mensaje, así que mencionarlo al inicio y por su nombre exacto
-    // hace que gane sobre cualquier otra señal.
+    // Armar el prompt. El template va PRIMERO (el backend lo elige por nombre exacto).
+    const specs = [
+      v.count ? `${v.count} slides` : "",
+      v.audience ? `audiencia: ${v.audience}` : "",
+      v.density ? `densidad: ${v.density}` : "",
+      imagesInstruction(v.images),
+    ].filter(Boolean).join(". ");
+
+    const quizPart = v.quiz === "yes"
+      ? " Agregá una última slide con un quiz interactivo de 3-4 preguntas sobre el tema (opciones, feedback y puntaje)."
+      : "";
+
     const prompt =
       `Usá el template "${result.templateName}" (${result.templateLabel}) para TODAS las slides, replicando su estilo visual exacto. ` +
-      `Creá una presentación de ${result.count} slides sobre: ${topic}. ` +
-      `Audiencia: ${result.audience}. Objetivo: ${result.tone}. ` +
-      `Densidad: ${result.density}. Idioma: ${result.language}. Imágenes: ${result.images}.`;
+      `Creá una presentación sobre: ${topic}.` +
+      (specs ? ` Preferencias: ${specs}.` : "") +
+      quizPart;
     processMessage(prompt);
   };
 
@@ -1310,13 +1388,6 @@ export default function GeminiChatbot({
               );
             })}
 
-            {/* Onboarding wizard (inline) */}
-            {wizard && (
-              <div className="animate-fadeIn">
-                <SlidesWizard onComplete={handleWizardComplete} onCancel={handleWizardCancel} />
-              </div>
-            )}
-
             {/* Loading indicator */}
             {loading && (
               <div className="flex gap-3 animate-fadeIn">
@@ -1353,6 +1424,13 @@ export default function GeminiChatbot({
             <div ref={messagesEndRef} />
           </div>
 
+          {/* Onboarding wizard — anclado encima del input (estilo Claude). */}
+          {wizard && (
+            <div className="px-6 pb-2 animate-fadeIn">
+              <SlidesWizard onComplete={handleWizardComplete} onCancel={handleWizardCancel} />
+            </div>
+          )}
+
           {/* Input area */}
           <div className="px-6 py-4 border-t border-[#52585A]">
             {attachedFiles.length > 0 && (
@@ -1374,31 +1452,29 @@ export default function GeminiChatbot({
               </div>
             )}
 
-            {isAdmin && (
-              <div className="relative flex items-center gap-2 mb-1">
+            {/* Prompt de imagen (sub-flujo del menú "+") */}
+            {imagePromptOpen && (
+              <div className="mb-2 flex items-center gap-2 p-2 bg-theme-primary border border-theme-tertiary rounded-xl">
+                <span className="material-symbols-outlined text-[#7182FF] flex-shrink-0" style={{ fontSize: 18 }}>image</span>
+                <input
+                  value={imagePrompt}
+                  onChange={(e) => setImagePrompt(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); generateImageAndInsert(); } if (e.key === "Escape") { setImagePromptOpen(false); setImagePrompt(""); } }}
+                  placeholder="Describe la imagen a generar…"
+                  autoFocus
+                  disabled={generatingImage}
+                  className="flex-1 bg-transparent text-sm text-theme-primary placeholder-theme-secondary focus:outline-none disabled:opacity-50"
+                />
                 <button
-                  onClick={() => setShowModelPicker(p => !p)}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border border-theme-tertiary bg-theme-primary hover:bg-[#52585A] text-theme-secondary transition-all"
+                  onClick={generateImageAndInsert}
+                  disabled={generatingImage || !imagePrompt.trim()}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#7182FF] text-white hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
-                  {ADMIN_MODELS.find(m => m.id === selectedModel)?.label || selectedModel}
-                  <svg className={`w-3 h-3 transition-transform ${showModelPicker ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  {generatingImage ? <><Spinner className="size-3" /> Generando…</> : "Generar"}
                 </button>
-                {showModelPicker && (
-                  <div className="absolute bottom-full mb-1 left-0 bg-theme-primary border border-theme-tertiary rounded-lg shadow-lg overflow-hidden z-10">
-                    {ADMIN_MODELS.map(m => (
-                      <button
-                        key={m.id}
-                        onClick={() => { setSelectedModel(m.id); localStorage.setItem("selectedModel", m.id); setShowModelPicker(false); }}
-                        className={`w-full text-left px-4 py-2 text-xs hover:bg-[#52585A] transition-colors flex items-center gap-2 ${selectedModel === m.id ? "text-theme-primary font-medium" : "text-theme-secondary"}`}
-                      >
-                        {selectedModel === m.id && <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />}
-                        {selectedModel !== m.id && <span className="w-1.5 h-1.5 inline-block" />}
-                        {m.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <button onClick={() => { setImagePromptOpen(false); setImagePrompt(""); }} className="p-1 text-theme-secondary hover:text-theme-primary" title="Cerrar">
+                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
+                </button>
               </div>
             )}
 
@@ -1408,12 +1484,57 @@ export default function GeminiChatbot({
                 setAttachedFiles((p) => [...p, ...files.filter((f) => f.size <= 10 * 1024 * 1024)]);
                 if (fileInputRef.current) fileInputRef.current.value = "";
               }} className="hidden" accept="*/*" />
-              <button onClick={() => fileInputRef.current?.click()} disabled={uploadingFiles || loading} className="bg-theme-primary hover:bg-[#52585A] border border-[#52585A] rounded-lg px-3 py-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0" title="Attach files">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-              </button>
-              <button onClick={() => setShowComponents(true)} disabled={uploadingFiles || loading} className="bg-theme-primary hover:bg-[#52585A] border border-[#52585A] rounded-lg px-3 py-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0" title="Componentes">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>
-              </button>
+
+              {/* Botón "+" con menú: subir archivos, generar imagen, modelo, /clear */}
+              <div className="relative shrink-0" ref={plusMenuRef}>
+                <button
+                  onClick={() => setShowPlusMenu((v) => !v)}
+                  disabled={uploadingFiles || loading}
+                  className="bg-theme-primary hover:bg-[#52585A] border border-[#52585A] rounded-lg px-3 py-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Más"
+                >
+                  <svg className={`w-5 h-5 transition-transform ${showPlusMenu ? "rotate-45" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                </button>
+
+                {showPlusMenu && (
+                  <div className="absolute bottom-full mb-2 left-0 z-50 w-60 bg-theme-primary border border-theme-tertiary rounded-xl shadow-2xl overflow-hidden py-1">
+                    <button onClick={() => { setShowPlusMenu(false); fileInputRef.current?.click(); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-theme-primary hover:bg-theme-quaternary transition-colors text-left">
+                      <span className="material-symbols-outlined text-base text-theme-secondary">upload_file</span>
+                      Subir archivos
+                    </button>
+                    <button onClick={() => { setShowPlusMenu(false); setImagePromptOpen(true); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-theme-primary hover:bg-theme-quaternary transition-colors text-left">
+                      <span className="material-symbols-outlined text-base text-theme-secondary">image</span>
+                      Generar imagen
+                    </button>
+                    <button onClick={() => { setShowPlusMenu(false); setShowComponents(true); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-theme-primary hover:bg-theme-quaternary transition-colors text-left">
+                      <span className="material-symbols-outlined text-base text-theme-secondary">grid_view</span>
+                      Componentes
+                    </button>
+
+                    <div className="my-1 border-t border-theme-tertiary" />
+                    <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-theme-secondary">Modelo</div>
+                    <div className="max-h-44 overflow-y-auto scrollbar-custom">
+                      {AVAILABLE_MODELS.map((m) => (
+                        <button
+                          key={m.id}
+                          onClick={() => { setSelectedModel(m.id); localStorage.setItem("selectedModel", m.id); }}
+                          className={`w-full text-left px-3 py-1.5 text-xs hover:bg-theme-quaternary transition-colors flex items-center gap-2 ${selectedModel === m.id ? "text-theme-primary font-medium" : "text-theme-secondary"}`}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${selectedModel === m.id ? "bg-green-400" : "bg-transparent"} inline-block`} />
+                          {m.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="my-1 border-t border-theme-tertiary" />
+                    <button onClick={() => { setShowPlusMenu(false); clearChat(); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors text-left">
+                      <span className="material-symbols-outlined text-base">delete_sweep</span>
+                      Limpiar chat (/clear)
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <textarea
                 ref={textareaRef}
                 value={inputValue}
