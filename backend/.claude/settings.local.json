@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(cat:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(node migrate-avatars.js:*)",
+      "Bash(node run-spotify-migration.js:*)",
+      "Bash(git reset:*)",
+      "Bash(psql:*)",
+      "Bash(node check-table.js:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

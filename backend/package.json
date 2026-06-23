@@ -1,0 +1,38 @@
+{
+  "name": "codeslides",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file=.env Server.js",
+    "start": "node Server.js",
+    "test": "node --test \"tests/*.test.mjs\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tomiBraunn/CodeSlides.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tomiBraunn/CodeSlides/issues"
+  },
+  "homepage": "https://github.com/tomiBraunn/CodeSlides#readme",
+  "description": "",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.76.1",
+    "bcrypt": "^6.0.0",
+    "canvas": "^3.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "node-fetch": "^3.3.2",
+    "passport": "^0.7.0",
+    "passport-github2": "^0.1.12",
+    "passport-google-oauth20": "^2.0.0",
+    "pg": "^8.16.3"
+  }
+}
