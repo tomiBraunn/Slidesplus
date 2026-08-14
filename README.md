@@ -1,3 +1,5 @@
+<img src="frontend/public/favicon.png" width="64" height="64" alt="SlidesPlus logo" />
+
 # SlidesPlus
 
 AI-powered presentation builder — built before alternatives like Claude, ChatGPT, or other AI tools could generate full presentations on their own.
